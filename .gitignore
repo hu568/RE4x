@@ -1,0 +1,27 @@
+# 临时目录
+TMP/
+tmp_frames/
+out_frames/
+
+# 输出文件
+output.png
+output_w_audio.mp4
+output_w_audio.mkv
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# PyInstaller 构建产物
+server/build/
+server/dist/
+server/*.spec
+
+# 计划文件与参考资料
+.sisyphus/
+参考/
+
+# Windows 系统文件
+Thumbs.db
+Desktop.ini

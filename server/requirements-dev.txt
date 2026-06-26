@@ -1,0 +1,4 @@
+flask>=3.0
+pillow>=10.0
+pytest>=7.0
+pyinstaller>=6.0
