@@ -86,4 +86,6 @@ cd server
 
 ## 许可
 
-本项目源码仅供学习参考。Real-ESRGAN、FFmpeg 等第三方组件遵循各自许可协议。
+本项目源码基于 **GNU General Public License v3.0 (GPL-3.0)** 开源。详见 [LICENSE](LICENSE) 文件。
+
+Real-ESRGAN（BSD-3-Clause）、FFmpeg（LGPL/GPL）等第三方组件遵循各自许可协议。
