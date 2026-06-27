@@ -1,0 +1,25 @@
+================================================================
+  RE4x SD Enhance — 便携式 AI 图片/视频放大工具包
+================================================================
+
+项目主页:
+  https://github.com/hu568/RE4x
+
+许可协议:
+  GNU General Public License v3.0 (GPL-3.0)
+  详见 LICENSE 文件
+
+版权声明:
+  Copyright (c) 2026 hu568
+
+重要提示:
+  本软件为免费开源项目，仅供学习参考。
+  严禁用于任何商业倒卖行为。
+  如您为此软件付费，请即要求退款并举报。
+
+第三方组件:
+  - Real-ESRGAN      (BSD-3-Clause)  https://github.com/xinntao/Real-ESRGAN
+  - FFmpeg           (LGPL/GPL)      https://ffmpeg.org
+  - ncnn             (BSD-3-Clause)  https://github.com/Tencent/ncnn
+
+================================================================

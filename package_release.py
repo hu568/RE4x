@@ -89,6 +89,9 @@ def create_release_zip(version: str) -> str:
     # Files to include (relative to project root)
     include = [
         "start.bat",
+        "README.md",
+        "LICENSE",
+        "RELEASE_INFO.txt",
         "tools/ffmpeg.exe",
         "tools/ffprobe.exe",
         "tools/realesrgan-ncnn-vulkan.exe",
