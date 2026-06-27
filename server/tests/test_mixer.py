@@ -1,6 +1,6 @@
 """Tests for :mod:`mixer` — ``ImageMixer`` with real ffmpeg binary.
 
-All blend operations use the actual ``ffmpeg.exe`` bundled in ``script/``.
+All blend operations use the actual ``ffmpeg.exe`` bundled in ``tools/``.
 """
 
 import os

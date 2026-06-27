@@ -9,14 +9,14 @@ import pytest
 
 
 def test_models_detection(project_root):
-    """Detect all known models in ``script/models/``.
+    """Detect all known models in ``tools/models/``.
 
     Verifies that the 5 ``.param`` files are deduplicated into at least
     3 models with the expected names.
     """
     from models import get_available_models  # noqa: PLC0415
 
-    models_dir = os.path.join(project_root, 'script', 'models')
+    models_dir = os.path.join(project_root, 'tools', 'models')
     models = get_available_models(models_dir)
 
     assert len(models) >= 3
@@ -31,7 +31,7 @@ def test_models_max_scale(project_root):
     """The deduplicated models have correct ``max_scale`` values."""
     from models import get_available_models  # noqa: PLC0415
 
-    models_dir = os.path.join(project_root, 'script', 'models')
+    models_dir = os.path.join(project_root, 'tools', 'models')
     models = get_available_models(models_dir)
     by_name = {m['name']: m for m in models}
 
@@ -46,7 +46,7 @@ def test_models_display_names(project_root):
     """Known models should have human-readable ``display_name`` values."""
     from models import get_available_models  # noqa: PLC0415
 
-    models_dir = os.path.join(project_root, 'script', 'models')
+    models_dir = os.path.join(project_root, 'tools', 'models')
     models = get_available_models(models_dir)
     by_name = {m['name']: m for m in models}
 

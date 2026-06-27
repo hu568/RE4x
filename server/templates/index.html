@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SD Enhance - 图片后期处理</title>
+<title>RE4x SD Enhance</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -41,6 +41,44 @@
     font-size: 14px;
   }
 
+  /* Page-level Tabs */
+  .page-tabs {
+    margin-bottom: 20px;
+  }
+  .page-tab-bar {
+    display: flex;
+    gap: 4px;
+    background: #1a1d24;
+    border-radius: 12px;
+    padding: 6px;
+    border: 1px solid #2a2d35;
+  }
+  .page-tab-btn {
+    flex: 1;
+    padding: 14px 20px;
+    border: none;
+    background: transparent;
+    color: #9ca3af;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.25s;
+    text-align: center;
+    letter-spacing: 0.3px;
+  }
+  .page-tab-btn:hover { color: #e0e0e0; background: rgba(255,255,255,0.03); }
+  .page-tab-btn.active {
+    background: linear-gradient(135deg, rgba(167,139,250,0.15), rgba(96,165,250,0.15));
+    color: #fff;
+    border: 1px solid rgba(167,139,250,0.3);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+  }
+
+  /* Input method panels */
+  .input-method { display: none; }
+  .input-method.active { display: block; }
+
   /* Main layout */
   .main-layout {
     display: grid;
@@ -68,34 +106,35 @@
   }
   .panel-body { padding: 16px; }
 
-  /* Tabs */
-  .tabs { margin-bottom: 16px; }
-  .tab-bar {
-    display: flex;
-    gap: 2px;
-    background: #111318;
+  /* Video upload area */
+  .video-upload-area {
+    border: 2px dashed #2a2d35;
     border-radius: 8px;
-    padding: 3px;
-  }
-  .tab-btn {
-    flex: 1;
-    padding: 8px 12px;
-    border: none;
-    background: transparent;
-    color: #9ca3af;
-    font-size: 13px;
-    cursor: pointer;
-    border-radius: 6px;
-    transition: all 0.2s;
+    padding: 30px 20px;
     text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
   }
-  .tab-btn:hover { color: #e0e0e0; }
-  .tab-btn.active {
-    background: #2a2d35;
-    color: #fff;
+  .video-upload-area:hover { border-color: #60a5fa; background: rgba(96,165,250,0.05); }
+  .video-upload-area.dragover { border-color: #60a5fa; background: rgba(96,165,250,0.1); }
+  .video-upload-area .icon { font-size: 36px; margin-bottom: 10px; }
+  .video-upload-area p { color: #9ca3af; font-size: 14px; }
+  .video-upload-area .hint { font-size: 12px; color: #6b7280; margin-top: 6px; }
+  .video-upload-area input[type="file"] { display: none; }
+  .video-upload-area.has-video { border-style: solid; border-color: #374151; padding: 12px; }
+  .video-upload-area.has-video .icon,
+  .video-upload-area.has-video p,
+  .video-upload-area.has-video .hint { display: none; }
+  .video-upload-area .video-info {
+    display: none;
+    text-align: left;
+    font-size: 13px;
+    color: #d1d5db;
+    line-height: 1.8;
   }
-  .tab-content { display: none; margin-top: 12px; }
-  .tab-content.active { display: block; }
+  .video-upload-area.has-video .video-info { display: block; }
+  .video-upload-area .video-info .label { color: #6b7280; }
 
   /* Upload area */
   .upload-area {
@@ -183,9 +222,11 @@
     color: #e0e0e0;
     font-size: 14px;
     outline: none;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, background 0.2s;
+    cursor: text;
   }
-  .text-input:focus { border-color: #a78bfa; }
+  .text-input:focus { border-color: #a78bfa; background: #1a1d24; }
+  .text-input:hover:not(:focus) { border-color: #374151; }
   .text-input::placeholder { color: #6b7280; }
 
   .form-group { margin-bottom: 12px; }
@@ -485,7 +526,44 @@
   }
   .lightbox-close:hover { opacity: 1; }
 
-  /* Scrollbar */
+  /* Download area */
+  .download-area {
+    display: none;
+    margin-top: 12px;
+    padding: 12px;
+    background: #111318;
+    border-radius: 6px;
+  }
+  .download-area.visible { display: block; }
+  .download-area .download-title {
+    font-size: 13px;
+    color: #9ca3af;
+    margin-bottom: 8px;
+  }
+  .download-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: #2a2d35;
+    border: 1px solid #374151;
+    border-radius: 6px;
+    color: #e0e0e0;
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+    margin-right: 8px;
+    margin-bottom: 4px;
+  }
+  .download-btn:hover { background: #374151; border-color: #a78bfa; color: #fff; }
+  .download-btn.primary {
+    background: linear-gradient(135deg, rgba(167,139,250,0.2), rgba(96,165,250,0.2));
+    border-color: rgba(167,139,250,0.3);
+  }
+  .download-btn.primary:hover {
+    background: linear-gradient(135deg, rgba(167,139,250,0.3), rgba(96,165,250,0.3));
+  }
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: #111318; }
   ::-webkit-scrollbar-thumb { background: #2a2d35; border-radius: 3px; }
@@ -515,8 +593,18 @@
 <div class="app-container">
   <!-- Header -->
   <div class="app-header">
-    <h1>🎨 SD Enhance</h1>
+    <h1>🎨 RE4x SD Enhance</h1>
     <p>独立的 Stable Diffusion 图片后期处理工具 — 图片放大</p>
+  </div>
+
+  <!-- Page-level Tabs -->
+  <div class="page-tabs">
+    <div class="page-tab-bar">
+      <button class="page-tab-btn active" data-tab="method-single">单张图片</button>
+      <button class="page-tab-btn" data-tab="method-batch">批量处理</button>
+      <button class="page-tab-btn" data-tab="method-dir">目录批量</button>
+      <button class="page-tab-btn" data-tab="method-video">视频处理</button>
+    </div>
   </div>
 
   <!-- Main layout -->
@@ -526,51 +614,71 @@
       <div class="panel-header">输入与设置</div>
       <div class="panel-body">
 
-        <!-- Tabs -->
-        <div class="tabs">
-          <div class="tab-bar">
-            <button class="tab-btn active" data-tab="tab-single">单张图片</button>
-            <button class="tab-btn" data-tab="tab-batch">批量处理</button>
-            <button class="tab-btn" data-tab="tab-dir">目录批量</button>
+        <!-- Input Method: Single Image -->
+        <div class="input-method active" id="method-single">
+          <div class="upload-area" id="single-upload">
+            <div class="icon">🖼️</div>
+            <p>点击或拖拽上传图片</p>
+            <div class="hint">支持 PNG, JPG, WebP 等格式</div>
+            <input type="file" accept="image/*" id="single-file-input">
+            <img class="upload-preview" id="single-preview" alt="preview">
+            <button class="remove-btn" id="single-remove">✕</button>
           </div>
+        </div>
 
-          <!-- Tab: Single Image -->
-          <div class="tab-content active" id="tab-single">
-            <div class="upload-area" id="single-upload">
-              <div class="icon">🖼️</div>
-              <p>点击或拖拽上传图片</p>
-              <div class="hint">支持 PNG, JPG, WebP 等格式</div>
-              <input type="file" accept="image/*" id="single-file-input">
-              <img class="upload-preview" id="single-preview" alt="preview">
-              <button class="remove-btn" id="single-remove">✕</button>
+        <!-- Input Method: Batch Files -->
+        <div class="input-method" id="method-batch">
+          <div class="upload-area" id="batch-upload">
+            <div class="icon">📂</div>
+            <p>点击选择多张图片</p>
+            <div class="hint">可多选</div>
+            <input type="file" accept="image/*" multiple id="batch-file-input">
+          </div>
+          <div class="batch-list" id="batch-list"></div>
+        </div>
+
+        <!-- Input Method: Directory -->
+        <div class="input-method" id="method-dir">
+          <div class="form-group">
+            <label>输入目录</label>
+            <input class="text-input" type="text" placeholder="图片所在目录路径..." id="input-dir">
+          </div>
+          <div class="form-group">
+            <label>输出目录（留空使用默认）</label>
+            <input class="text-input" type="text" placeholder="留空则保存到默认输出目录" id="output-dir">
+          </div>
+          <div class="checkbox-wrap">
+            <input type="checkbox" id="show-results" checked>
+            <label for="show-results">显示结果图片</label>
+          </div>
+        </div>
+
+        <!-- Input Method: Video Processing -->
+        <div class="input-method" id="method-video">
+          <div class="video-upload-area" id="video-upload">
+            <div class="icon">🎬</div>
+            <p>点击或拖拽上传视频</p>
+            <div class="hint">支持 MP4, WebM, AVI, MOV, MKV 等格式</div>
+            <input type="file" accept="video/*" id="video-file-input">
+            <div class="video-info" id="video-info">
+              <div><span class="label">文件名：</span><span id="video-name"></span></div>
+              <div><span class="label">大小：</span><span id="video-size"></span></div>
+            </div>
+            <button class="remove-btn" id="video-remove">✕</button>
+          </div>
+          <div class="form-group" style="margin-top:10px">
+            <label>处理模式</label>
+            <div class="radio-group" id="video-mode">
+              <button class="radio-option active" data-value="upscale">视频放大</button>
             </div>
           </div>
-
-          <!-- Tab: Batch Files -->
-          <div class="tab-content" id="tab-batch">
-            <div class="upload-area" id="batch-upload">
-              <div class="icon">📂</div>
-              <p>点击选择多张图片</p>
-              <div class="hint">可多选</div>
-              <input type="file" accept="image/*" multiple id="batch-file-input">
-            </div>
-            <div class="batch-list" id="batch-list"></div>
-          </div>
-
-          <!-- Tab: Directory -->
-          <div class="tab-content" id="tab-dir">
-            <div class="form-group">
-              <label>输入目录</label>
-              <input class="text-input" type="text" placeholder="图片所在目录路径..." id="input-dir">
-            </div>
-            <div class="form-group">
-              <label>输出目录（留空使用默认）</label>
-              <input class="text-input" type="text" placeholder="留空则保存到默认输出目录" id="output-dir">
-            </div>
-            <div class="checkbox-wrap">
-              <input type="checkbox" id="show-results" checked>
-              <label for="show-results">显示结果图片</label>
-            </div>
+          <div class="form-group">
+            <label>输出格式</label>
+            <select class="select-input" id="video-format">
+              <option value="mp4">MP4</option>
+              <option value="avi">AVI</option>
+              <option value="gif">GIF</option>
+            </select>
           </div>
         </div>
 
@@ -617,28 +725,14 @@
             </div>
             <div class="row">
               <div class="form-group">
-                <label>放大器 1</label>
+                <label>放大器</label>
                 <select class="select-input" id="upscaler-1">
-                  <option value="">Loading...</option>
+                  <option>加载中...</option>
                 </select>
               </div>
-              <div class="form-group">
-                <label>放大器 2（混合）</label>
-                <select class="select-input" id="upscaler-2">
-                  <option value="">Loading...</option>
-                </select>
-              </div>
-            </div>
-            <div class="slider-wrap">
-              <div class="slider-header">
-                <span>二级放大器混合度</span>
-                <span class="val" id="mix-val">0.0</span>
-              </div>
-              <input type="range" id="upscaler-mix" min="0" max="1" value="0" step="0.05">
             </div>
           </div>
         </div>
-
 
         <!-- Submit Button -->
         <button class="submit-btn" id="submit-btn">
@@ -665,6 +759,11 @@
         </div>
 
         <div class="info-text" id="info-text"></div>
+
+        <div class="download-area" id="download-area">
+          <div class="download-title">📥 下载结果</div>
+          <div id="download-links"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -680,78 +779,50 @@
 (function() {
   'use strict';
 
-  // ==================== DOM References ====================
-  const tabBtns = document.querySelectorAll('.tab-btn');
-  const tabContents = {
-    'tab-single': document.getElementById('tab-single'),
-    'tab-batch': document.getElementById('tab-batch'),
-    'tab-dir': document.getElementById('tab-dir')
+  // === Page-level Tabs ===
+  var pageTabBtns = document.querySelectorAll('.page-tab-btn');
+  var inputMethods = {
+    'method-single': document.getElementById('method-single'),
+    'method-batch': document.getElementById('method-batch'),
+    'method-dir': document.getElementById('method-dir'),
+    'method-video': document.getElementById('method-video')
   };
-  let currentTab = 0;
+  var currentTab = 0; // 0=single, 1=batch, 2=dir, 3=video
 
-  // Upload references
-  const singleArea = document.getElementById('single-upload');
-  const singleInput = document.getElementById('single-file-input');
-  const singlePreview = document.getElementById('single-preview');
-  const singleRemove = document.getElementById('single-remove');
-  let singleFile = null;
-  let singleImageData = null;
-
-  // Batch references
-  const batchArea = document.getElementById('batch-upload');
-  const batchInput = document.getElementById('batch-file-input');
-  const batchList = document.getElementById('batch-list');
-  const batchFiles = [];
-
-  // Settings references
-  const modeRadios = document.querySelectorAll('#upscale-mode .radio-option');
-  const scaleSliderWrap = document.getElementById('scale-slider-wrap');
-  const dimensionRow = document.getElementById('dimension-row');
-  const cropWrap = document.getElementById('crop-wrap');
-  let upscaleMode = '按比例';
-
-  const scaleSlider = document.getElementById('upscale-scale');
-  const scaleVal = document.getElementById('scale-val');
-  const mixSlider = document.getElementById('upscaler-mix');
-  const mixVal = document.getElementById('mix-val');
-
-  // Output references
-  const submitBtn = document.getElementById('submit-btn');
-  const statusDot = document.getElementById('status-dot');
-  const statusText = document.getElementById('status-text');
-  const gallery = document.getElementById('gallery');
-  const infoText = document.getElementById('info-text');
-
-  const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
-
-  // ==================== Tabs ====================
-  tabBtns.forEach((btn, idx) => {
-    btn.addEventListener('click', () => {
-      tabBtns.forEach(b => b.classList.remove('active'));
+  pageTabBtns.forEach(function(btn, idx) {
+    btn.addEventListener('click', function() {
+      pageTabBtns.forEach(function(b) { b.classList.remove('active'); });
       btn.classList.add('active');
-      Object.values(tabContents).forEach(c => c.classList.remove('active'));
-      tabContents[btn.dataset.tab].classList.add('active');
+      Object.values(inputMethods).forEach(function(c) { c.classList.remove('active'); });
+      inputMethods[btn.dataset.tab].classList.add('active');
       currentTab = idx;
     });
   });
 
-  // ==================== Single Image Upload ====================
-  singleArea.addEventListener('click', (e) => {
-    if (e.target === singleRemove || e.target.id === 'single-remove') return;
+  // === Single Image Upload ===
+  var singleArea = document.getElementById('single-upload');
+  var singleInput = document.getElementById('single-file-input');
+  var singlePreview = document.getElementById('single-preview');
+  var singleRemove = document.getElementById('single-remove');
+  var singleImageData = null;
+  var singleFile = null;
+  var MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+
+  singleArea.addEventListener('click', function(e) {
+    if (e.target === singleRemove) return;
     singleInput.click();
   });
 
-  singleInput.addEventListener('change', () => {
-    const file = singleInput.files[0];
+  singleInput.addEventListener('change', function() {
+    var file = singleInput.files[0];
     if (!file) return;
     if (file.size > MAX_FILE_SIZE) {
-      statusDot.className = 'dot error';
-      statusText.textContent = '❌ 文件过大，最大支持 50MB';
+      updateStatus('error', '❌ 文件过大，最大支持 50MB');
       return;
     }
     singleFile = file;
-    const reader = new FileReader();
-    reader.onload = (e) => {
+    var reader = new FileReader();
+    reader.onload = function(e) {
       singlePreview.src = e.target.result;
       singleImageData = e.target.result;
       singleArea.classList.add('has-image');
@@ -759,7 +830,7 @@
     reader.readAsDataURL(file);
   });
 
-  singleRemove.addEventListener('click', (e) => {
+  singleRemove.addEventListener('click', function(e) {
     e.stopPropagation();
     singlePreview.src = '';
     singleInput.value = '';
@@ -769,26 +840,25 @@
   });
 
   // Drag & drop for single
-  singleArea.addEventListener('dragover', (e) => {
+  singleArea.addEventListener('dragover', function(e) {
     e.preventDefault();
     singleArea.classList.add('dragover');
   });
-  singleArea.addEventListener('dragleave', () => {
+  singleArea.addEventListener('dragleave', function() {
     singleArea.classList.remove('dragover');
   });
-  singleArea.addEventListener('drop', (e) => {
+  singleArea.addEventListener('drop', function(e) {
     e.preventDefault();
     singleArea.classList.remove('dragover');
-    const file = e.dataTransfer.files[0];
+    var file = e.dataTransfer.files[0];
     if (file && file.type.startsWith('image/')) {
       if (file.size > MAX_FILE_SIZE) {
-        statusDot.className = 'dot error';
-        statusText.textContent = '❌ 文件过大，最大支持 50MB';
+        updateStatus('error', '❌ 文件过大，最大支持 50MB');
         return;
       }
       singleFile = file;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
+      var reader = new FileReader();
+      reader.onload = function(ev) {
         singlePreview.src = ev.target.result;
         singleImageData = ev.target.result;
         singleArea.classList.add('has-image');
@@ -797,10 +867,16 @@
     }
   });
 
-  // ==================== Batch Upload ====================
-  batchArea.addEventListener('click', () => batchInput.click());
-  batchInput.addEventListener('change', () => {
-    for (const file of batchInput.files) {
+  // === Batch Upload ===
+  var batchArea = document.getElementById('batch-upload');
+  var batchInput = document.getElementById('batch-file-input');
+  var batchList = document.getElementById('batch-list');
+  var batchFiles = [];
+
+  batchArea.addEventListener('click', function() { batchInput.click(); });
+  batchInput.addEventListener('change', function() {
+    for (var i = 0; i < batchInput.files.length; i++) {
+      var file = batchInput.files[i];
       if (file.size > MAX_FILE_SIZE) continue;
       batchFiles.push(file);
     }
@@ -809,154 +885,175 @@
 
   function renderBatchList() {
     batchList.innerHTML = '';
-    batchFiles.forEach((file, idx) => {
-      const div = document.createElement('div');
+    batchFiles.forEach(function(file, idx) {
+      var div = document.createElement('div');
       div.className = 'batch-item';
-      const size = file.size > 1024 * 1024
+      var size = file.size > 1024 * 1024
         ? (file.size / 1024 / 1024).toFixed(1) + ' MB'
         : (file.size / 1024).toFixed(0) + ' KB';
-      div.innerHTML = `
-        <span class="name">${file.name}</span>
-        <span class="size">${size}</span>
-        <button class="remove-batch" data-idx="${idx}">✕</button>
-      `;
+      div.innerHTML =
+        '<span class="name">' + file.name + '</span>' +
+        '<span class="size">' + size + '</span>' +
+        '<button class="remove-batch" data-idx="' + idx + '">✕</button>';
       batchList.appendChild(div);
     });
-    batchList.querySelectorAll('.remove-batch').forEach(btn => {
-      btn.addEventListener('click', () => {
+    batchList.querySelectorAll('.remove-batch').forEach(function(btn) {
+      btn.addEventListener('click', function() {
         batchFiles.splice(parseInt(btn.dataset.idx), 1);
         renderBatchList();
       });
     });
   }
 
-  // ==================== Upscale Mode Toggle ====================
-  modeRadios.forEach(btn => {
-    btn.addEventListener('click', () => {
-      modeRadios.forEach(b => b.classList.remove('active'));
+  // === Video Upload ===
+  var videoArea = document.getElementById('video-upload');
+  var videoInput = document.getElementById('video-file-input');
+  var videoInfo = document.getElementById('video-info');
+  var videoName = document.getElementById('video-name');
+  var videoSize = document.getElementById('video-size');
+  var videoRemove = document.getElementById('video-remove');
+  var videoFileData = null;
+
+  videoArea.addEventListener('click', function(e) {
+    if (e.target === videoRemove) return;
+    videoInput.click();
+  });
+
+  videoInput.addEventListener('change', function() {
+    var file = videoInput.files[0];
+    if (!file) return;
+    if (file.size > MAX_FILE_SIZE) {
+      updateStatus('error', '❌ 视频文件过大，最大支持 50MB');
+      return;
+    }
+    videoName.textContent = file.name;
+    var size = file.size > 1024 * 1024
+      ? (file.size / 1024 / 1024).toFixed(1) + ' MB'
+      : (file.size / 1024).toFixed(0) + ' KB';
+    videoSize.textContent = size;
+    videoFileData = file;
+    videoArea.classList.add('has-video');
+  });
+
+  videoRemove.addEventListener('click', function(e) {
+    e.stopPropagation();
+    videoInput.value = '';
+    videoFileData = null;
+    videoArea.classList.remove('has-video');
+  });
+
+  // Drag & drop for video
+  videoArea.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    videoArea.classList.add('dragover');
+  });
+  videoArea.addEventListener('dragleave', function() {
+    videoArea.classList.remove('dragover');
+  });
+  videoArea.addEventListener('drop', function(e) {
+    e.preventDefault();
+    videoArea.classList.remove('dragover');
+    var file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('video/')) {
+      if (file.size > MAX_FILE_SIZE) {
+        updateStatus('error', '❌ 视频文件过大，最大支持 50MB');
+        return;
+      }
+      videoName.textContent = file.name;
+      var size = file.size > 1024 * 1024
+        ? (file.size / 1024 / 1024).toFixed(1) + ' MB'
+        : (file.size / 1024).toFixed(0) + ' KB';
+      videoSize.textContent = size;
+      videoFileData = file;
+      videoArea.classList.add('has-video');
+    }
+  });
+
+  // === Upscale Mode Toggle ===
+  var modeRadios = document.querySelectorAll('#upscale-mode .radio-option');
+  var scaleSliderWrap = document.getElementById('scale-slider-wrap');
+  var dimensionRow = document.getElementById('dimension-row');
+  var cropWrap = document.getElementById('crop-wrap');
+  var upscaleMode = '按比例';
+
+  modeRadios.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      modeRadios.forEach(function(b) { b.classList.remove('active'); });
       btn.classList.add('active');
       upscaleMode = btn.dataset.value;
-      const isScale = upscaleMode === '按比例';
+      var isScale = upscaleMode === '按比例';
       scaleSliderWrap.classList.toggle('hidden', !isScale);
       dimensionRow.classList.toggle('hidden', isScale);
       cropWrap.classList.toggle('hidden', isScale);
     });
   });
 
-  // ==================== Sliders ====================
-  scaleSlider.addEventListener('input', () => {
+  // === Slider ===
+  var scaleSlider = document.getElementById('upscale-scale');
+  var scaleVal = document.getElementById('scale-val');
+  scaleSlider.addEventListener('input', function() {
     scaleVal.textContent = parseFloat(scaleSlider.value).toFixed(1);
   });
 
-  mixSlider.addEventListener('input', () => {
-    mixVal.textContent = parseFloat(mixSlider.value).toFixed(2);
-  });
-
-  // ==================== Accordion ====================
-  document.querySelectorAll('.accordion-header').forEach(header => {
-    header.addEventListener('click', () => {
-      header.parentElement.classList.toggle('open');
+  // === Accordion ===
+  document.querySelectorAll('.accordion-header').forEach(function(header) {
+    header.addEventListener('click', function() {
+      var accordion = header.parentElement;
+      accordion.classList.toggle('open');
     });
   });
 
-  // ==================== Lightbox ====================
-  const lightbox = document.getElementById('lightbox');
-  const lightboxImg = document.getElementById('lightbox-img');
-  const lightboxClose = document.getElementById('lightbox-close');
+  // === Status Helpers ===
+  var statusDot = document.getElementById('status-dot');
+  var statusText = document.getElementById('status-text');
 
-  function openLightbox(src) {
-    lightboxImg.src = src;
-    lightbox.classList.add('open');
+  function updateStatus(state, msg) {
+    statusDot.className = 'dot ' + state;
+    statusText.textContent = msg;
   }
 
-  lightboxClose.addEventListener('click', () => {
-    lightbox.classList.remove('open');
-  });
-
-  lightbox.addEventListener('click', (e) => {
-    if (e.target === lightbox) {
-      lightbox.classList.remove('open');
-    }
-  });
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') lightbox.classList.remove('open');
-  });
-
-  // ==================== Model Loading ====================
+  // === Model Loading ===
   async function loadModels() {
+    var select = document.getElementById('upscaler-1');
     try {
-      const res = await fetch('/api/models');
-      if (!res.ok) {
-        console.warn('Failed to load models:', res.status);
-        populateModelDropdowns([]);
-        return;
-      }
-      const models = await res.json();
-      populateModelDropdowns(models);
+      var res = await fetch('/api/models');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      var models = await res.json();
+      populateSelect(models);
     } catch (e) {
       console.error('Failed to load models:', e);
-      populateModelDropdowns([]);
+      select.innerHTML = '<option value="realesr-animevideov3">RealESRGAN AnimeVideo v3</option>';
     }
   }
 
-  function populateModelDropdowns(models) {
-    populateSelect('upscaler-1', models, 'realesrgan-x4plus-anime');
-    populateSelect('upscaler-2', models, null);
-    // Default upscaler-1 to the matching one
-    const s1 = document.getElementById('upscaler-1');
-    const defaultOpt = s1.querySelector('option[value="realesrgan-x4plus-anime"]');
-    if (defaultOpt) defaultOpt.selected = true;
-    else if (models.length > 0) s1.selectedIndex = 1;
-
-    // Default upscaler-2 to "None"
-    const s2 = document.getElementById('upscaler-2');
-    const noneOpt = s2.querySelector('option[value="None"]');
-    if (noneOpt) noneOpt.selected = true;
-    else if (s2.options.length > 0) s2.selectedIndex = 0;
-  }
-
-  function populateSelect(selectId, models, defaultVal) {
-    const select = document.getElementById(selectId);
+  function populateSelect(models) {
+    var select = document.getElementById('upscaler-1');
     select.innerHTML = '';
 
-    // "None" option
-    const noneOpt = document.createElement('option');
-    noneOpt.value = 'None';
-    noneOpt.textContent = 'None';
-    select.appendChild(noneOpt);
-
     if (models.length === 0) {
-      const noModels = document.createElement('option');
-      noModels.value = 'default';
-      noModels.textContent = '未找到模型';
-      select.appendChild(noModels);
+      var noOpt = document.createElement('option');
+      noOpt.value = 'realesr-animevideov3';
+      noOpt.textContent = 'RealESRGAN AnimeVideo v3';
+      select.appendChild(noOpt);
       return;
     }
 
     models.forEach(function(m) {
-      const opt = document.createElement('option');
+      var opt = document.createElement('option');
       opt.value = m.name;
       opt.textContent = m.display_name || m.name;
       select.appendChild(opt);
     });
 
-    if (defaultVal) {
-      const match = select.querySelector('option[value="' + defaultVal + '"]');
-      if (match) match.selected = true;
-    }
+    // Default to realesrgan-x4plus-anime
+    var defaultOpt = select.querySelector('option[value="realesrgan-x4plus-anime"]');
+    if (defaultOpt) defaultOpt.selected = true;
   }
 
-  // ==================== Collect Common Params ====================
+  // === Collect Params ===
   function getParams() {
     var params = {};
     params.model = document.getElementById('upscaler-1').value;
-
-    var m2 = document.getElementById('upscaler-2').value;
-    if (m2 !== 'None') {
-      params.model_2 = m2;
-      params.mix_ratio = parseFloat(mixSlider.value);
-    }
 
     if (upscaleMode === '按比例') {
       params.scale = parseFloat(scaleSlider.value);
@@ -964,14 +1061,14 @@
       params.width = parseInt(document.getElementById('upscale-width').value);
       params.height = parseInt(document.getElementById('upscale-height').value);
       if (document.getElementById('upscale-crop').checked) {
-        params.crop = true;
+        params.crop = 'true';
       }
     }
 
     return params;
   }
 
-  // ==================== API: Process Single ====================
+  // === API: Process Single ===
   async function processSingle(file) {
     var formData = new FormData();
     formData.append('file', file);
@@ -983,13 +1080,13 @@
 
     var res = await fetch('/api/upscale', { method: 'POST', body: formData });
     if (!res.ok) {
-      var errText = await res.text();
-      throw new Error('上传失败: ' + errText);
+      var errData = await res.json().catch(function() { return null; });
+      throw new Error(errData && errData.error ? errData.error : 'HTTP ' + res.status);
     }
     return res.blob();
   }
 
-  // ==================== API: Process Batch ====================
+  // === API: Process Batch ===
   async function processBatch(files) {
     var formData = new FormData();
     files.forEach(function(f) {
@@ -1003,28 +1100,26 @@
 
     var res = await fetch('/api/upscale/batch', { method: 'POST', body: formData });
     if (!res.ok) {
-      var errText = await res.text();
-      throw new Error('批量上传失败: ' + errText);
+      var errData = await res.json().catch(function() { return null; });
+      throw new Error(errData && errData.error ? errData.error : 'HTTP ' + res.status);
     }
     var data = await res.json();
     return data.task_id;
   }
 
-  // ==================== API: Process Directory ====================
+  // === API: Process Directory ===
   async function processDir(inputDir, outputDir) {
-    var modelVal = document.getElementById('upscaler-1').value;
+    var params = getParams();
     var body = {
       input_dir: inputDir,
       output_dir: outputDir || '',
-      scale: parseFloat(scaleSlider.value),
-      model: modelVal
+      model: params.model
     };
-
-    var m2 = document.getElementById('upscaler-2').value;
-    if (m2 !== 'None') {
-      body.model_2 = m2;
-      body.mix_ratio = parseFloat(mixSlider.value);
-    }
+    // Pass scale or width/height
+    if (params.scale) body.scale = params.scale;
+    if (params.width) body.width = params.width;
+    if (params.height) body.height = params.height;
+    if (params.crop) body.crop = params.crop;
 
     var res = await fetch('/api/upscale/dir', {
       method: 'POST',
@@ -1032,20 +1127,48 @@
       body: JSON.stringify(body)
     });
     if (!res.ok) {
-      var errText = await res.text();
-      throw new Error('目录处理失败: ' + errText);
+      var errData = await res.json().catch(function() { return null; });
+      throw new Error(errData && errData.error ? errData.error : 'HTTP ' + res.status);
     }
     var data = await res.json();
     return data.task_id;
   }
 
-  // ==================== API: Poll Status ====================
+  // === API: Process Video ===
+  async function processVideo(file) {
+    var formData = new FormData();
+    formData.append('file', file);
+
+    var params = getParams();
+    for (var key in params) {
+      formData.append(key, params[key]);
+    }
+
+    var format = document.getElementById('video-format').value;
+    formData.append('output_format', format);
+
+    var res = await fetch('/api/upscale/video', { method: 'POST', body: formData });
+    if (!res.ok) {
+      var errData = await res.json().catch(function() { return null; });
+      throw new Error(errData && errData.error ? errData.error : 'HTTP ' + res.status);
+    }
+    var data = await res.json();
+    return data.task_id;
+  }
+
+  // === API: Poll Status ===
   function pollStatus(taskId, onProgress, onSuccess, onError) {
     function poll() {
       fetch('/api/status/' + taskId)
         .then(function(res) { return res.json(); })
         .then(function(data) {
-          if (data.status === 'processing') {
+          if (data.status === 'processing' ||
+              (typeof data.status === 'string' && (
+                data.status.indexOf('upscaling_') === 0 ||
+                data.status.indexOf('resizing_') === 0 ||
+                data.status === 'extracting_frames' ||
+                data.status === 'merging_frames'
+              ))) {
             if (onProgress) onProgress(data);
             setTimeout(poll, 500);
           } else if (data.status === 'done') {
@@ -1059,107 +1182,170 @@
     poll();
   }
 
-  // ==================== Gallery Helpers ====================
+  // === Gallery Helpers ===
+  var gallery = document.getElementById('gallery');
+  var infoText = document.getElementById('info-text');
+
   function clearGallery() {
     gallery.innerHTML = '';
   }
 
-  function addToGallery(imageSrc) {
+  function addToGallery(src, isVideo) {
     var item = document.createElement('div');
     item.className = 'gallery-item';
-    var img = document.createElement('img');
-    img.src = imageSrc;
-    img.alt = 'result';
-    img.loading = 'lazy';
-    img.addEventListener('click', function() { openLightbox(imageSrc); });
-    item.appendChild(img);
+
+    if (isVideo) {
+      var vid = document.createElement('video');
+      vid.src = src;
+      vid.controls = true;
+      vid.preload = 'metadata';
+      vid.style.width = '100%';
+      vid.style.height = '100%';
+      vid.style.objectFit = 'contain';
+      item.appendChild(vid);
+    } else {
+      var img = document.createElement('img');
+      img.src = src;
+      img.alt = 'result';
+      img.loading = 'lazy';
+      img.addEventListener('click', function() { openLightbox(src); });
+      item.appendChild(img);
+    }
+
     gallery.appendChild(item);
   }
 
-  // ==================== Submit Handler ====================
+  // === Lightbox ===
+  var lightbox = document.getElementById('lightbox');
+  var lightboxImg = document.getElementById('lightbox-img');
+  var lightboxClose = document.getElementById('lightbox-close');
+
+  function openLightbox(src) {
+    lightboxImg.src = src;
+    lightbox.classList.add('open');
+  }
+
+  lightboxClose.addEventListener('click', function() {
+    lightbox.classList.remove('open');
+  });
+
+  lightbox.addEventListener('click', function(e) {
+    if (e.target === lightbox) {
+      lightbox.classList.remove('open');
+    }
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') lightbox.classList.remove('open');
+  });
+
+  // === Download Helpers ===
+  var downloadArea = document.getElementById('download-area');
+  var downloadLinks = document.getElementById('download-links');
+
+  function clearDownloads() {
+    downloadLinks.innerHTML = '';
+    downloadArea.classList.remove('visible');
+  }
+
+  function addDownloadLink(url, filename, isPrimary) {
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = filename || '';
+    a.className = 'download-btn' + (isPrimary ? ' primary' : '');
+    a.textContent = '⬇ ' + (filename || '下载');
+    a.title = filename || '';
+    downloadLinks.appendChild(a);
+    downloadArea.classList.add('visible');
+  }
+
+  // === Submit Handler ===
+  var submitBtn = document.getElementById('submit-btn');
+
   submitBtn.addEventListener('click', async function() {
-    // Validate input based on current tab
-    if (currentTab === 0) {
-      // Single image
-      if (!singleFile) {
-        statusDot.className = 'dot error';
-        statusText.textContent = '❌ 请先上传一张图片';
-        return;
-      }
-    } else if (currentTab === 1) {
-      // Batch
-      if (batchFiles.length === 0) {
-        statusDot.className = 'dot error';
-        statusText.textContent = '❌ 请先选择要处理的图片';
-        return;
-      }
-    } else if (currentTab === 2) {
-      // Directory
+    // Validate
+    if (currentTab === 0 && !singleFile) {
+      updateStatus('error', '❌ 请先上传一张图片');
+      return;
+    }
+    if (currentTab === 1 && batchFiles.length === 0) {
+      updateStatus('error', '❌ 请先选择要处理的图片');
+      return;
+    }
+    if (currentTab === 2) {
       var inputDir = document.getElementById('input-dir').value.trim();
       if (!inputDir) {
-        statusDot.className = 'dot error';
-        statusText.textContent = '❌ 请输入输入目录路径';
+        updateStatus('error', '❌ 请输入输入目录路径');
         return;
       }
     }
+    if (currentTab === 3 && !videoFileData) {
+      updateStatus('error', '❌ 请先上传一个视频文件');
+      return;
+    }
 
-    // Clear previous gallery and info
+    // Clear previous
     clearGallery();
+    clearDownloads();
     infoText.innerHTML = '';
 
-    // Set loading state
+    // Loading
     submitBtn.classList.add('loading');
     submitBtn.disabled = true;
 
     try {
       if (currentTab === 0) {
-        // Single image processing
-        statusDot.className = 'dot processing';
-        statusText.textContent = '⏳ 正在处理...';
+        // ── Single Image ──────────────────────────────────
+        updateStatus('processing', '⏳ 正在处理...');
 
         var blob = await processSingle(singleFile);
         var url = URL.createObjectURL(blob);
-        addToGallery(url);
+        addToGallery(url, false);
 
-        statusDot.className = 'dot done';
-        statusText.textContent = '✅ 处理完成';
+        var origName = singleFile.name.replace(/\.[^.]+$/, '');
+        addDownloadLink(url, origName + '_x' + scaleVal.textContent + '.png', true);
+
         var scale = scaleVal.textContent;
         var modelSelect = document.getElementById('upscaler-1');
         var modelDisplay = modelSelect.options[modelSelect.selectedIndex].text;
+        updateStatus('done', '✅ 处理完成');
         infoText.innerHTML = '<p>✅ 处理完成</p><p>放大倍数: ' + scale + 'x</p><p>放大器: ' + modelDisplay + '</p>';
 
       } else if (currentTab === 1) {
-        // Batch processing
-        statusDot.className = 'dot processing';
-        statusText.textContent = '⏳ 上传 ' + batchFiles.length + ' 张图片...';
+        // ── Batch ──────────────────────────────────────────
+        updateStatus('processing', '⏳ 上传 ' + batchFiles.length + ' 张图片...');
         var taskId = await processBatch(batchFiles);
-        statusText.textContent = '⏳ 批量处理中...';
+        updateStatus('processing', '⏳ 批量处理中...');
 
         await new Promise(function(resolve, reject) {
           pollStatus(
             taskId,
             function(data) {
-              var progress = data.progress || 0;
-              statusText.textContent = '⏳ 批量处理中... ' + progress + '%';
+              updateStatus('processing', '⏳ 批量处理中... ' + (data.progress || 0) + '%');
             },
             function(results) {
-              statusDot.className = 'dot done';
               if (results && results.length > 0) {
-                var urls = results.map(function(r) {
-                  return typeof r === 'string' ? r : r.url;
+                results.forEach(function(r) {
+                  var u = typeof r === 'string' ? r : r.url;
+                  addToGallery(u, false);
                 });
-                urls.forEach(function(url) { addToGallery(url); });
-                statusText.textContent = '✅ 处理完成，共 ' + urls.length + ' 张图片';
-                infoText.innerHTML = '<p>✅ 处理完成，共 ' + urls.length + ' 张图片</p>';
+                results.forEach(function(r) {
+                  var u = typeof r === 'string' ? r : r.url;
+                  var fn = typeof r === 'string' ? u.split('/').pop() : (r.filename || '');
+                  addDownloadLink(u, fn, false);
+                });
+                // ZIP download all
+                addDownloadLink('/api/results/' + taskId + '/download', 'batch_' + taskId + '.zip', true);
+                updateStatus('done', '✅ 处理完成，共 ' + results.length + ' 张图片');
+                infoText.innerHTML = '<p>✅ 处理完成，共 ' + results.length + ' 张图片</p>';
               } else {
-                statusText.textContent = '✅ 处理完成（无结果）';
+                updateStatus('done', '✅ 处理完成（无结果）');
                 infoText.innerHTML = '<p>⚠️ 处理完成，但未生成结果</p>';
               }
               resolve();
             },
             function(err) {
-              statusDot.className = 'dot error';
-              statusText.textContent = '❌ ' + err.message;
+              updateStatus('error', '❌ ' + err.message);
               infoText.innerHTML = '<p>❌ 批处理失败: ' + err.message + '</p>';
               reject(err);
             }
@@ -1167,48 +1353,99 @@
         });
 
       } else if (currentTab === 2) {
-        // Directory processing
+        // ── Directory ──────────────────────────────────────
         var dirInput = document.getElementById('input-dir').value.trim();
         var dirOutput = document.getElementById('output-dir').value.trim();
-        statusDot.className = 'dot processing';
-        statusText.textContent = '⏳ 正在处理目录...';
+        updateStatus('processing', '⏳ 正在处理目录...');
         var dirTaskId = await processDir(dirInput, dirOutput);
-        statusText.textContent = '⏳ 目录处理中...';
 
         await new Promise(function(resolve, reject) {
           pollStatus(
             dirTaskId,
             function(data) {
-              var progress = data.progress || 0;
-              statusText.textContent = '⏳ 目录处理中... ' + progress + '%';
+              updateStatus('processing', '⏳ 目录处理中... ' + (data.progress || 0) + '%');
             },
             function(results) {
-              statusDot.className = 'dot done';
               if (results && results.length > 0) {
-                var urls = results.map(function(r) {
-                  return typeof r === 'string' ? r : r.url;
+                results.forEach(function(r) {
+                  var u = typeof r === 'string' ? r : r.url;
+                  addToGallery(u, false);
                 });
-                urls.forEach(function(u) { addToGallery(u); });
-                statusText.textContent = '✅ 目录处理完成，共 ' + urls.length + ' 张图片';
-                infoText.innerHTML = '<p>✅ 目录处理完成，共 ' + urls.length + ' 张图片</p>';
+                results.forEach(function(r) {
+                  var u = typeof r === 'string' ? r : r.url;
+                  var fn = typeof r === 'string' ? u.split('/').pop() : (r.filename || '');
+                  addDownloadLink(u, fn, false);
+                });
+                // ZIP download all
+                addDownloadLink('/api/results/' + dirTaskId + '/download', 'results_' + dirTaskId + '.zip', true);
+                updateStatus('done', '✅ 目录处理完成，共 ' + results.length + ' 张图片');
+                infoText.innerHTML = '<p>✅ 目录处理完成，共 ' + results.length + ' 张图片</p>';
               } else {
-                statusText.textContent = '✅ 目录处理完成（无结果）';
+                updateStatus('done', '✅ 目录处理完成（无结果）');
                 infoText.innerHTML = '<p>⚠️ 目录处理完成，但未生成结果</p>';
               }
               resolve();
             },
             function(err) {
-              statusDot.className = 'dot error';
-              statusText.textContent = '❌ ' + err.message;
+              updateStatus('error', '❌ ' + err.message);
               infoText.innerHTML = '<p>❌ 目录处理失败: ' + err.message + '</p>';
+              reject(err);
+            }
+          );
+        });
+
+      } else if (currentTab === 3) {
+        // ── Video ──────────────────────────────────────────
+        updateStatus('processing', '⏳ 正在上传视频...');
+        var videoTaskId = await processVideo(videoFileData);
+
+        await new Promise(function(resolve, reject) {
+          pollStatus(
+            videoTaskId,
+            function(data) {
+              var p = data.progress || 0;
+              var st = data.status || '';
+              var msg = '⏳ 视频处理中... ' + p + '%';
+              if (st === 'extracting_frames') {
+                msg = '⏳ 正在提取视频帧... ' + p + '%';
+              } else if (st.indexOf('upscaling_') === 0) {
+                // Format: upscaling_DONE_of_TOTAL
+                var parts = st.replace('upscaling_', '').split('_of_');
+                var done = parts[0] || '0';
+                var total = parts[1] || '?';
+                msg = '⏳ 正在 AI 放大... ' + done + '/' + total + ' 帧 (' + p + '%)';
+              } else if (st.indexOf('resizing_') === 0) {
+                var rn = st.replace('resizing_', '').replace('_frames', '');
+                msg = '⏳ 正在缩放 ' + rn + ' 帧... ' + p + '%';
+              } else if (st === 'merging_frames') {
+                msg = '⏳ 正在合成输出视频... ' + p + '%';
+              }
+              updateStatus('processing', msg);
+            },
+            function(results) {
+              if (results && results.length > 0) {
+                var vUrl = results[0].url;
+                addToGallery(vUrl, true);
+                addDownloadLink(vUrl, results[0].filename || 'output.mp4', true);
+                var fmt = document.getElementById('video-format').value.toUpperCase();
+                updateStatus('done', '✅ 视频处理完成');
+                infoText.innerHTML = '<p>✅ 视频处理完成</p><p>输出格式: ' + fmt + '</p>';
+              } else {
+                updateStatus('done', '✅ 视频处理完成（无结果）');
+                infoText.innerHTML = '<p>⚠️ 视频处理完成，但未生成结果</p>';
+              }
+              resolve();
+            },
+            function(err) {
+              updateStatus('error', '❌ ' + err.message);
+              infoText.innerHTML = '<p>❌ 视频处理失败: ' + err.message + '</p>';
               reject(err);
             }
           );
         });
       }
     } catch (err) {
-      statusDot.className = 'dot error';
-      statusText.textContent = '❌ ' + err.message;
+      updateStatus('error', '❌ ' + err.message);
       if (!infoText.innerHTML) {
         infoText.innerHTML = '<p>❌ 处理失败: ' + err.message + '</p>';
       }
@@ -1218,7 +1455,7 @@
     }
   });
 
-  // ==================== Initialize ====================
+  // === Initialize ===
   loadModels();
 
 })();

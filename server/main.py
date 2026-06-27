@@ -36,25 +36,31 @@ def create_app() -> Flask:
 
     # ── Path resolution ───────────────────────────────────────────────────
     if getattr(sys, 'frozen', False):
-        base = os.path.dirname(os.path.realpath(sys.executable))
+        # Exe at tools/sd-enhance-server/sd-enhance-server.exe
+        # → walk up 2 levels to project root
+        exe_dir = os.path.dirname(os.path.realpath(sys.executable))
+        base = os.path.dirname(os.path.dirname(exe_dir))
     else:
         base = os.getcwd()
 
-    engine_path = os.path.join(base, 'script', 'realesrgan-ncnn-vulkan.exe')
-    ffmpeg_path = os.path.join(base, 'script', 'ffmpeg.exe')
-    models_dir = os.path.join(base, 'script', 'models')
+    engine_path = os.path.join(base, 'tools', 'realesrgan-ncnn-vulkan.exe')
+    ffmpeg_path = os.path.join(base, 'tools', 'ffmpeg.exe')
+    models_dir = os.path.join(base, 'tools', 'models')
 
-    # ── Initialise engine & mixer ─────────────────────────────────────────
+    # ── Initialise engine, mixer & resizer ────────────────────────────────
     from engine import UpscaleEngine  # noqa: PLC0415
     from mixer import ImageMixer      # noqa: PLC0415
+    from resizer import ImageResizer  # noqa: PLC0415
     from routes import bp             # noqa: PLC0415
 
     engine = UpscaleEngine(engine_path, models_dir)
     mixer = ImageMixer(ffmpeg_path)
+    resizer = ImageResizer(ffmpeg_path)
 
     # Attach shared instances to the blueprint
     bp.engine = engine
     bp.mixer = mixer
+    bp.resizer = resizer
     bp.models_dir = models_dir
 
     app.register_blueprint(bp)
@@ -70,6 +76,6 @@ def create_app() -> Flask:
 if __name__ == '__main__':
     application = create_app()
     print("SD Enhance server starting on http://localhost:5000")
-    print(f"Engine: script{os.sep}realesrgan-ncnn-vulkan.exe")
-    print(f"Models: script{os.sep}models{os.sep}")
+    print(f"Engine: tools{os.sep}realesrgan-ncnn-vulkan.exe")
+    print(f"Models: tools{os.sep}models{os.sep}")
     application.run(host='0.0.0.0', port=5000, debug=False)

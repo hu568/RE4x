@@ -4,12 +4,12 @@ title SD Enhance - 图片放大工具
 
 echo ========================================
 echo   SD Enhance - 图片放大工具
-echo   正在启动服务，请稍候...
+echo   正在启动服务器...
 echo ========================================
 
 :: 检测生产模式（打包 exe）
-if exist "script\sd-enhance-server\sd-enhance-server.exe" (
-    set "SERVER_CMD=script\sd-enhance-server\sd-enhance-server.exe"
+if exist "tools\sd-enhance-server\sd-enhance-server.exe" (
+    set "SERVER_CMD=tools\sd-enhance-server\sd-enhance-server.exe"
     goto :start_server
 )
 
@@ -34,17 +34,18 @@ exit /b 1
 :start_server
 start "SD-Enhance-Server" %SERVER_CMD%
 
-echo 正在等待服务就绪...
+echo 正在等待服务器...
 :wait
 timeout /t 1 /nobreak >nul
 curl -s http://localhost:5000/ >nul 2>&1
 if errorlevel 1 goto wait
 
-echo 服务已就绪！正在打开浏览器...
+echo 服务器已启动，正在打开浏览器...
 start http://localhost:5000/
 
 echo ========================================
-echo   服务地址: http://localhost:5000/
+echo   访问地址: http://localhost:5000/
 echo   关闭此窗口即可停止服务
 echo ========================================
 pause
+

@@ -163,7 +163,7 @@ def test_dir_missing(client):
 
 
 def test_dir_path_traversal(client):
-    """Directory mode rejects a path outside the project root."""
+    """Directory mode: ``..`` is resolved harmlessly; non-existent path returns 400."""
     resp = client.post(
         '/api/upscale/dir',
         json={'input_dir': '../../../Windows/System32'},
@@ -172,7 +172,9 @@ def test_dir_path_traversal(client):
     body = resp.get_json()
     assert body is not None
     assert 'error' in body
-    assert 'traversal' in body['error'].lower() or 'denied' in body['error'].lower()
+    # Error should be about path not being found (resolved safely),
+    # not about traversal denial
+    assert 'not found' in body['error'].lower() or 'not readable' in body['error'].lower()
 
 
 def test_dir_no_input_dir(client):
@@ -193,6 +195,148 @@ def test_status_not_found(client):
     """Querying a non-existent task returns 404."""
     resp = client.get('/api/status/nonexistent')
     assert resp.status_code == 404
+    body = resp.get_json()
+    assert body is not None
+    assert 'error' in body
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Unified pipeline: model 4x → ffmpeg resize
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+def test_upscale_scale_6x(client, make_image):
+    """Scale 6x: model upscales 4x, then ffmpeg resizes to 6x.
+
+    Input 100×100 → model outputs 400×400 → ffmpeg ×1.5 → 600×600.
+    """
+    data = {
+        'file': (make_image((100, 100)), 'test.jpg'),
+        'scale': '6',
+        'model': 'realesr-animevideov3',
+    }
+    resp = client.post('/api/upscale', data=data, content_type='multipart/form-data')
+    assert resp.status_code == 200, \
+        f'Expected 200, got {resp.status_code}: {resp.get_json(silent=True)}'
+    assert resp.content_type.startswith('image/')
+
+    from PIL import Image
+    import io
+    img = Image.open(io.BytesIO(resp.data))
+    assert img.size == (600, 600), f"Expected 600x600, got {img.size}"
+
+
+def test_upscale_scale_2x(client, make_image):
+    """Scale 2x: model 4x → ffmpeg ×0.5 → 2x final.
+
+    Input 100×100 → model 400×400 → ffmpeg ×0.5 → 200×200.
+    """
+    data = {
+        'file': (make_image((100, 100)), 'test.jpg'),
+        'scale': '2',
+        'model': 'realesr-animevideov3',
+    }
+    resp = client.post('/api/upscale', data=data, content_type='multipart/form-data')
+    assert resp.status_code == 200, \
+        f'Expected 200, got {resp.status_code}: {resp.get_json(silent=True)}'
+
+    from PIL import Image
+    import io
+    img = Image.open(io.BytesIO(resp.data))
+    assert img.size == (200, 200), f"Expected 200x200, got {img.size}"
+
+
+def test_upscale_scale_4x(client, make_image):
+    """Scale 4x: model 4x → ffmpeg ×1.0 (effectively a re-encode).
+
+    Input 100×100 → output 400×400.
+    """
+    data = {
+        'file': (make_image((100, 100)), 'test.jpg'),
+        'scale': '4',
+        'model': 'realesr-animevideov3',
+    }
+    resp = client.post('/api/upscale', data=data, content_type='multipart/form-data')
+    assert resp.status_code == 200, \
+        f'Expected 200, got {resp.status_code}: {resp.get_json(silent=True)}'
+
+    from PIL import Image
+    import io
+    img = Image.open(io.BytesIO(resp.data))
+    assert img.size == (400, 400), f"Expected 400x400, got {img.size}"
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Dimension mode
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+def test_upscale_dimension_mode(client, make_image):
+    """Dimension mode: target 800×600, input 100×100.
+
+    Without crop (contain): effective_scale = min(8, 6) = 6.
+    Model 4x → ffmpeg ×1.5 → 600×600 (fits within 800×600).
+    """
+    data = {
+        'file': (make_image((100, 100)), 'test.jpg'),
+        'width': '800',
+        'height': '600',
+        'model': 'realesr-animevideov3',
+    }
+    resp = client.post('/api/upscale', data=data, content_type='multipart/form-data')
+    assert resp.status_code == 200, \
+        f'Expected 200, got {resp.status_code}: {resp.get_json(silent=True)}'
+
+    from PIL import Image
+    import io
+    img = Image.open(io.BytesIO(resp.data))
+    # contain: output fits within 800×600, aspect ratio preserved
+    # 100×100, scale=min(8,6)=6 → 600×600
+    assert img.size == (600, 600), f"Expected 600x600 (contain), got {img.size}"
+
+
+def test_upscale_dimension_crop(client, make_image):
+    """Dimension mode with crop: target 400×400 from 100×200 input.
+
+    With crop (cover): effective_scale = max(4, 2) = 4.
+    Model 4x → 400×800 → ffmpeg crop center to 400×400.
+    """
+    data = {
+        'file': (make_image((100, 200)), 'test.jpg'),
+        'width': '400',
+        'height': '400',
+        'crop': 'true',
+        'model': 'realesr-animevideov3',
+    }
+    resp = client.post('/api/upscale', data=data, content_type='multipart/form-data')
+    assert resp.status_code == 200, \
+        f'Expected 200, got {resp.status_code}: {resp.get_json(silent=True)}'
+
+    from PIL import Image
+    import io
+    img = Image.open(io.BytesIO(resp.data))
+    assert img.size == (400, 400), f"Expected 400x400 (crop), got {img.size}"
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# POST /api/upscale/video
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+def test_video_no_file(client):
+    """Video endpoint with no file returns 400."""
+    resp = client.post('/api/upscale/video', content_type='multipart/form-data')
+    assert resp.status_code == 400
+    body = resp.get_json()
+    assert body is not None
+    assert 'error' in body
+
+
+def test_video_bad_extension(client):
+    """Video endpoint with non-video extension returns 400."""
+    data = {'file': (io.BytesIO(b'not a video'), 'test.txt')}
+    resp = client.post('/api/upscale/video', data=data, content_type='multipart/form-data')
+    assert resp.status_code == 400
     body = resp.get_json()
     assert body is not None
     assert 'error' in body

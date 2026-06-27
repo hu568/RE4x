@@ -37,13 +37,15 @@ class ImageMixer:
 
     @staticmethod
     def _resolve_base_path() -> str:
-        """Return the root directory for resolving relative paths.
+        """Return the project root directory for resolving relative paths.
 
-        - PyInstaller frozen exe → directory containing the executable.
+        - PyInstaller frozen exe at ``tools/sd-enhance-server/``
+          → walk up 2 levels to project root.
         - Development / plain Python → current working directory.
         """
         if getattr(sys, "frozen", False):
-            return os.path.dirname(os.path.realpath(sys.executable))
+            exe_dir = os.path.dirname(os.path.realpath(sys.executable))
+            return os.path.dirname(os.path.dirname(exe_dir))
         return os.getcwd()
 
     @classmethod

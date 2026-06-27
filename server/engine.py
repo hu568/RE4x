@@ -44,13 +44,15 @@ class UpscaleEngine:
 
     @staticmethod
     def _resolve_base_path() -> str:
-        """Return the root directory for resolving relative paths.
+        """Return the project root directory for resolving relative paths.
 
-        - PyInstaller frozen exe → directory containing the executable.
+        - PyInstaller frozen exe at ``tools/sd-enhance-server/``
+          → walk up 2 levels to project root.
         - Development / plain Python → current working directory.
         """
         if getattr(sys, "frozen", False):
-            return os.path.dirname(os.path.realpath(sys.executable))
+            exe_dir = os.path.dirname(os.path.realpath(sys.executable))
+            return os.path.dirname(os.path.dirname(exe_dir))
         return os.getcwd()
 
     @classmethod
@@ -177,3 +179,242 @@ class UpscaleEngine:
                     "output_path": abs_output,
                     "error": str(e),
                 }
+
+    def upscale_dir(
+        self,
+        input_dir: str,
+        output_dir: str,
+        model: str = "realesr-animevideov3",
+        scale: float = 4.0,
+        tile_size: int = 0,
+        gpu_id: int = -1,
+        tta: bool = False,
+        output_format: str = "jpg",
+        timeout: int = 1800,
+    ) -> dict:
+        """Upscale all images in a directory in a single engine invocation.
+
+        The ``realesrgan-ncnn-vulkan.exe`` natively supports directory
+        batch mode — much faster than calling :meth:`upscale` per frame.
+
+        Args:
+            input_dir:    Directory containing source images.
+            output_dir:   Directory for upscaled images (created if needed).
+            output_format: ``"png"`` or ``"jpg"`` (default jpg for speed).
+            timeout:      Subprocess timeout in seconds (default 30 min).
+        """
+        abs_input = self._resolve_path(input_dir)
+        abs_output = self._resolve_path(output_dir)
+
+        if not os.path.isdir(abs_input):
+            return {
+                "success": False,
+                "output_path": abs_output,
+                "error": f"Input directory not found: {abs_input}",
+            }
+
+        os.makedirs(abs_output, exist_ok=True)
+
+        scale_int = int(scale)
+        args = [
+            self._engine_path,
+            "-i", abs_input,
+            "-o", abs_output,
+            "-s", str(scale_int),
+            "-n", model,
+            "-f", output_format,
+        ]
+
+        if tile_size > 0:
+            args.extend(["-t", str(tile_size)])
+        if gpu_id >= 0:
+            args.extend(["-g", str(gpu_id)])
+        if tta:
+            args.append("-x")
+
+        process = None
+        try:
+            with self._lock:
+                process = subprocess.Popen(
+                    args,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    shell=False,
+                )
+                _stdout, stderr = process.communicate(timeout=timeout)
+
+            if process.returncode != 0:
+                error_msg = (
+                    stderr.decode("utf-8", errors="replace").strip()
+                )
+                return {
+                    "success": False,
+                    "output_path": abs_output,
+                    "error": error_msg
+                    or f"Engine exited with code {process.returncode}",
+                }
+
+            return {
+                "success": True,
+                "output_path": abs_output,
+                "error": None,
+            }
+
+        except subprocess.TimeoutExpired:
+            if process is not None:
+                process.kill()
+                process.wait()
+            return {
+                "success": False,
+                "output_path": abs_output,
+                "error": f"Process timed out after {timeout}s",
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "output_path": abs_output,
+                "error": str(e),
+            }
+
+    def upscale_dir_with_progress(
+        self,
+        input_dir: str,
+        output_dir: str,
+        total_frames: int,
+        progress_callback,
+        model: str = "realesr-animevideov3",
+        scale: float = 4.0,
+        tile_size: int = 0,
+        gpu_id: int = -1,
+        tta: bool = False,
+        output_format: str = "jpg",
+        timeout: int = 3600,
+        poll_interval: float = 0.5,
+    ) -> dict:
+        """Like :meth:`upscale_dir` but calls *progress_callback* periodically.
+
+        *progress_callback* receives ``(completed: int, total: int)`` as the
+        engine writes output files.
+
+        Args:
+            total_frames: Expected number of output files.
+            progress_callback: Callable ``(done, total)`` called during
+                processing.
+            poll_interval: Seconds between output-directory polls.
+        """
+        import time
+
+        abs_input = self._resolve_path(input_dir)
+        abs_output = self._resolve_path(output_dir)
+
+        if not os.path.isdir(abs_input):
+            return {
+                "success": False,
+                "output_path": abs_output,
+                "error": f"Input directory not found: {abs_input}",
+            }
+
+        os.makedirs(abs_output, exist_ok=True)
+
+        scale_int = int(scale)
+        args = [
+            self._engine_path,
+            "-i", abs_input,
+            "-o", abs_output,
+            "-s", str(scale_int),
+            "-n", model,
+            "-f", output_format,
+        ]
+
+        if tile_size > 0:
+            args.extend(["-t", str(tile_size)])
+        if gpu_id >= 0:
+            args.extend(["-g", str(gpu_id)])
+        if tta:
+            args.append("-x")
+
+        process = None
+        stderr_lines: list[str] = []
+        try:
+            with self._lock:
+                process = subprocess.Popen(
+                    args,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    shell=False,
+                )
+
+            # Drain stderr in a background thread to prevent pipe-buffer
+            # deadlock (the engine is very verbose).
+            def _drain():
+                try:
+                    for line in process.stderr:
+                        stderr_lines.append(
+                            line.decode("utf-8", errors="replace").rstrip()
+                        )
+                except Exception:
+                    pass
+
+            import threading
+            drain_thread = threading.Thread(target=_drain, daemon=True)
+            drain_thread.start()
+
+            # Poll output directory while the engine runs
+            while process.poll() is None:
+                time.sleep(poll_interval)
+                try:
+                    done = len([
+                        f for f in os.listdir(abs_output)
+                        if f.lower().endswith(('.jpg', '.jpeg', '.png'))
+                    ])
+                    if progress_callback:
+                        progress_callback(done, total_frames)
+                except Exception:
+                    pass
+
+            # Wait for stderr drain to finish
+            drain_thread.join(timeout=5)
+
+            # Final count
+            try:
+                done = len([
+                    f for f in os.listdir(abs_output)
+                    if f.lower().endswith(('.jpg', '.jpeg', '.png'))
+                ])
+                if progress_callback:
+                    progress_callback(done, total_frames)
+            except Exception:
+                pass
+
+            if process.returncode != 0:
+                error_msg = (
+                    "\n".join(stderr_lines[-10:]) if stderr_lines
+                    else f"Engine exited with code {process.returncode}"
+                )
+                return {
+                    "success": False,
+                    "output_path": abs_output,
+                    "error": error_msg,
+                }
+
+            return {
+                "success": True,
+                "output_path": abs_output,
+                "error": None,
+            }
+
+        except subprocess.TimeoutExpired:
+            if process is not None:
+                process.kill()
+                process.wait()
+            return {
+                "success": False,
+                "output_path": abs_output,
+                "error": f"Process timed out after {timeout}s",
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "output_path": abs_output,
+                "error": str(e),
+            }

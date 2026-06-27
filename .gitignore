@@ -12,15 +12,27 @@ output_w_audio.mkv
 __pycache__/
 *.pyc
 .venv/
+*.egg-info/
+
+# 测试缓存
+.pytest_cache/
 
 # PyInstaller 构建产物
 server/build/
 server/dist/
-server/*.spec
+tools/build/
 
-# 计划文件与参考资料
+# 大型二进制文件（需用户自行下载，详见 README.md）
+tools/ffmpeg.exe
+tools/ffprobe.exe
+tools/models/
+tools/realesrgan-ncnn-vulkan.exe
+tools/vcomp140.dll
+tools/vcomp140d.dll
+tools/sd-enhance-server/
+
+# 计划文件
 .sisyphus/
-参考/
 
 # Windows 系统文件
 Thumbs.db

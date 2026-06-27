@@ -42,14 +42,14 @@ def tmp_dir() -> str:
 
 @pytest.fixture(scope='session')
 def test_img() -> str:
-    """Path to ``test/input.jpg`` (220×220 RGB)."""
-    return os.path.join(PROJECT_ROOT, 'test', 'input.jpg')
+    """Path to ``test-data/input.jpg`` (220×220 RGB)."""
+    return os.path.join(PROJECT_ROOT, 'test-data', 'input.jpg')
 
 
 @pytest.fixture(scope='session')
 def test_img2() -> str:
-    """Path to ``test/input2.jpg`` (256×256 RGB)."""
-    return os.path.join(PROJECT_ROOT, 'test', 'input2.jpg')
+    """Path to ``test-data/input2.jpg`` (256×256 RGB)."""
+    return os.path.join(PROJECT_ROOT, 'test-data', 'input2.jpg')
 
 
 @pytest.fixture(scope='session')
@@ -58,8 +58,8 @@ def engine():
     ``realesrgan-ncnn-vulkan.exe`` binary."""
     from engine import UpscaleEngine  # noqa: PLC0415
 
-    engine_path = os.path.join(PROJECT_ROOT, 'script', 'realesrgan-ncnn-vulkan.exe')
-    models_dir = os.path.join(PROJECT_ROOT, 'script', 'models')
+    engine_path = os.path.join(PROJECT_ROOT, 'tools', 'realesrgan-ncnn-vulkan.exe')
+    models_dir = os.path.join(PROJECT_ROOT, 'tools', 'models')
     return UpscaleEngine(engine_path, models_dir)
 
 
@@ -69,8 +69,18 @@ def mixer():
     ``ffmpeg.exe`` binary."""
     from mixer import ImageMixer  # noqa: PLC0415
 
-    ffmpeg_path = os.path.join(PROJECT_ROOT, 'script', 'ffmpeg.exe')
+    ffmpeg_path = os.path.join(PROJECT_ROOT, 'tools', 'ffmpeg.exe')
     return ImageMixer(ffmpeg_path)
+
+
+@pytest.fixture(scope='session')
+def resizer():
+    """Fully initialised :class:`ImageResizer` backed by the real
+    ``ffmpeg.exe`` binary."""
+    from resizer import ImageResizer  # noqa: PLC0415
+
+    ffmpeg_path = os.path.join(PROJECT_ROOT, 'tools', 'ffmpeg.exe')
+    return ImageResizer(ffmpeg_path)
 
 
 # ── Function-scoped fixtures ───────────────────────────────────────────
@@ -81,7 +91,7 @@ def client():
     """Flask test client with real engine and mixer.
 
     Temporarily changes the working directory to the project root so that
-    ``create_app()`` resolves ``script/`` paths correctly.
+    ``create_app()`` resolves ``tools/`` paths correctly.
 
     Usage::
 

@@ -1,7 +1,7 @@
 """
 Model auto-detection for RE4x SD Enhance.
 
-Scans ``script/models/`` for ``.param`` files and returns a deduplicated
+Scans ``tools/models/`` for ``.param`` files and returns a deduplicated
 list of available models.  Scale variants (e.g. ``realesr-animevideov3-x2``,
 ``realesr-animevideov3-x3``, ``realesr-animevideov3-x4``) are collapsed into
 a single entry with the maximum scale detected.

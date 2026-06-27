@@ -11,6 +11,7 @@ Provides:
 import os
 import sys
 import uuid
+import zipfile
 import threading
 from io import BytesIO
 
@@ -94,7 +95,8 @@ bp = Blueprint('api', __name__, url_prefix='/api')
 # References — attached at registration time by create_app()
 bp.engine = None        # UpscaleEngine instance
 bp.mixer = None         # ImageMixer instance
-bp.models_dir = None    # path to script/models/
+bp.resizer = None       # ImageResizer instance
+bp.models_dir = None    # path to tools/models/
 bp.task_manager = TaskManager()
 
 
@@ -103,11 +105,13 @@ bp.task_manager = TaskManager()
 def _get_base_path() -> str:
     """Return the project root directory.
 
-    - Frozen (PyInstaller): directory containing the executable.
+    - Frozen (PyInstaller) exe at ``tools/sd-enhance-server/``
+      → walk up 2 levels to project root.
     - Development: current working directory (``E:\\RE4x``).
     """
     if getattr(sys, 'frozen', False):
-        return os.path.dirname(os.path.realpath(sys.executable))
+        exe_dir = os.path.dirname(os.path.realpath(sys.executable))
+        return os.path.dirname(os.path.dirname(exe_dir))
     return os.getcwd()
 
 
@@ -184,6 +188,81 @@ def _cleanup_files(*paths: str | None) -> None:
                 pass
 
 
+def _run_upscale_pipeline(
+    input_path: str,
+    output_path: str,
+    model: str,
+    target_scale: float,
+    engine,
+    resizer,
+    tmp_dir: str,
+) -> dict:
+    """Unified two-step upscale pipeline.
+
+    Always: model upscale at 4x → ffmpeg resize to *target_scale*.
+
+    Examples::
+
+        target_scale=2  → model 4x → ffmpeg ×0.5  → 2x final
+        target_scale=4  → model 4x → ffmpeg ×1.0  → 4x final
+        target_scale=6  → model 4x → ffmpeg ×1.5  → 6x final
+    """
+    import uuid
+
+    # Step 1: Model upscale at 4x
+    tmp_4x = os.path.join(tmp_dir, f"pipe4x_{uuid.uuid4().hex}.png")
+    r = engine.upscale(input_path, tmp_4x, model=model, scale=4)
+    if not r['success']:
+        _cleanup_files(tmp_4x)
+        return {"success": False, "output_path": output_path,
+                "error": f"Model upscale failed: {r['error']}"}
+
+    # Step 2: ffmpeg resize to target
+    ffmpeg_scale = target_scale / 4.0
+    result = resizer.resize_by_scale(tmp_4x, output_path, scale=ffmpeg_scale)
+    _cleanup_files(tmp_4x)
+    return result
+
+
+def _compute_dimension_upscale(
+    input_path: str,
+    target_w: int,
+    target_h: int,
+    crop: bool,
+) -> tuple[int, int, float]:
+    """Compute output dimensions and effective scale factor for dimension mode.
+
+    Args:
+        input_path: Source image.
+        target_w:   User-requested target width.
+        target_h:   User-requested target height.
+        crop:       If True, fill the target box (cover → crop).
+                    If False, fit within the target box (contain).
+
+    Returns:
+        ``(final_w, final_h, effective_scale)`` where *effective_scale* is
+        the multiplier needed to reach *final_w* × *final_h* from the
+        input dimensions.
+    """
+    with Image.open(input_path) as img:
+        src_w, src_h = img.size
+
+    w_ratio = target_w / src_w
+    h_ratio = target_h / src_h
+
+    if crop:
+        # Cover: scale so the image fills the entire target box
+        effective_scale = max(w_ratio, h_ratio)
+        final_w, final_h = target_w, target_h
+    else:
+        # Contain: scale so the image fits within the target box
+        effective_scale = min(w_ratio, h_ratio)
+        final_w = max(1, round(src_w * effective_scale))
+        final_h = max(1, round(src_h * effective_scale))
+
+    return final_w, final_h, effective_scale
+
+
 # ══════════════════════════════════════════════════════════════════════════
 # API Routes
 # ══════════════════════════════════════════════════════════════════════════
@@ -220,10 +299,13 @@ def upscale_single():
 
     Accepts ``multipart/form-data`` with fields:
 
-        ``file``     — image file (required)
-        ``model``    — model name (default: ``realesr-animevideov3``)
-        ``scale``    — upscale ratio (default: ``2``)
-        ``model_2``  — second model for two-stage blend (optional)
+        ``file``      — image file (required)
+        ``model``     — model name (default: ``realesr-animevideov3``)
+        ``scale``     — upscale ratio (default: ``2``)
+        ``width``     — target width for dimension mode (optional)
+        ``height``    — target height for dimension mode (optional)
+        ``crop``      — crop to target (``"true"`` / ``"false"``, optional)
+        ``model_2``   — second model for two-stage blend (optional)
         ``mix_ratio`` — blend ratio 0-1 (default: ``0.5``)
 
     On success returns ``200`` with the image binary (``image/png``).
@@ -242,7 +324,10 @@ def upscale_single():
 
     # ── Parse parameters ───────────────────────────────────────────────────
     model = request.form.get('model', 'realesr-animevideov3')
-    scale = float(request.form.get('scale', 2))
+    scale_str = request.form.get('scale')
+    width_str = request.form.get('width')
+    height_str = request.form.get('height')
+    crop = request.form.get('crop', '').lower() in ('true', '1', 'yes')
     model_2 = request.form.get('model_2')
     mix_ratio = float(request.form.get('mix_ratio', 0.5))
 
@@ -252,6 +337,32 @@ def upscale_single():
 
     engine = bp.engine
     mixer = bp.mixer
+    resizer = bp.resizer
+
+    # ── Determine mode & target scale ──────────────────────────────────────
+    if width_str and height_str:
+        # Dimension mode
+        try:
+            target_w = int(width_str)
+            target_h = int(height_str)
+        except (ValueError, TypeError):
+            return jsonify({'error': 'Invalid width/height values'}), 400
+        if target_w < 1 or target_h < 1:
+            return jsonify({'error': 'Width and height must be positive'}), 400
+
+        final_w, final_h, effective_scale = _compute_dimension_upscale(
+            saved_path, target_w, target_h, crop
+        )
+    elif scale_str:
+        # Scale mode
+        target_scale = float(scale_str)
+        effective_scale = target_scale
+        final_w = final_h = None  # determined by resize_by_scale
+    else:
+        # Neither provided → default scale
+        target_scale = 2.0
+        effective_scale = target_scale
+        final_w = final_h = None
 
     # Directories we need to clean up when done
     to_clean = [saved_path]
@@ -263,14 +374,20 @@ def upscale_single():
             tmp1 = os.path.join(tmp_dir, f"stg1_{uuid.uuid4().hex}.png")
             tmp2 = os.path.join(tmp_dir, f"stg2_{uuid.uuid4().hex}.png")
 
-            r1 = engine.upscale(saved_path, tmp1, model=model, scale=scale)
+            r1 = _run_upscale_pipeline(
+                saved_path, tmp1, model=model, target_scale=effective_scale,
+                engine=engine, resizer=resizer, tmp_dir=tmp_dir,
+            )
             if not r1['success']:
                 _cleanup_files(tmp1)
                 return jsonify({'error': f'Stage 1 upscale failed: {r1["error"]}'}), 500
 
             to_clean.append(tmp1)
 
-            r2 = engine.upscale(saved_path, tmp2, model=model_2, scale=scale)
+            r2 = _run_upscale_pipeline(
+                saved_path, tmp2, model=model_2, target_scale=effective_scale,
+                engine=engine, resizer=resizer, tmp_dir=tmp_dir,
+            )
             if not r2['success']:
                 return jsonify({'error': f'Stage 2 upscale failed: {r2["error"]}'}), 500
 
@@ -284,9 +401,29 @@ def upscale_single():
         # ── Single stage ───────────────────────────────────────────────────
         else:
             final_path = os.path.join(tmp_dir, f"out_{uuid.uuid4().hex}.png")
-            result = engine.upscale(saved_path, final_path, model=model, scale=scale)
+            result = _run_upscale_pipeline(
+                saved_path, final_path, model=model, target_scale=effective_scale,
+                engine=engine, resizer=resizer, tmp_dir=tmp_dir,
+            )
             if not result['success']:
                 return jsonify({'error': f'Upscale failed: {result["error"]}'}), 500
+
+        # ── Dimension mode: exact size adjustment ──────────────────────────
+        if final_w and final_h and crop:
+            # After pipeline, crop to exact target dimensions
+            pre_crop = final_path
+            final_path = os.path.join(tmp_dir, f"crop_{uuid.uuid4().hex}.png")
+            crop_result = resizer.crop(pre_crop, final_path, final_w, final_h)
+            if not crop_result['success']:
+                return jsonify({'error': f'Crop failed: {crop_result["error"]}'}), 500
+            # pre_crop (pipeline output) still cleaned up via to_clean
+        elif final_w and final_h and not crop:
+            # After pipeline, resize to exact fit dimensions
+            pre_resize = final_path
+            final_path = os.path.join(tmp_dir, f"fit_{uuid.uuid4().hex}.png")
+            resize_result = resizer.resize(pre_resize, final_path, final_w, final_h)
+            if not resize_result['success']:
+                return jsonify({'error': f'Fit resize failed: {resize_result["error"]}'}), 500
 
         to_clean.append(final_path)
 
@@ -373,12 +510,18 @@ def upscale_batch():
                     tmp1 = os.path.join(tmp_dir, f"bat_{uuid.uuid4().hex}.png")
                     tmp2 = os.path.join(tmp_dir, f"bat_{uuid.uuid4().hex}.png")
 
-                    r1 = bp.engine.upscale(input_path, tmp1, model=model, scale=scale)
+                    r1 = _run_upscale_pipeline(
+                        input_path, tmp1, model=model, target_scale=scale,
+                        engine=bp.engine, resizer=bp.resizer, tmp_dir=tmp_dir,
+                    )
                     if not r1['success']:
                         _cleanup_files(tmp1)
                         continue
 
-                    r2 = bp.engine.upscale(input_path, tmp2, model=model_2, scale=scale)
+                    r2 = _run_upscale_pipeline(
+                        input_path, tmp2, model=model_2, target_scale=scale,
+                        engine=bp.engine, resizer=bp.resizer, tmp_dir=tmp_dir,
+                    )
                     if not r2['success']:
                         _cleanup_files(tmp1, tmp2)
                         continue
@@ -389,7 +532,10 @@ def upscale_batch():
                         continue
                 else:
                     # ── Single stage ────────────────────────────────────────
-                    r = bp.engine.upscale(input_path, out_path, model=model, scale=scale)
+                    r = _run_upscale_pipeline(
+                        input_path, out_path, model=model, target_scale=scale,
+                        engine=bp.engine, resizer=bp.resizer, tmp_dir=tmp_dir,
+                    )
                     if not r['success']:
                         continue
 
@@ -452,7 +598,7 @@ def upscale_dir():
     if not input_dir:
         return jsonify({'error': 'input_dir is required'}), 400
 
-    # ── Path-traversal protection ──────────────────────────────────────────
+    # ── Validate input_dir (any accessible local path is allowed) ─────────
     base_path = _get_base_path()
     project_root = os.path.realpath(base_path)
 
@@ -461,24 +607,14 @@ def upscale_dir():
     except (ValueError, OSError) as e:
         return jsonify({'error': f'Invalid input directory: {e}'}), 400
 
-    # Normalise case for Windows before comparing
-    if not os.path.normcase(resolved_input).startswith(
-        os.path.normcase(project_root)
-    ):
-        return jsonify({'error': 'Path traversal denied: input_dir must be within project directory'}), 400
-
     if not os.path.isdir(resolved_input):
         return jsonify({'error': f'Input directory not found or not readable: {input_dir}'}), 400
 
-    # ── Resolve output_dir (must also be within project root) ──────────────
+    # ── Resolve output_dir (use as-is if valid, otherwise fall back) ──────
     abs_output_dir: str | None = None
     if output_dir:
         try:
             abs_output_dir = os.path.realpath(output_dir)
-            if not os.path.normcase(abs_output_dir).startswith(
-                os.path.normcase(project_root)
-            ):
-                abs_output_dir = None  # fall back to TMP/results/<task_id>/
         except (ValueError, OSError):
             abs_output_dir = None
 
@@ -523,12 +659,18 @@ def upscale_dir():
                     tmp1 = os.path.join(tmp_dir, f"dir_{uuid.uuid4().hex}.png")
                     tmp2 = os.path.join(tmp_dir, f"dir_{uuid.uuid4().hex}.png")
 
-                    r1 = bp.engine.upscale(in_path, tmp1, model=model, scale=scale)
+                    r1 = _run_upscale_pipeline(
+                        in_path, tmp1, model=model, target_scale=scale,
+                        engine=bp.engine, resizer=bp.resizer, tmp_dir=tmp_dir,
+                    )
                     if not r1['success']:
                         _cleanup_files(tmp1)
                         continue
 
-                    r2 = bp.engine.upscale(in_path, tmp2, model=model_2, scale=scale)
+                    r2 = _run_upscale_pipeline(
+                        in_path, tmp2, model=model_2, target_scale=scale,
+                        engine=bp.engine, resizer=bp.resizer, tmp_dir=tmp_dir,
+                    )
                     if not r2['success']:
                         _cleanup_files(tmp1, tmp2)
                         continue
@@ -538,7 +680,10 @@ def upscale_dir():
                     if not br['success']:
                         continue
                 else:
-                    r = bp.engine.upscale(in_path, out_path, model=model, scale=scale)
+                    r = _run_upscale_pipeline(
+                        in_path, out_path, model=model, target_scale=scale,
+                        engine=bp.engine, resizer=bp.resizer, tmp_dir=tmp_dir,
+                    )
                     if not r['success']:
                         continue
 
@@ -605,3 +750,361 @@ def serve_result(task_id: str, filename: str):
         return jsonify({'error': 'File not found'}), 404
 
     return send_file(requested)
+
+
+# ── GET /api/results/<task_id>/download (zip all results) ───────────────────
+
+@bp.route('/results/<task_id>/download', methods=['GET'])
+def download_results_zip(task_id: str):
+    """Package all result files of *task_id* into a zip and return it.
+
+    Returns ``200`` with ``application/zip`` on success.
+    Returns ``404`` if the task's results directory is empty or missing.
+    """
+    base_path = _get_base_path()
+    results_dir = os.path.join(base_path, 'TMP', 'results', task_id)
+
+    if not os.path.isdir(results_dir):
+        return jsonify({'error': 'Results not found'}), 404
+
+    files = sorted(
+        f for f in os.listdir(results_dir)
+        if os.path.isfile(os.path.join(results_dir, f))
+    )
+    if not files:
+        return jsonify({'error': 'No result files to download'}), 404
+
+    buf = BytesIO()
+    with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as zf:
+        for fname in files:
+            fpath = os.path.join(results_dir, fname)
+            zf.write(fpath, arcname=fname)
+
+    buf.seek(0)
+    zip_name = f"sd_enhance_{task_id}.zip"
+    return send_file(
+        buf,
+        mimetype='application/zip',
+        as_attachment=True,
+        download_name=zip_name,
+    )
+
+
+# ── Video allowed extensions ────────────────────────────────────────────────
+
+VIDEO_EXTENSIONS = {'.mp4', '.webm', '.avi', '.mov', '.mkv'}
+
+
+def _is_video_file(filename: str) -> bool:
+    """Return ``True`` if *filename* has an allowed video extension."""
+    _, ext = os.path.splitext(filename.lower())
+    return ext in VIDEO_EXTENSIONS
+
+
+# ── POST /api/upscale/video (async) ─────────────────────────────────────────
+
+@bp.route('/upscale/video', methods=['POST'])
+def upscale_video():
+    """Upload a video and upscale every frame asynchronously.
+
+    Accepts ``multipart/form-data`` with:
+
+        ``file``          — video file (required)
+        ``model``         — model name (default: ``realesr-animevideov3``)
+        ``scale``         — upscale ratio (default: ``2``)
+        ``output_format`` — ``mp4``, ``avi``, or ``gif`` (default: ``mp4``)
+
+    Returns ``200`` with ``{"task_id": "..."}``.
+    Poll ``GET /api/status/<task_id>`` for progress.
+    """
+    file = request.files.get('file')
+    if not file or not file.filename:
+        return jsonify({'error': 'No video file provided'}), 400
+
+    if not _is_video_file(file.filename):
+        return jsonify({
+            'error': f'Unsupported video format: {file.filename}. '
+                     f'Supported: {", ".join(VIDEO_EXTENSIONS)}'
+        }), 400
+
+    # Read into memory, validate size
+    file_data = file.read()
+    if len(file_data) > MAX_FILE_SIZE:
+        return jsonify({'error': 'Video file too large (max 50 MB)'}), 400
+
+    # ── Parse parameters ───────────────────────────────────────────────────
+    model = request.form.get('model', 'realesr-animevideov3')
+    scale = float(request.form.get('scale', 2))
+    output_format = request.form.get('output_format', 'mp4').lower()
+    if output_format not in ('mp4', 'avi', 'gif'):
+        return jsonify({'error': f'Unsupported output format: {output_format}'}), 400
+
+    # ── Persist uploaded video ─────────────────────────────────────────────
+    base_path = _get_base_path()
+    upload_dir = os.path.join(base_path, 'TMP', 'uploads')
+    os.makedirs(upload_dir, exist_ok=True)
+    safe_name = f"{uuid.uuid4().hex}_{file.filename}"
+    video_path = os.path.join(upload_dir, safe_name)
+
+    with open(video_path, 'wb') as f:
+        f.write(file_data)
+
+    # ── Create async task ──────────────────────────────────────────────────
+    task_id = bp.task_manager.create_task()
+
+    def _process_video(**kwargs):
+        """Background: extract frames, upscale, merge back."""
+        from subprocess import Popen, PIPE
+        tm = bp.task_manager
+        tid = task_id
+        tmp_dir = os.path.join(base_path, 'TMP')
+        results_dir = os.path.join(tmp_dir, 'results', tid)
+        frames_dir = os.path.join(tmp_dir, 'frames', tid)
+        out_frames_dir = os.path.join(tmp_dir, 'out_frames', tid)
+        os.makedirs(results_dir, exist_ok=True)
+        os.makedirs(frames_dir, exist_ok=True)
+        os.makedirs(out_frames_dir, exist_ok=True)
+
+        try:
+            # ── 1. Extract frames (CFR to preserve timing) ─────────────────
+            tm.update_task(tid, progress=2,
+                           status='extracting_frames')
+
+            # Detect FPS early — used to guide extraction
+            detected_fps = _detect_fps(video_path)
+
+            frame_pattern = os.path.join(frames_dir, 'frame%08d.jpg')
+            extract_args = [
+                bp.resizer._ffmpeg_path,
+                '-i', video_path,
+                '-qscale:v', '1',
+                '-vsync', 'cfr',
+                '-r', str(detected_fps),
+                '-start_number', '1',
+                '-y',
+                frame_pattern,
+            ]
+            proc = Popen(extract_args, stdout=PIPE, stderr=PIPE, shell=False)
+            _, stderr = proc.communicate(timeout=600)
+            if proc.returncode != 0:
+                err = stderr.decode('utf-8', errors='replace')[:500]
+                tm.update_task(tid, status='error',
+                               error=f'Frame extraction failed: {err}')
+                return []
+
+            # ── 2. Enumerate frames ────────────────────────────────────────
+            frame_files = sorted(
+                f for f in os.listdir(frames_dir)
+                if f.lower().endswith(('.jpg', '.jpeg', '.png'))
+            )
+            total_frames = len(frame_files)
+            if total_frames == 0:
+                tm.update_task(tid, status='error',
+                               error='No frames extracted from video')
+                return []
+
+            # ── 3. Model upscale ALL frames (directory batch + progress) ──
+            model_4x_dir = os.path.join(tmp_dir, 'frames_4x', tid)
+
+            def _on_progress(done, total):
+                pct = 8 + int((done / max(total, 1)) * 62)  # 8%→70%
+                tm.update_task(
+                    tid, progress=pct,
+                    status=f'upscaling_{done}_of_{total}',
+                )
+
+            tm.update_task(tid, progress=8,
+                           status=f'upscaling_0_of_{total_frames}')
+
+            r = bp.engine.upscale_dir_with_progress(
+                frames_dir, model_4x_dir,
+                total_frames=total_frames,
+                progress_callback=_on_progress,
+                model=model, scale=4, output_format='jpg',
+                timeout=3600,
+            )
+            if not r['success']:
+                tm.update_task(tid, status='error',
+                               error=f'Frame upscale failed: {r["error"]}')
+                return []
+
+            tm.update_task(tid, progress=70,
+                           status=f'resizing_{total_frames}_frames')
+
+            # ── 4. ffmpeg resize each frame to target scale ─────────────────
+            model_4x_files = sorted(
+                f for f in os.listdir(model_4x_dir)
+                if f.lower().endswith(('.jpg', '.jpeg', '.png'))
+            )
+
+            ffmpeg_scale = scale / 4.0
+            for idx, fname in enumerate(model_4x_files):
+                in_frame = os.path.join(model_4x_dir, fname)
+                out_frame = os.path.join(out_frames_dir, fname)
+
+                if abs(ffmpeg_scale - 1.0) < 0.001:
+                    # Target scale is 4x — model output is already correct,
+                    # just copy the file
+                    import shutil
+                    shutil.copy2(in_frame, out_frame)
+                else:
+                    r = bp.resizer.resize_by_scale(
+                        in_frame, out_frame, scale=ffmpeg_scale,
+                    )
+                    if not r['success']:
+                        tm.update_task(tid, status='error',
+                                       error=f'Frame {idx+1} resize failed: {r["error"]}')
+                        return []
+
+                # Progress: 70→95 across resizes
+                if total_frames > 0:
+                    progress = 70 + int((idx + 1) / len(model_4x_files) * 25)
+                    tm.update_task(tid, progress=progress,
+                                   status=f'resizing_frame_{idx+1}')
+
+            # ── 5. Merge frames into output video ─────────────────────────
+            tm.update_task(tid, progress=95, status='merging_frames')
+
+            # Use the same FPS detected during extraction
+            fps = detected_fps
+
+            # Cleanup model 4x temp dir
+            import shutil
+            shutil.rmtree(model_4x_dir, ignore_errors=True)
+
+            out_ext = 'gif' if output_format == 'gif' else 'mp4'
+            output_name = f"output.{out_ext}"
+            output_path = os.path.join(results_dir, output_name)
+
+            out_frame_pattern = os.path.join(out_frames_dir, 'frame%08d.jpg')
+
+            if output_format == 'gif':
+                # GIF: lower FPS, palette
+                merge_args = [
+                    bp.resizer._ffmpeg_path,
+                    '-start_number', '1',
+                    '-framerate', str(fps),
+                    '-i', out_frame_pattern,
+                    '-vf', f'fps=10,scale=iw:ih:flags=lanczos,split[s0][s1];'
+                           f'[s0]palettegen[p];[s1][p]paletteuse',
+                    '-y', output_path,
+                ]
+            else:
+                # MP4/AVI: libx264 with audio from source
+                merge_args = [
+                    bp.resizer._ffmpeg_path,
+                    '-start_number', '1',
+                    '-framerate', str(fps),
+                    '-i', out_frame_pattern,
+                    '-i', video_path,
+                    '-map', '0:v:0',
+                    '-map', '1:a:0?',
+                    '-c:a', 'copy',
+                    '-c:v', 'libx264',
+                    '-r', str(fps),
+                    '-pix_fmt', 'yuv420p',
+                    '-shortest',
+                    '-y', output_path,
+                ]
+
+            proc = Popen(merge_args, stdout=PIPE, stderr=PIPE, shell=False)
+            _, stderr = proc.communicate(timeout=600)
+            if proc.returncode != 0:
+                err = stderr.decode('utf-8', errors='replace')[:500]
+                tm.update_task(tid, status='error',
+                               error=f'Frame merge failed: {err}')
+                return []
+
+            return [{
+                'url': f"/api/results/{tid}/{output_name}",
+                'filename': output_name,
+            }]
+
+        except Exception as e:
+            tm.update_task(tid, status='error', error=str(e))
+            return []
+        finally:
+            # Cleanup temp dirs (keep results)
+            import shutil
+            for d in [frames_dir, out_frames_dir]:
+                try:
+                    shutil.rmtree(d, ignore_errors=True)
+                except Exception:
+                    pass
+            _cleanup_files(video_path)
+
+    bp.task_manager.run_task(task_id, _process_video)
+    return jsonify({'task_id': task_id})
+
+
+def _detect_fps(video_path: str) -> float:
+    """Detect frame-rate of *video_path* using ffprobe or ffmpeg.
+
+    Prefers ``avg_frame_rate`` (actual frame count ÷ duration) over
+    ``r_frame_rate`` (often wrong for VFR).
+
+    Falls back to 24.0 if detection fails.
+    """
+    import json as _json
+    import re
+    from subprocess import Popen, PIPE
+
+    ffmpeg_dir = os.path.dirname(bp.resizer._ffmpeg_path)
+
+    # ── Try ffprobe first (most accurate) ────────────────────────────────
+    ffprobe_path = os.path.join(ffmpeg_dir, 'ffprobe.exe')
+    if not os.path.isfile(ffprobe_path):
+        ffprobe_path = os.path.join(ffmpeg_dir, 'ffprobe')
+
+    if os.path.isfile(ffprobe_path):
+        args = [
+            ffprobe_path,
+            '-v', 'quiet',
+            '-print_format', 'json',
+            '-show_streams',
+            video_path,
+        ]
+        try:
+            proc = Popen(args, stdout=PIPE, stderr=PIPE, shell=False)
+            stdout, _ = proc.communicate(timeout=30)
+            if proc.returncode == 0 and stdout:
+                info = _json.loads(stdout)
+                for stream in info.get('streams', []):
+                    if stream.get('codec_type') == 'video':
+                        for key in ('avg_frame_rate', 'r_frame_rate'):
+                            fps_str = stream.get(key, '')
+                            if fps_str and '/' in fps_str:
+                                num, den = fps_str.split('/')
+                                if int(den) != 0:
+                                    fps = float(num) / float(den)
+                                    if fps > 0:
+                                        return round(fps, 2)
+        except Exception:
+            pass
+
+    # ── Fallback: parse ffmpeg -i output ─────────────────────────────────
+    args = [
+        bp.resizer._ffmpeg_path,
+        '-i', video_path,
+    ]
+    try:
+        proc = Popen(args, stdout=PIPE, stderr=PIPE, shell=False)
+        _, stderr = proc.communicate(timeout=30)
+        output = stderr.decode('utf-8', errors='replace')
+        # Look for lines like: "Stream #0:0: Video: ..., 60 fps, ..."
+        # or "..., 23.98 fps, ..." or "..., 30 tbr, ..."
+        match = re.search(r'Video:.*?(\d+\.?\d*)\s*fps', output)
+        if match:
+            fps = float(match.group(1))
+            if fps > 0:
+                return fps
+        # Also try the tbr (time base rate) which is usually the stream fps
+        match = re.search(r'Video:.*?(\d+\.?\d*)\s*tbr', output)
+        if match:
+            fps = float(match.group(1))
+            if fps > 0:
+                return fps
+    except Exception:
+        pass
+
+    return 24.0  # sensible default
