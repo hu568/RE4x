@@ -79,6 +79,81 @@
   .input-method { display: none; }
   .input-method.active { display: block; }
 
+  /* About Tab */
+  .about-container {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 20px 0;
+  }
+  .about-header {
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  .about-header h2 {
+    font-size: 26px;
+    background: linear-gradient(135deg, #a78bfa, #60a5fa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .about-version {
+    color: #6b7280;
+    font-size: 14px;
+    margin-top: 4px;
+  }
+  .about-desc {
+    text-align: center;
+    color: #9ca3af;
+    font-size: 14px;
+    margin-bottom: 28px;
+    line-height: 1.6;
+  }
+  .about-section {
+    background: #1a1d24;
+    border: 1px solid #2a2d35;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 14px;
+  }
+  .about-section h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #e0e0e0;
+    margin-bottom: 10px;
+  }
+  .about-section p {
+    font-size: 14px;
+    color: #9ca3af;
+    line-height: 1.7;
+  }
+  .about-section a {
+    color: #60a5fa;
+    text-decoration: none;
+  }
+  .about-section a:hover {
+    text-decoration: underline;
+  }
+  .about-section ul {
+    list-style: none;
+    padding: 0;
+  }
+  .about-section ul li {
+    font-size: 14px;
+    color: #9ca3af;
+    line-height: 1.8;
+    padding-left: 16px;
+    position: relative;
+  }
+  .about-section ul li::before {
+    content: "•";
+    position: absolute;
+    left: 4px;
+    color: #6b7280;
+  }
+  .about-section ul li a {
+    color: #60a5fa;
+  }
+
   /* Main layout */
   .main-layout {
     display: grid;
@@ -604,6 +679,7 @@
       <button class="page-tab-btn" data-tab="method-batch">批量处理</button>
       <button class="page-tab-btn" data-tab="method-dir">目录批量</button>
       <button class="page-tab-btn" data-tab="method-video">视频处理</button>
+      <button class="page-tab-btn" data-tab="method-about">关于</button>
     </div>
   </div>
 
@@ -769,6 +845,52 @@
   </div>
 </div>
 
+<!-- About Tab -->
+<div class="input-method" id="method-about">
+  <div class="about-container">
+    <div class="about-header">
+      <h2>RE4x SD Enhance</h2>
+      <p class="about-version">v1.0.0</p>
+    </div>
+    <p class="about-desc">便携式 AI 图片/视频放大工具包。无需 CUDA、无需 PyTorch，开箱即用。</p>
+
+    <div class="about-section">
+      <h3>📌 项目地址</h3>
+      <p><a href="https://github.com/hu568/RE4x" target="_blank">https://github.com/hu568/RE4x</a></p>
+    </div>
+
+    <div class="about-section">
+      <h3>📖 许可协议</h3>
+      <p>本项目源码基于 <strong>GNU General Public License v3.0 (GPL-3.0)</strong> 开源。</p>
+      <p>Real-ESRGAN（BSD-3-Clause）、FFmpeg（LGPL/GPL）等第三方组件遵循各自许可协议。</p>
+    </div>
+
+    <div class="about-section">
+      <h3>⚙️ 技术栈</h3>
+      <ul>
+        <li><strong>后端</strong> — Python Flask</li>
+        <li><strong>放大引擎</strong> — Real-ESRGAN ncnn Vulkan</li>
+        <li><strong>图像处理</strong> — FFmpeg（缩放/裁剪/混合）</li>
+        <li><strong>前端</strong> — 原生 HTML/CSS/JavaScript</li>
+      </ul>
+    </div>
+
+    <div class="about-section">
+      <h3>⚠️ 重要提示</h3>
+      <p>本软件为免费开源项目，仅供学习参考。严禁用于任何商业倒卖行为。</p>
+    </div>
+
+    <div class="about-section">
+      <h3>🙏 致谢</h3>
+      <ul>
+        <li><a href="https://github.com/xinntao/Real-ESRGAN" target="_blank">Real-ESRGAN</a> — 基于 AI 的图像超分辨率</li>
+        <li><a href="https://github.com/Tencent/ncnn" target="_blank">ncnn</a> — 高性能神经网络推理框架</li>
+        <li><a href="https://ffmpeg.org" target="_blank">FFmpeg</a> — 多媒体处理工具</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
 <!-- Lightbox -->
 <div class="lightbox" id="lightbox">
   <button class="lightbox-close" id="lightbox-close">✕</button>
@@ -785,9 +907,11 @@
     'method-single': document.getElementById('method-single'),
     'method-batch': document.getElementById('method-batch'),
     'method-dir': document.getElementById('method-dir'),
-    'method-video': document.getElementById('method-video')
+    'method-video': document.getElementById('method-video'),
+    'method-about': document.getElementById('method-about')
   };
-  var currentTab = 0; // 0=single, 1=batch, 2=dir, 3=video
+  var mainLayout = document.querySelector('.main-layout');
+  var currentTab = 0; // 0=single, 1=batch, 2=dir, 3=video, 4=about
 
   pageTabBtns.forEach(function(btn, idx) {
     btn.addEventListener('click', function() {
@@ -795,6 +919,8 @@
       btn.classList.add('active');
       Object.values(inputMethods).forEach(function(c) { c.classList.remove('active'); });
       inputMethods[btn.dataset.tab].classList.add('active');
+      // Toggle main layout visibility (hidden on about tab)
+      if (mainLayout) mainLayout.style.display = btn.dataset.tab === 'method-about' ? 'none' : '';
       currentTab = idx;
     });
   });
