@@ -120,6 +120,75 @@ def test_upscale_bad_model(client, make_image):
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# Parameter validation (scale / mix_ratio)
+# ═══════════════════════════════════════════════════════════════════════
+
+
+def test_upscale_invalid_scale(client, make_image):
+    """Non-numeric scale returns 400 instead of crashing with a 500."""
+    data = {
+        'file': (make_image(), 'test.jpg'),
+        'scale': 'not-a-number',
+    }
+    resp = client.post('/api/upscale', data=data, content_type='multipart/form-data')
+    assert resp.status_code == 400
+    assert 'scale' in resp.get_json()['error']
+
+
+def test_upscale_scale_out_of_range(client, make_image):
+    """Scale outside 0.1–8.0 is rejected with 400."""
+    for bad in ('0', '0.05', '99', '-2'):
+        data = {
+            'file': (make_image(), 'test.jpg'),
+            'scale': bad,
+        }
+        resp = client.post('/api/upscale', data=data, content_type='multipart/form-data')
+        assert resp.status_code == 400, f'scale={bad} should be rejected, got {resp.status_code}'
+        assert 'scale' in resp.get_json()['error']
+
+
+def test_upscale_invalid_mix_ratio(client, make_image):
+    """mix_ratio outside 0–1 returns 400."""
+    data = {
+        'file': (make_image(), 'test.jpg'),
+        'scale': '2',
+        'mix_ratio': '1.5',
+    }
+    resp = client.post('/api/upscale', data=data, content_type='multipart/form-data')
+    assert resp.status_code == 400
+    assert 'mix_ratio' in resp.get_json()['error']
+
+
+def test_upscale_nan_scale(client, make_image):
+    """NaN scale must be rejected, not silently pass range checks."""
+    data = {
+        'file': (make_image(), 'test.jpg'),
+        'scale': 'nan',
+    }
+    resp = client.post('/api/upscale', data=data, content_type='multipart/form-data')
+    assert resp.status_code == 400
+    assert 'scale' in resp.get_json()['error']
+
+
+def test_batch_invalid_scale(client, make_image):
+    """Batch with a non-numeric scale returns 400."""
+    data = {
+        'files': (make_image(), 'img1.jpg'),
+        'scale': 'abc',
+    }
+    resp = client.post('/api/upscale/batch', data=data, content_type='multipart/form-data')
+    assert resp.status_code == 400
+    assert 'scale' in resp.get_json()['error']
+
+
+def test_dir_invalid_scale(client):
+    """Directory mode with a non-numeric scale returns 400."""
+    resp = client.post('/api/upscale/dir', json={'input_dir': '.', 'scale': 'abc'})
+    assert resp.status_code == 400
+    assert 'scale' in resp.get_json()['error']
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # POST /api/upscale/batch  (multi-file, async)
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -198,6 +267,48 @@ def test_status_not_found(client):
     body = resp.get_json()
     assert body is not None
     assert 'error' in body
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# GET /api/results/<task_id>/...  — path-traversal protection
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+def test_results_bad_task_id_format(client):
+    """Malformed task ids (non-8-hex) are rejected outright — never joined
+    into a filesystem path."""
+    # Encoded traversal payloads previously reached os.path.join via the
+    # <task_id> route variable (URL-decoded backslashes/slashes).
+    # Note: some payloads (encoded '/') are rejected by Werkzeug's router
+    # itself with a plain-HTML 404 — both rejection styles are acceptable.
+    for url in (
+        '/api/results/..%5C..%5C..%5Ctest-data/download',
+        '/api/results/..%2F..%2Ftest-data/download',
+        '/api/results/..%5C..%5Ctest-data/input.jpg',
+        '/api/results/abc/input.jpg',           # not hex
+        '/api/results/ABCDEFGH/input.jpg',      # uppercase hex rejected
+        '/api/results/abcdefgh!/input.jpg',     # stray char
+    ):
+        resp = client.get(url)
+        assert resp.status_code == 404, f'{url} should be 404, got {resp.status_code}'
+        body = resp.get_json(silent=True)
+        if body is not None:
+            assert 'error' in body
+
+
+def test_results_serve_denies_filename_traversal(client, project_root):
+    """A valid task id combined with a traversing filename is denied."""
+    resp = client.get('/api/results/aaaaaaaa/..%5C..%5C..%5C..%5Ctest-data%5Cinput.jpg')
+    assert resp.status_code in (403, 404)  # 403 traversal / 404 not found
+    resp = client.get('/api/results/aaaaaaaa/..%2F..%2F..%2F..%2Ftest-data%2Finput.jpg')
+    assert resp.status_code in (403, 404)
+
+
+def test_results_download_unknown_task(client):
+    """Well-formed but unknown task id yields 404 (not a filesystem error)."""
+    resp = client.get('/api/results/aaaaaaaa/download')
+    assert resp.status_code == 404
+    assert 'error' in resp.get_json()
 
 
 # ═══════════════════════════════════════════════════════════════════════════

@@ -901,6 +901,16 @@
 (function() {
   'use strict';
 
+  // Escape user-controlled strings before inserting into innerHTML
+  // (file names, server error messages) to prevent self-XSS.
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function(c) {
+      return {
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[c];
+    });
+  }
+
   // === Page-level Tabs ===
   var pageTabBtns = document.querySelectorAll('.page-tab-btn');
   var inputMethods = {
@@ -1018,8 +1028,8 @@
         ? (file.size / 1024 / 1024).toFixed(1) + ' MB'
         : (file.size / 1024).toFixed(0) + ' KB';
       div.innerHTML =
-        '<span class="name">' + file.name + '</span>' +
-        '<span class="size">' + size + '</span>' +
+        '<span class="name">' + escapeHtml(file.name) + '</span>' +
+        '<span class="size">' + escapeHtml(size) + '</span>' +
         '<button class="remove-batch" data-idx="' + idx + '">✕</button>';
       batchList.appendChild(div);
     });
@@ -1435,7 +1445,7 @@
         var modelSelect = document.getElementById('upscaler-1');
         var modelDisplay = modelSelect.options[modelSelect.selectedIndex].text;
         updateStatus('done', '✅ 处理完成');
-        infoText.innerHTML = '<p>✅ 处理完成</p><p>放大倍数: ' + scale + 'x</p><p>放大器: ' + modelDisplay + '</p>';
+        infoText.innerHTML = '<p>✅ 处理完成</p><p>放大倍数: ' + escapeHtml(scale) + 'x</p><p>放大器: ' + escapeHtml(modelDisplay) + '</p>';
 
       } else if (currentTab === 1) {
         // ── Batch ──────────────────────────────────────────
@@ -1472,7 +1482,7 @@
             },
             function(err) {
               updateStatus('error', '❌ ' + err.message);
-              infoText.innerHTML = '<p>❌ 批处理失败: ' + err.message + '</p>';
+              infoText.innerHTML = '<p>❌ 批处理失败: ' + escapeHtml(err.message) + '</p>';
               reject(err);
             }
           );
@@ -1514,7 +1524,7 @@
             },
             function(err) {
               updateStatus('error', '❌ ' + err.message);
-              infoText.innerHTML = '<p>❌ 目录处理失败: ' + err.message + '</p>';
+              infoText.innerHTML = '<p>❌ 目录处理失败: ' + escapeHtml(err.message) + '</p>';
               reject(err);
             }
           );
@@ -1555,7 +1565,7 @@
                 addDownloadLink(vUrl, results[0].filename || 'output.mp4', true);
                 var fmt = document.getElementById('video-format').value.toUpperCase();
                 updateStatus('done', '✅ 视频处理完成');
-                infoText.innerHTML = '<p>✅ 视频处理完成</p><p>输出格式: ' + fmt + '</p>';
+                infoText.innerHTML = '<p>✅ 视频处理完成</p><p>输出格式: ' + escapeHtml(fmt) + '</p>';
               } else {
                 updateStatus('done', '✅ 视频处理完成（无结果）');
                 infoText.innerHTML = '<p>⚠️ 视频处理完成，但未生成结果</p>';
@@ -1564,7 +1574,7 @@
             },
             function(err) {
               updateStatus('error', '❌ ' + err.message);
-              infoText.innerHTML = '<p>❌ 视频处理失败: ' + err.message + '</p>';
+              infoText.innerHTML = '<p>❌ 视频处理失败: ' + escapeHtml(err.message) + '</p>';
               reject(err);
             }
           );
@@ -1573,7 +1583,7 @@
     } catch (err) {
       updateStatus('error', '❌ ' + err.message);
       if (!infoText.innerHTML) {
-        infoText.innerHTML = '<p>❌ 处理失败: ' + err.message + '</p>';
+        infoText.innerHTML = '<p>❌ 处理失败: ' + escapeHtml(err.message) + '</p>';
       }
     } finally {
       submitBtn.classList.remove('loading');

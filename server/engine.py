@@ -336,6 +336,10 @@ class UpscaleEngine:
         process = None
         stderr_lines: list[str] = []
         try:
+            # Hold the global GPU lock for the ENTIRE engine run — from
+            # spawning the subprocess through the progress-poll loop — so no
+            # second engine process (e.g. a single-image upscale) can start
+            # concurrently and fight over the GPU.
             with self._lock:
                 process = subprocess.Popen(
                     args,
@@ -344,24 +348,37 @@ class UpscaleEngine:
                     shell=False,
                 )
 
-            # Drain stderr in a background thread to prevent pipe-buffer
-            # deadlock (the engine is very verbose).
-            def _drain():
-                try:
-                    for line in process.stderr:
-                        stderr_lines.append(
-                            line.decode("utf-8", errors="replace").rstrip()
-                        )
-                except Exception:
-                    pass
+                # Drain stderr in a background thread to prevent pipe-buffer
+                # deadlock (the engine is very verbose).
+                def _drain():
+                    try:
+                        for line in process.stderr:
+                            stderr_lines.append(
+                                line.decode("utf-8", errors="replace").rstrip()
+                            )
+                    except Exception:
+                        pass
 
-            import threading
-            drain_thread = threading.Thread(target=_drain, daemon=True)
-            drain_thread.start()
+                drain_thread = threading.Thread(target=_drain, daemon=True)
+                drain_thread.start()
 
-            # Poll output directory while the engine runs
-            while process.poll() is None:
-                time.sleep(poll_interval)
+                # Poll output directory while the engine runs
+                while process.poll() is None:
+                    time.sleep(poll_interval)
+                    try:
+                        done = len([
+                            f for f in os.listdir(abs_output)
+                            if f.lower().endswith(('.jpg', '.jpeg', '.png'))
+                        ])
+                        if progress_callback:
+                            progress_callback(done, total_frames)
+                    except Exception:
+                        pass
+
+                # Wait for stderr drain to finish
+                drain_thread.join(timeout=5)
+
+                # Final count
                 try:
                     done = len([
                         f for f in os.listdir(abs_output)
@@ -371,20 +388,6 @@ class UpscaleEngine:
                         progress_callback(done, total_frames)
                 except Exception:
                     pass
-
-            # Wait for stderr drain to finish
-            drain_thread.join(timeout=5)
-
-            # Final count
-            try:
-                done = len([
-                    f for f in os.listdir(abs_output)
-                    if f.lower().endswith(('.jpg', '.jpeg', '.png'))
-                ])
-                if progress_callback:
-                    progress_callback(done, total_frames)
-            except Exception:
-                pass
 
             if process.returncode != 0:
                 error_msg = (

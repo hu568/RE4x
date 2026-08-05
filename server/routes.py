@@ -8,7 +8,9 @@ Provides:
   - Two-stage blend support (model_1 → model_2 → ffmpeg blend)
 """
 
+import math
 import os
+import re
 import sys
 import uuid
 import zipfile
@@ -24,6 +26,9 @@ from PIL import Image
 
 ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tiff'}
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
+
+# Task IDs are 8-char lowercase hex prefixes of UUID4 (see TaskManager.create_task).
+_VALID_TASK_ID_RE = re.compile(r'^[0-9a-f]{8}$')
 
 
 # ── Task Manager ──────────────────────────────────────────────────────────
@@ -121,6 +126,35 @@ def _is_allowed_file(filename: str) -> bool:
     return ext in ALLOWED_EXTENSIONS
 
 
+def _parse_float(
+    value,
+    default: float,
+    *,
+    min_val: float | None = None,
+    max_val: float | None = None,
+) -> tuple[float, str | None]:
+    """Parse *value* as a float, falling back to *default* on empty input.
+
+    Returns ``(parsed, None)`` on success or ``(default, error_message)``
+    when *value* is not a number or falls outside [min_val, max_val].
+    """
+    if value is None or value == '':
+        return default, None
+    try:
+        v = float(value)
+    except (ValueError, TypeError):
+        return default, f'Invalid number: {value!r}'
+    # Reject NaN (comparisons against min/max are always False for NaN,
+    # so it would otherwise slip through every range check).
+    if not math.isfinite(v):
+        return default, f'Value must be a finite number, got: {value!r}'
+    if min_val is not None and v < min_val:
+        return default, f'Value must be >= {min_val}'
+    if max_val is not None and v > max_val:
+        return default, f'Value must be <= {max_val}'
+    return v, None
+
+
 def _validate_and_save_upload(file_storage, upload_dir: str):
     """Validate and persist an uploaded file.
 
@@ -169,7 +203,11 @@ def _validate_and_save_upload(file_storage, upload_dir: str):
 
     # ── Persist ────────────────────────────────────────────────────────────
     os.makedirs(upload_dir, exist_ok=True)
-    safe_name = f"{uuid.uuid4().hex}_{file_storage.filename}"
+    # basename the client-supplied name so path separators / traversal
+    # components in the original filename can never leak into the saved path
+    # (the uuid prefix already prevents collisions).
+    raw_name = file_storage.filename.replace('\\', '/')
+    safe_name = f"{uuid.uuid4().hex}_{os.path.basename(raw_name)}"
     save_path = os.path.join(upload_dir, safe_name)
 
     with open(save_path, 'wb') as f:
@@ -186,6 +224,20 @@ def _cleanup_files(*paths: str | None) -> None:
                 os.remove(p)
             except Exception:
                 pass
+
+
+def _resolve_results_dir(task_id: str | None) -> str | None:
+    """Return the realpath of ``TMP/results/<task_id>`` for a well-formed
+    task id, else ``None``.
+
+    Enforces the 8-char hex task-id format so user input can never be
+    combined with ``os.path.join`` to escape the results root (path
+    traversal via ``..`` components in *task_id*).
+    """
+    if not task_id or not _VALID_TASK_ID_RE.match(task_id):
+        return None
+    base_path = _get_base_path()
+    return os.path.realpath(os.path.join(base_path, 'TMP', 'results', task_id))
 
 
 def _run_upscale_pipeline(
@@ -329,7 +381,11 @@ def upscale_single():
     height_str = request.form.get('height')
     crop = request.form.get('crop', '').lower() in ('true', '1', 'yes')
     model_2 = request.form.get('model_2')
-    mix_ratio = float(request.form.get('mix_ratio', 0.5))
+    mix_ratio, err = _parse_float(
+        request.form.get('mix_ratio'), 0.5, min_val=0.0, max_val=1.0,
+    )
+    if err:
+        return jsonify({'error': f'mix_ratio: {err}'}), 400
 
     # Normalise "None" sentinel from frontend
     if model_2 in (None, '', 'None'):
@@ -355,7 +411,11 @@ def upscale_single():
         )
     elif scale_str:
         # Scale mode
-        target_scale = float(scale_str)
+        target_scale, err = _parse_float(
+            scale_str, None, min_val=0.1, max_val=8.0,
+        )
+        if err:
+            return jsonify({'error': f'scale: {err}'}), 400
         effective_scale = target_scale
         final_w = final_h = None  # determined by resize_by_scale
     else:
@@ -476,9 +536,15 @@ def upscale_batch():
 
     # ── Parse parameters ───────────────────────────────────────────────────
     model = request.form.get('model', 'realesr-animevideov3')
-    scale = float(request.form.get('scale', 2))
+    scale, err = _parse_float(request.form.get('scale'), 2, min_val=0.1, max_val=8.0)
+    if err:
+        return jsonify({'error': f'scale: {err}'}), 400
     model_2 = request.form.get('model_2')
-    mix_ratio = float(request.form.get('mix_ratio', 0.5))
+    mix_ratio, err = _parse_float(
+        request.form.get('mix_ratio'), 0.5, min_val=0.0, max_val=1.0,
+    )
+    if err:
+        return jsonify({'error': f'mix_ratio: {err}'}), 400
 
     if model_2 in (None, '', 'None'):
         model_2 = None
@@ -575,8 +641,11 @@ def upscale_dir():
             "mix_ratio":  0.5                  // optional
         }
 
-    Security: rejects paths that resolve outside the project root
-    (path-traversal protection via ``os.path.realpath``).
+    Security note: by design this endpoint processes **any local directory
+    readable by the server process** (including ``output_dir`` writes) — it
+    is a power-user/local feature, not a sandbox. Do not expose the server
+    to untrusted networks. Paths are resolved via ``os.path.realpath`` so
+    symlink/``..`` components are handled consistently.
 
     Returns ``200`` with ``{"task_id": "..."}``.
     """
@@ -588,9 +657,15 @@ def upscale_dir():
     input_dir = (data.get('input_dir') or '').strip()
     output_dir = (data.get('output_dir') or '').strip()
     model = data.get('model', 'realesr-animevideov3')
-    scale = float(data.get('scale', 2))
+    scale, err = _parse_float(data.get('scale'), 2, min_val=0.1, max_val=8.0)
+    if err:
+        return jsonify({'error': f'scale: {err}'}), 400
     model_2 = data.get('model_2')
-    mix_ratio = float(data.get('mix_ratio', 0.5))
+    mix_ratio, err = _parse_float(
+        data.get('mix_ratio'), 0.5, min_val=0.0, max_val=1.0,
+    )
+    if err:
+        return jsonify({'error': f'mix_ratio: {err}'}), 400
 
     if model_2 in (None, '', 'None'):
         model_2 = None
@@ -733,17 +808,23 @@ def get_status(task_id: str):
 def serve_result(task_id: str, filename: str):
     """Serve a result file produced by a batch or directory task.
 
-    Security: resolves the requested path and verifies it lies inside
-    ``TMP/results/<task_id>/`` — rejects any path-traversal attempt
-    embedded in *filename*.
+    Security: *task_id* must match the 8-char hex format, and the resolved
+    request path must lie inside ``TMP/results/<task_id>/`` (checked with
+    ``os.path.commonpath``) — rejects any path-traversal attempt embedded
+    in *filename* or *task_id*.
     """
-    base_path = _get_base_path()
-    safe_base = os.path.realpath(os.path.join(base_path, 'TMP', 'results', task_id))
+    safe_base = _resolve_results_dir(task_id)
+    if safe_base is None:
+        return jsonify({'error': 'Task not found'}), 404
 
     requested = os.path.realpath(os.path.join(safe_base, filename))
 
     # Ensure the resolved path is still inside the expected directory
-    if not requested.startswith(safe_base):
+    try:
+        inside = os.path.commonpath([requested, safe_base]) == safe_base
+    except ValueError:
+        inside = False  # e.g. different drives
+    if not inside:
         return jsonify({'error': 'Access denied'}), 403
 
     if not os.path.isfile(requested):
@@ -761,10 +842,8 @@ def download_results_zip(task_id: str):
     Returns ``200`` with ``application/zip`` on success.
     Returns ``404`` if the task's results directory is empty or missing.
     """
-    base_path = _get_base_path()
-    results_dir = os.path.join(base_path, 'TMP', 'results', task_id)
-
-    if not os.path.isdir(results_dir):
+    results_dir = _resolve_results_dir(task_id)
+    if results_dir is None or not os.path.isdir(results_dir):
         return jsonify({'error': 'Results not found'}), 404
 
     files = sorted(
@@ -834,7 +913,9 @@ def upscale_video():
 
     # ── Parse parameters ───────────────────────────────────────────────────
     model = request.form.get('model', 'realesr-animevideov3')
-    scale = float(request.form.get('scale', 2))
+    scale, err = _parse_float(request.form.get('scale'), 2, min_val=0.1, max_val=8.0)
+    if err:
+        return jsonify({'error': f'scale: {err}'}), 400
     output_format = request.form.get('output_format', 'mp4').lower()
     if output_format not in ('mp4', 'avi', 'gif'):
         return jsonify({'error': f'Unsupported output format: {output_format}'}), 400
@@ -843,7 +924,8 @@ def upscale_video():
     base_path = _get_base_path()
     upload_dir = os.path.join(base_path, 'TMP', 'uploads')
     os.makedirs(upload_dir, exist_ok=True)
-    safe_name = f"{uuid.uuid4().hex}_{file.filename}"
+    raw_name = file.filename.replace('\\', '/')
+    safe_name = f"{uuid.uuid4().hex}_{os.path.basename(raw_name)}"
     video_path = os.path.join(upload_dir, safe_name)
 
     with open(video_path, 'wb') as f:
