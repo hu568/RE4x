@@ -34,6 +34,13 @@ tools/sd-enhance-server/
 # 计划文件
 .sisyphus/
 
+# Reasonix 工具（本地运行时元数据与配置）
+.reasonix/
+reasonix.toml
+
+# 发行版产物
+release/
+
 # Windows 系统文件
 Thumbs.db
 Desktop.ini
