@@ -329,8 +329,16 @@ class UpscaleService:
 
     # ── Param parsing ─────────────────────────────────────────────────────
 
-    def parse_params(self, params: dict | None) -> tuple[dict, str | None]:
+    def parse_params(self, params: dict | None,
+                     output_formats: tuple = ('png', 'jpg')) -> tuple[dict, str | None]:
         """Validate/normalise GUI parameters.
+
+        Args:
+            params: Raw GUI parameter dict.
+            output_formats: Allowed output formats for this task type.
+                Image tasks default to ``('png', 'jpg')``; video tasks pass
+                ``VIDEO_OUTPUT_FORMATS`` (mp4/avi/gif). The value is never
+                silently rewritten — an unsupported format raises an error.
 
         Returns ``(params, None)`` on success or ``(None, error_msg)``.
         Normalised keys: model, model_2, mix_ratio, target_scale,
@@ -358,9 +366,13 @@ class UpscaleService:
 
         crop = params.get('crop') in (True, 'true', '1', 'yes')
 
-        output_format = str(params.get('output_format') or 'png').lower()
-        if output_format not in ('png', 'jpg'):
-            output_format = 'png'
+        output_format = str(
+            params.get('output_format') or output_formats[0]).lower().strip()
+        if output_format not in output_formats:
+            return None, (
+                f'Unsupported output format: {output_format} '
+                f'(allowed: {", ".join(output_formats)})'
+            )
 
         # Scale vs dimension mode
         target_scale: float | None = None
@@ -627,15 +639,12 @@ class UpscaleService:
                                error=f'Unsupported video format: {video_path}')
                 return []
 
-            parsed, err = self.parse_params(params)
+            parsed, err = self.parse_params(
+                params, output_formats=VIDEO_OUTPUT_FORMATS)
             if err:
                 tm.update_task(tid, status='error', error=err)
                 return []
-            output_format = parsed.get('output_format', 'png')
-            if output_format not in VIDEO_OUTPUT_FORMATS:
-                tm.update_task(tid, status='error',
-                               error=f'Unsupported output format: {output_format}')
-                return []
+            output_format = parsed.get('output_format', 'mp4')
 
             scale = parsed['target_scale'] or 2.0
 
@@ -657,7 +666,8 @@ class UpscaleService:
                 frame_pattern = os.path.join(frames_dir, 'frame%08d.jpg')
                 extract_args = [
                     ffmpeg, '-i', abs_video,
-                    '-qscale:v', '1', '-vsync', 'cfr',
+                    '-qscale:v', '1',
+                    '-fps_mode', 'cfr',      # ffmpeg 9.0: replaces -vsync cfr
                     '-r', str(detected_fps), '-start_number', '1', '-y',
                     frame_pattern,
                 ]

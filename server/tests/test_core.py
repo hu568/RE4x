@@ -60,6 +60,33 @@ def test_parse_params_bad_model(service):
     assert 'Unknown model' in err
 
 
+def test_parse_params_video_formats(service):
+    """Video tasks must accept mp4/avi/gif — and NOT rewrite mp4 to png.
+
+    Regression test: parse_params used to force any non-(png/jpg) value to
+    'png', so video tasks reported the absurd 'Unsupported output format: png'.
+    """
+    from core import VIDEO_OUTPUT_FORMATS  # noqa: PLC0415
+
+    for fmt in VIDEO_OUTPUT_FORMATS:
+        parsed, err = service.parse_params(
+            {'output_format': fmt}, output_formats=VIDEO_OUTPUT_FORMATS)
+        assert err is None, f'{fmt} should be accepted: {err}'
+        assert parsed['output_format'] == fmt
+
+    # Default (no output_format) → first allowed format (mp4 for video)
+    parsed, err = service.parse_params(
+        {}, output_formats=VIDEO_OUTPUT_FORMATS)
+    assert err is None
+    assert parsed['output_format'] == 'mp4'
+
+    # Still rejects truly unsupported formats
+    _, err = service.parse_params(
+        {'output_format': 'png'}, output_formats=VIDEO_OUTPUT_FORMATS)
+    assert err is not None
+    assert 'Unsupported output format' in err
+
+
 def test_parse_params_model2_none_sentinel(service):
     parsed, err = service.parse_params({'model_2': 'None'})
     assert err is None
@@ -208,6 +235,26 @@ def test_submit_video_bad_output_format(service, test_img):
     tid = service.submit_video(test_img, {'output_format': 'mkv'})
     t = _wait_done(service, tid, timeout=30)
     assert t['status'] == 'error'
+
+
+def test_submit_video_mp4_end_to_end(service, project_root):
+    """Real end-to-end video upscale: extract → model 4x → resize → merge.
+
+    Regression test for two v2.0 bugs:
+      1. parse_params rewrote 'mp4' → 'png' (wrong format whitelist)
+      2. ffmpeg 9.0 removed -vsync (now -fps_mode cfr) → extraction failed
+    """
+    video = os.path.join(project_root, 'test-data', 'onepiece_demo.mp4')
+    if not os.path.isfile(video):
+        pytest.skip('test-data/onepiece_demo.mp4 missing')
+
+    tid = service.submit_video(
+        video, {'scale': 2, 'output_format': 'mp4'})
+    t = _wait_done(service, tid, timeout=420)
+    assert t['status'] == 'done', t.get('error')
+    assert len(t['results']) == 1
+    assert t['results'][0]['filename'].endswith('.mp4')
+    assert os.path.isfile(t['results'][0]['path'])
 
 
 # ── Zip results ──────────────────────────────────────────────────────────

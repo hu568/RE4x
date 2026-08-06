@@ -10,6 +10,9 @@
 - **本地路径直读**: 不再上传文件，直接处理本地路径，去掉 50MB 上传限制与 MIME 校验
 - **模型加载竞态修复**: pywebview 的 `js_api` 异步注入，前端初始化改为监听 `pywebviewready` 事件（此前立即执行会导致模型下拉框永远为空）
 - **exe 放根目录**: 打包输出到项目根目录（`sd-enhance-server.exe` + `_internal/` 与 `tools/` 平级），解压即见、双击即用；删除 `start.bat`；frozen 路径解析改为「exe 同级」（dev 模式按文件位置推导项目根，任意 cwd 启动都正确）
+- **视频格式修复**: `parse_params` 曾把非 png/jpg 的 `output_format` 静默改写成 `'png'`，导致视频任务报荒谬的「Unsupported output format: png」——改为按任务类型白名单校验（图片 png/jpg，视频 mp4/avi/gif），格式不再被篡改
+- **ffmpeg 9.0 兼容**: 视频提取帧改用 `-fps_mode cfr`（9.0 移除了 `-vsync`，旧参数会导致提取必然失败）
+- **端到端视频测试**: 新增真实 mp4 放大测试（提取→4x→缩放→合成），此前测试无视频成功路径、两个 bug 均未被覆盖
 
 ### 📦 缩小发行包体积
 

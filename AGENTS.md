@@ -72,7 +72,7 @@ tools/realesrgan-ncnn-vulkan.exe -i input_folder -o output_folder -n realesrgan-
 
 ```bash
 # 1. 提取帧（先创建 tmp_frames/）
-ffmpeg -i onepiece_demo.mp4 -qscale:v 1 -qmin 1 -qmax 1 -vsync 0 tmp_frames/frame%08d.jpg
+ffmpeg -i onepiece_demo.mp4 -qscale:v 1 -fps_mode cfr -r 23.98 tmp_frames/frame%08d.jpg
 
 # 2. 放大每一帧（先创建 out_frames/）
 ./realesrgan-ncnn-vulkan.exe -i tmp_frames -o out_frames -n realesrgan-x4plus-anime -s 4 -f jpg
