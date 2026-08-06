@@ -38,11 +38,14 @@ def _resource_path(rel: str) -> str:
 
 
 def _base_path() -> str:
-    """Project root (holds ``tools/``)."""
+    """Project root (holds ``tools/``).
+
+    - Frozen exe sits at the project root (next to ``tools/``).
+    - Dev: derived from this file's location (works from any cwd).
+    """
     if getattr(sys, 'frozen', False):
-        exe_dir = os.path.dirname(os.path.realpath(sys.executable))
-        return os.path.dirname(os.path.dirname(exe_dir))
-    return os.getcwd()
+        return os.path.dirname(os.path.realpath(sys.executable))
+    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def main() -> None:

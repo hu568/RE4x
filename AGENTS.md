@@ -10,14 +10,15 @@
 
 ```
 RE4x/
+├── sd-enhance-server.exe           # 桌面应用（根目录，双击即用，PyInstaller onedir）
+├── _internal/                       # PyInstaller 运行时数据（勿动）
 ├── tools/                       # 可执行工具（gitignored，需下载）
 │   ├── realesrgan-ncnn-vulkan.exe   # AI 图片放大引擎
 │   ├── ffmpeg.exe                    # 视频处理（精简版 essentials 构建，无需 ffprobe）
 │   ├── vcomp140.dll                  # VC++ 运行库
-│   ├── sd-enhance-server/           # PyInstaller 打包的桌面应用
 │   └── models/                      # ESRGAN 模型（.param + .bin）
 ├── server/                      # Python 源码（git 追踪）
-│   ├── app.py                   # pywebview 桌面入口（替代旧 main.py）
+│   ├── app.py                   # pywebview 桌面入口
 │   ├── core.py                  # 核心服务：TaskManager + 统一管线 + 单图/批量/目录/视频（无 Flask）
 │   ├── gui_api.py               # js_api 桥接：文件对话框、任务提交、结果操作
 │   ├── engine.py                # realesrgan-ncnn-vulkan.exe 封装
@@ -29,8 +30,7 @@ RE4x/
 │   ├── requirements*.txt        # Python 依赖（pywebview + pillow）
 │   └── build.spec               # PyInstaller 构建配置（collect_all pywebview）
 ├── test-data/                   # 测试素材
-├── start.bat                    # 一键启动
-├── package_release.py           # 发行包打包脚本
+├── package_release.py           # 发行包打包脚本（构建到根目录 + 打 zip）
 ├── README.md                    # 面向用户的说明
 └── AGENTS.md                    # 本文件（开发文档）
 ```
@@ -38,8 +38,8 @@ RE4x/
 ## 快速启动
 
 ```bash
-# 方式一：双击 start.bat（生产模式）
-# 自动检测打包版 exe 或 dev 环境，直接打开桌面窗口（无需浏览器）
+# 方式一：双击根目录 sd-enhance-server.exe（生产模式）
+# 直接打开桌面窗口（无需浏览器、无需 start.bat）
 
 # 方式二：开发模式
 cd server
@@ -47,10 +47,10 @@ python -m venv .venv
 .venv\Scripts\pip install -r requirements-dev.txt
 .venv\Scripts\python app.py     # 打开桌面 GUI
 
-# 方式三：打包构建
+# 方式三：打包构建（输出到项目根目录）
 cd server
-.venv\Scripts\pyinstaller build.spec --distpath ..\tools\sd-enhance-server --workpath ..\tools\build --clean
-# 输出到 tools/sd-enhance-server/
+.venv\Scripts\pyinstaller build.spec --distpath .. --workpath ..\tools\build --clean
+# 输出: 根目录 sd-enhance-server.exe + _internal/
 ```
 
 ## 核心命令（引擎原始 CLI）
@@ -165,7 +165,7 @@ GuiApi (server/gui_api.py) ──► UpscaleService (server/core.py)
 - **视频处理**：提取帧 → 逐帧走统一管线 → ffprobe 检测 FPS → ffmpeg 合成（保留原音频），支持 mp4/avi/gif 输出
 - **双级混合**：用 ffmpeg 的 `blend` 滤镜混合两个不同模型的放大结果
 - **GPU 并发控制**：`threading.Lock` 确保一次只有一个引擎进程运行
-- **路径感知**：开发模式（python app.py）和生产模式（PyInstaller exe）自动切换路径（frozen 时 exe 在 `tools/sd-enhance-server/`，项目根上两级）
+- **路径感知**：开发模式（python app.py）和生产模式（PyInstaller exe）自动切换路径；frozen 时 exe 位于项目根目录（与 `tools/` 同级），dev 模式按 `app.py` 文件位置推导项目根（任何 cwd 都正确）
 - **模型自动发现**：`get_available_models()` 扫描 `tools/models/*.param`，提取基名去重
 - **任务模型**：所有处理（含单图）走 `TaskManager` 后台线程 + `task_id`，前端 500ms 轮询 `get_task`
 - **无网络依赖**：GUI 本地处理文件路径，不上传、不校验 MIME（本地信任）；大小限制（50MB）仅保留在历史 Web 版，v2 无限制
@@ -184,8 +184,8 @@ server\.venv\Scripts\python server\app.py
 server\.venv\Scripts\python -m pytest server\tests\ -v
 
 # 打包构建
-server\.venv\Scripts\pyinstaller server\build.spec --distpath tools\sd-enhance-server --workpath tools\build --clean
-# 输出: tools/sd-enhance-server/sd-enhance-server.exe + _internal/
+server\.venv\Scripts\pyinstaller server\build.spec --distpath . --workpath tools\build --clean
+# 输出: 根目录 sd-enhance-server.exe + _internal/
 # 然后 python package_release.py 2.0.0 打发行 zip
 ```
 

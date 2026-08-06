@@ -129,14 +129,12 @@ class TaskManager:
 def _get_base_path() -> str:
     """Return the project root directory.
 
-    - Frozen (PyInstaller) exe at ``tools/sd-enhance-server/``
-      → walk up 2 levels to project root.
+    - Frozen exe sits at the project root (next to ``tools/``).
     - Development: current working directory.
     """
     import sys
     if getattr(sys, 'frozen', False):
-        exe_dir = os.path.dirname(os.path.realpath(sys.executable))
-        return os.path.dirname(os.path.dirname(exe_dir))
+        return os.path.dirname(os.path.realpath(sys.executable))
     return os.getcwd()
 
 

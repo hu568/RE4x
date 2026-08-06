@@ -1,8 +1,8 @@
 # -*- mode: python ; coding: utf-8 -*-
 # PyInstaller spec for the SD Enhance desktop GUI (pywebview).
-# Build:
-#   .venv\Scripts\pyinstaller build.spec --distpath ..\tools\sd-enhance-server --workpath ..\tools\build --clean
-# Output goes to tools/sd-enhance-server/ (see package_release.py).
+# Build (outputs sd-enhance-server.exe + _internal/ at the project root):
+#   .venv\Scripts\pyinstaller build.spec --distpath .. --workpath ..\tools\build --clean
+# or simply:  python package_release.py 2.0.0
 
 import os
 

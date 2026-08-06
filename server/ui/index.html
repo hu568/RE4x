@@ -438,8 +438,9 @@
    SD Enhance v2 desktop UI — talks to Python via pywebview js_api
    ════════════════════════════════════════════════════════════ */
 
-const api = window.pywebview ? window.pywebview.api : null;
-if (!api) {
+let api = null;
+const hasApi = () => !!(window.pywebview && window.pywebview.api);
+if (!hasApi()) {
   document.getElementById('status-text').textContent = '未检测到桌面环境（请在 pywebview 中运行）';
 }
 
@@ -728,8 +729,15 @@ function openAbout() { $('about-mask').classList.add('open'); }
 function closeAbout() { $('about-mask').classList.remove('open'); }
 
 /* ── Init ──────────────────────────────────────────────── */
-switchTab('single');
-loadModels();
+// pywebview 注入 js_api 是异步的（pywebviewready 事件后才可用），
+// 所以初始化必须等事件触发，否则 api 为 null、模型加载被跳过。
+function initDesktop() {
+  api = window.pywebview.api;
+  switchTab('single');
+  loadModels();
+}
+window.addEventListener('pywebviewready', initDesktop);
+if (hasApi()) initDesktop(); // 兜底：页面加载晚于注入完成时
 </script>
 </body>
 </html>

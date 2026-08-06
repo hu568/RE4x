@@ -28,16 +28,30 @@ def get_version(args: list[str]) -> str:
 
 
 def build_exe() -> bool:
-    """Run PyInstaller to build sd-enhance-server.exe."""
+    """Run PyInstaller to build sd-enhance-server.exe at the project root.
+
+    Output layout (exe next to ``tools/`` so the user double-clicks it
+    directly)::
+
+        <project root>/
+        ├── sd-enhance-server.exe
+        ├── _internal/          # PyInstaller onedir runtime data
+        └── tools/              # engine / ffmpeg / models
+    """
     print("[1/4] Building PyInstaller exe...")
     spec = os.path.join(SERVER_DIR, "build.spec")
-    dist = os.path.join(TOOLS_DIR, "sd-enhance-server")
+    dist = PROJECT_ROOT
     work = os.path.join(TOOLS_DIR, "build")
 
-    # Clean previous
-    for d in [dist, work]:
-        if os.path.isdir(d):
-            shutil.rmtree(d)
+    # Clean previous root-level build artifacts (never touch project files)
+    for name in ("sd-enhance-server.exe", "_internal", "sd-enhance-server"):
+        p = os.path.join(dist, name)
+        if os.path.isfile(p):
+            os.remove(p)
+        elif os.path.isdir(p):
+            shutil.rmtree(p)
+    if os.path.isdir(work):
+        shutil.rmtree(work)
 
     result = subprocess.run(
         [
@@ -56,16 +70,9 @@ def build_exe() -> bool:
         return False
 
     # PyInstaller COLLECT creates a nested subdirectory with the app name.
-    # Move files up one level to get a clean structure.
+    # Move files up one level to get the root-level layout above.
     nested = os.path.join(dist, "sd-enhance-server")
     if os.path.isdir(nested):
-        for item in os.listdir(dist):
-            if item != "sd-enhance-server":
-                p = os.path.join(dist, item)
-                if os.path.isfile(p):
-                    os.remove(p)
-                else:
-                    shutil.rmtree(p)
         for item in os.listdir(nested):
             shutil.move(os.path.join(nested, item), os.path.join(dist, item))
         os.rmdir(nested)
@@ -88,14 +95,14 @@ def create_release_zip(version: str) -> str:
 
     # Files to include (relative to project root)
     include = [
-        "start.bat",
         "README.md",
         "LICENSE",
         "RELEASE_INFO.txt",
+        "sd-enhance-server.exe",   # root-level: double-click to run
+        "_internal",               # PyInstaller runtime data (next to exe)
         "tools/ffmpeg.exe",
         "tools/realesrgan-ncnn-vulkan.exe",
         "tools/vcomp140.dll",
-        "tools/sd-enhance-server",
         "tools/models",
     ]
 

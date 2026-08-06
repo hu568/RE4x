@@ -17,9 +17,9 @@ __pycache__/
 # 测试缓存
 .pytest_cache/
 
-# PyInstaller 构建产物
-server/build/
-server/dist/
+# PyInstaller 构建产物（输出到项目根目录）
+/sd-enhance-server.exe
+/_internal/
 tools/build/
 
 # 大型二进制文件（需用户自行下载，详见 README.md）
@@ -44,3 +44,6 @@ release/
 # Windows 系统文件
 Thumbs.db
 Desktop.ini
+
+# WebView2 运行时用户数据（exe 启动自动生成）
+sd-enhance-server.exe.WebView2/

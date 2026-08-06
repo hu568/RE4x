@@ -46,13 +46,11 @@ class UpscaleEngine:
     def _resolve_base_path() -> str:
         """Return the project root directory for resolving relative paths.
 
-        - PyInstaller frozen exe at ``tools/sd-enhance-server/``
-          → walk up 2 levels to project root.
+        - PyInstaller frozen exe sits at the project root (next to ``tools/``).
         - Development / plain Python → current working directory.
         """
         if getattr(sys, "frozen", False):
-            exe_dir = os.path.dirname(os.path.realpath(sys.executable))
-            return os.path.dirname(os.path.dirname(exe_dir))
+            return os.path.dirname(os.path.realpath(sys.executable))
         return os.getcwd()
 
     @classmethod

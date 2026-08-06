@@ -8,6 +8,8 @@
 - **全新前端**: `server/ui/index.html` 重写为桌面风格（侧边导航 + 卡片布局 + 原生文件对话框），通过 `window.pywebview.api.*` 桥接 Python
 - **架构重构**: 删除 `routes.py` / `main.py` / Flask 依赖，业务逻辑抽取为 `server/core.py`（`UpscaleService` + `TaskManager`），新增 `gui_api.py` 桥接层
 - **本地路径直读**: 不再上传文件，直接处理本地路径，去掉 50MB 上传限制与 MIME 校验
+- **模型加载竞态修复**: pywebview 的 `js_api` 异步注入，前端初始化改为监听 `pywebviewready` 事件（此前立即执行会导致模型下拉框永远为空）
+- **exe 放根目录**: 打包输出到项目根目录（`sd-enhance-server.exe` + `_internal/` 与 `tools/` 平级），解压即见、双击即用；删除 `start.bat`；frozen 路径解析改为「exe 同级」（dev 模式按文件位置推导项目根，任意 cwd 启动都正确）
 
 ### 📦 缩小发行包体积
 

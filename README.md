@@ -46,9 +46,7 @@ tools/
 
 ### 2. 启动
 
-```
-双击 start.bat（或 tools\sd-enhance-server\sd-enhance-server.exe）
-```
+直接双击 **`sd-enhance-server.exe`**（位于程序根目录，与 `tools/` 平级）即可。
 
 > 要求 Windows 10/11（自带 WebView2 运行时）。
 
@@ -73,12 +71,14 @@ python -m venv .venv
 .venv\Scripts\python -m pytest tests/ -v
 ```
 
+> 从任何目录运行 `python server/app.py` 都能正确定位 `tools/`（dev 模式按文件位置推导项目根）。
+
 ## 构建
 
 ```bash
 cd server
-.venv\Scripts\pyinstaller build.spec --distpath ..\tools\sd-enhance-server --workpath ..\tools\build --clean
-# 输出: tools/sd-enhance-server/sd-enhance-server.exe + _internal/
+.venv\Scripts\pyinstaller build.spec --distpath .. --workpath ..\tools\build --clean
+# 输出: 项目根目录的 sd-enhance-server.exe + _internal/
 
 # 打包发行 zip（自动构建 + 收集 tools/ 全部运行时）
 python package_release.py 2.0.0
@@ -88,12 +88,13 @@ python package_release.py 2.0.0
 
 ```
 RE4x/
-├── tools/                       # 运行时（需自行下载，见上）
+├── sd-enhance-server.exe       # 桌面应用（根目录，双击即用）
+├── _internal/                  # PyInstaller 运行时数据（勿动）
+├── tools/                      # 运行时（需自行下载，见上）
 │   ├── realesrgan-ncnn-vulkan.exe
 │   ├── ffmpeg.exe                 # 精简版 essentials 构建（无需 ffprobe）
 │   ├── vcomp140.dll
 │   ├── models/                  # 模型 .param + .bin
-│   └── sd-enhance-server/       # PyInstaller 打包的桌面应用
 ├── server/                      # Python 源码
 │   ├── app.py                   # pywebview 桌面入口
 │   ├── core.py                  # 核心服务（管线/任务，无 Flask）
@@ -101,7 +102,6 @@ RE4x/
 │   ├── engine.py / mixer.py / resizer.py / models.py
 │   ├── ui/index.html            # 桌面界面（单 HTML）
 │   └── tests/                   # pytest 测试套件
-├── start.bat                    # 一键启动
 └── package_release.py           # 发行包打包脚本
 ```
 
