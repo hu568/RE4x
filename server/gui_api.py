@@ -10,10 +10,13 @@ Native dialogs (file open / folder / save) use pywebview's
 """
 
 import base64
+import logging
 import os
 import shutil
 
 import webview
+
+logger = logging.getLogger('sd_enhance.gui')
 
 
 class GuiApi:
@@ -78,6 +81,12 @@ class GuiApi:
 
     # ── Info ──────────────────────────────────────────────────────────────
 
+    def get_log_path(self) -> str | None:
+        """Absolute path of the on-disk log file (for the About dialog)."""
+        from logutil import log_dir  # noqa: PLC0415
+        path = os.path.join(log_dir(self.service.base_path), 'sd-enhance.log')
+        return path if os.path.isfile(path) else None
+
     def get_models(self) -> list[dict]:
         return self.service.get_models()
 
@@ -107,6 +116,7 @@ class GuiApi:
         """Start a single-image upscale task → ``{"task_id": "..."}``."""
         if not path:
             return {'error': 'No file selected'}
+        logger.info('submit_single: %s params=%s', path, params)
         return {'task_id': self.service.submit_single(path, params)}
 
     def submit_files(self, paths: list, params: dict) -> dict:
@@ -114,6 +124,7 @@ class GuiApi:
         paths = [p for p in (paths or []) if p]
         if not paths:
             return {'error': 'No files selected'}
+        logger.info('submit_files: %d file(s), params=%s', len(paths), params)
         return {'task_id': self.service.submit_files(paths, params)}
 
     def submit_dir(self, input_dir: str, output_dir: str | None,
@@ -121,6 +132,8 @@ class GuiApi:
         """Start a directory upscale task → ``{"task_id": "..."}``."""
         if not input_dir:
             return {'error': 'No input directory selected'}
+        logger.info('submit_dir: %s -> %s, params=%s',
+                    input_dir, output_dir, params)
         return {'task_id': self.service.submit_dir(
             input_dir, output_dir or None, params)}
 
@@ -128,6 +141,7 @@ class GuiApi:
         """Start a video upscale task → ``{"task_id": "..."}``."""
         if not path:
             return {'error': 'No video selected'}
+        logger.info('submit_video: %s params=%s', path, params)
         return {'task_id': self.service.submit_video(path, params)}
 
     def get_task(self, task_id: str) -> dict | None:

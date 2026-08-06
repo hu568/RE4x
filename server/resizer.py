@@ -4,11 +4,14 @@ Model always upscales at 4x; this module resizes the 4x output to the
 final target dimensions or scale factor.
 """
 
+import logging
 import os
 import sys
 import subprocess
 
 from PIL import Image
+
+logger = logging.getLogger('sd_enhance.resizer')
 
 
 class ImageResizer:
@@ -101,6 +104,7 @@ class ImageResizer:
             "-y",
             abs_output,
         ]
+        logger.debug('ffmpeg resize: %s', ' '.join(args))
 
         process = None
         try:
@@ -114,6 +118,8 @@ class ImageResizer:
 
             if process.returncode != 0:
                 error_msg = stderr.decode("utf-8", errors="replace").strip()
+                logger.error('ffmpeg resize failed (rc=%s): %s',
+                             process.returncode, error_msg[-2000:])
                 return {
                     "success": False,
                     "output_path": abs_output,
@@ -213,6 +219,7 @@ class ImageResizer:
             "-y",
             abs_output,
         ]
+        logger.debug('ffmpeg crop: %s', ' '.join(args))
 
         process = None
         try:
@@ -226,6 +233,8 @@ class ImageResizer:
 
             if process.returncode != 0:
                 error_msg = stderr.decode("utf-8", errors="replace").strip()
+                logger.error('ffmpeg crop failed (rc=%s): %s',
+                             process.returncode, error_msg[-2000:])
                 return {
                     "success": False,
                     "output_path": abs_output,

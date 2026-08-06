@@ -9,6 +9,7 @@ All long-running work runs in daemon threads behind a ``task_id``; the
 frontend polls :meth:`UpscaleService.get_task` for progress/results.
 """
 
+import logging
 import math
 import os
 import re
@@ -18,6 +19,8 @@ import uuid
 import zipfile
 
 from PIL import Image
+
+logger = logging.getLogger('sd_enhance.core')
 
 # ── Constants ─────────────────────────────────────────────────────────────
 
@@ -114,10 +117,15 @@ class TaskManager:
                 with self._lock:
                     task = self._tasks.get(task_id)
                 if task and task.get('status') == 'error':
+                    logger.error('[%s] task failed: %s',
+                                 task_id, task.get('error'))
                     return
                 self.update_task(task_id, status='done',
                                  results=results, progress=100)
+                logger.info('[%s] task done: %d result(s)',
+                            task_id, len(results or []))
             except Exception as e:
+                logger.exception('[%s] task crashed: %s', task_id, e)
                 self.update_task(task_id, status='error', error=str(e))
 
         t = threading.Thread(target=_run, daemon=True)
@@ -408,7 +416,6 @@ class UpscaleService:
             'final_h': final_h,
             'output_format': output_format,
         }, None
-
     # ── Task plumbing ─────────────────────────────────────────────────────
 
     def create_task(self) -> str:
@@ -646,7 +653,9 @@ class UpscaleService:
                 return []
             output_format = parsed.get('output_format', 'mp4')
 
+            # Dimension mode is resolved later (needs source frame size).
             scale = parsed['target_scale'] or 2.0
+            dim_mode = bool(parsed['final_w'] and parsed['final_h'])
 
             results_dir = os.path.join(self.tmp_dir, 'results', tid)
             frames_dir = os.path.join(self.tmp_dir, 'frames', tid)
@@ -689,6 +698,42 @@ class UpscaleService:
                                    error='No frames extracted from video')
                     return []
 
+                # ── 2b. Resolve dimension-mode targets (source-sized) ────
+                # ``_compute_dimension_upscale`` needs an actual frame to read
+                # the source resolution; frames are all the same size.
+                video_final_w = video_final_h = None
+                video_crop = False
+                video_mid_w = video_mid_h = None
+                if dim_mode:
+                    first_frame = os.path.join(frames_dir, frame_files[0])
+                    with Image.open(first_frame) as img:
+                        src_w, src_h = img.size
+                    video_final_w, video_final_h, eff_scale = (
+                        _compute_dimension_upscale(
+                            first_frame,
+                            parsed['final_w'], parsed['final_h'],
+                            parsed['crop'],
+                        )
+                    )
+                    video_crop = parsed['crop']
+                    scale = eff_scale
+                    if video_crop:
+                        # cover: 4x frame -> intermediate (fills target box)
+                        # -> center-crop to exact final size. mid >= final.
+                        cover_scale = max(
+                            parsed['final_w'] / src_w,
+                            parsed['final_h'] / src_h,
+                        )
+                        video_mid_w = max(1, round(src_w * cover_scale))
+                        video_mid_h = max(1, round(src_h * cover_scale))
+                    logger.info(
+                        '[%s] video dimension mode: src %dx%d -> final %dx%d '
+                        '(crop=%s, mid %sx%s)',
+                        tid, src_w, src_h,
+                        video_final_w, video_final_h, video_crop,
+                        video_mid_w, video_mid_h,
+                    )
+
                 # ── 3. Model upscale ALL frames (dir batch + progress) ──
                 model_4x_dir = os.path.join(self.tmp_dir, 'frames_4x', tid)
 
@@ -714,7 +759,7 @@ class UpscaleService:
                 tm.update_task(tid, progress=70,
                                status=f'resizing_{total_frames}_frames')
 
-                # ── 4. ffmpeg resize each frame to target scale ──────────
+                # ── 4. Resize each 4x frame to the final target ─────────
                 model_4x_files = sorted(
                     f for f in os.listdir(model_4x_dir)
                     if f.lower().endswith(('.jpg', '.jpeg', '.png')))
@@ -722,15 +767,37 @@ class UpscaleService:
                 for idx, fname in enumerate(model_4x_files):
                     in_frame = os.path.join(model_4x_dir, fname)
                     out_frame = os.path.join(out_frames_dir, fname)
-                    if abs(ffmpeg_scale - 1.0) < 0.001:
+
+                    if dim_mode:
+                        if video_crop:
+                            # cover: 4x -> mid (fills box) -> center-crop
+                            tmp_mid = os.path.join(
+                                out_frames_dir, f'.mid_{idx}.png')
+                            rr = self.resizer.resize(
+                                in_frame, tmp_mid,
+                                video_mid_w, video_mid_h)
+                            if rr['success']:
+                                rr = self.resizer.crop(
+                                    tmp_mid, out_frame,
+                                    video_final_w, video_final_h)
+                            _cleanup_files(tmp_mid)
+                        else:
+                            # contain: exact-size resize
+                            rr = self.resizer.resize(
+                                in_frame, out_frame,
+                                video_final_w, video_final_h)
+                    elif abs(ffmpeg_scale - 1.0) < 0.001:
+                        # Target scale is 4x — model output is already correct
                         shutil.copy2(in_frame, out_frame)
+                        rr = {'success': True, 'error': None}
                     else:
                         rr = self.resizer.resize_by_scale(
                             in_frame, out_frame, scale=ffmpeg_scale)
-                        if not rr['success']:
-                            tm.update_task(tid, status='error',
-                                           error=f'Frame {idx+1} resize failed: {rr["error"]}')
-                            return []
+
+                    if not rr['success']:
+                        tm.update_task(tid, status='error',
+                                       error=f'Frame {idx+1} resize failed: {rr["error"]}')
+                        return []
                     if total_frames > 0:
                         progress = 70 + int((idx + 1) / len(model_4x_files) * 25)
                         tm.update_task(tid, progress=progress,

@@ -143,6 +143,14 @@ GuiApi (server/gui_api.py) ──► UpscaleService (server/core.py)
 6. **混合层**（`server/mixer.py`）：利用 `ffmpeg blend` 滤镜实现双级放大器混合
 7. **模型层**（`server/models.py`）：自动扫描 `tools/models/` 检测可用模型
 
+- 桌面 GUI（`server/ui/index.html`）
+
+<details>
+<summary>运行日志</summary>
+
+每次启动自动写入 **`<程序根目录>/logs/sd-enhance.log`**（TimedRotatingFileHandler，每日轮转保留 7 天，UTF-8）。内容包含：启动信息、任务生命周期（提交/完成/失败）、引擎与 ffmpeg 子进程命令及失败 stderr。GUI「关于」弹窗会显示当前日志文件路径，用户反馈问题时直接附上该文件即可。开发/测试环境同样写日志（`setup_logging` 幂等，可在任意入口调用）。
+</details>
+
 ### js_api 桥接方法（`window.pywebview.api.*`）
 
 | 方法 | 说明 |

@@ -1,9 +1,12 @@
 """UpscaleEngine — wraps realesrgan-ncnn-vulkan.exe subprocess calls."""
 
+import logging
 import os
 import sys
 import subprocess
 import threading
+
+logger = logging.getLogger('sd_enhance.engine')
 
 
 class UpscaleEngine:
@@ -136,6 +139,7 @@ class UpscaleEngine:
         args.extend(["-f", output_format])
 
         # Run subprocess ------------------------------------------------------
+        logger.debug('engine cmd: %s', ' '.join(args))
         with self.__class__._lock:
             process = None
             try:
@@ -149,6 +153,8 @@ class UpscaleEngine:
 
                 if process.returncode != 0:
                     error_msg = stderr.decode("utf-8", errors="replace").strip()
+                    logger.error('engine failed (rc=%s): %s',
+                                 process.returncode, error_msg[-2000:])
                     return {
                         "success": False,
                         "output_path": abs_output,

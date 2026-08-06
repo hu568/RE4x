@@ -428,6 +428,7 @@
       <li>本地处理，无需上传，无需联网</li>
     </ul>
     <p style="color:var(--text-dim);font-size:12px;">引擎：realesrgan-ncnn-vulkan · 模型自动探测 <code>tools/models/</code></p>
+    <p style="color:var(--text-dim);font-size:12px;">日志：<span id="about-log-path">…</span></p>
     <button class="small-btn close" onclick="closeAbout()">关闭</button>
   </div>
 </div>
@@ -725,7 +726,13 @@ function escapeJs(s) {
 }
 
 /* ── About ─────────────────────────────────────────────── */
-function openAbout() { $('about-mask').classList.add('open'); }
+async function openAbout() {
+  $('about-mask').classList.add('open');
+  if (api) {
+    const p = await api.get_log_path();
+    $('about-log-path').textContent = p || '（未找到日志文件）';
+  }
+}
 function closeAbout() { $('about-mask').classList.remove('open'); }
 
 /* ── Init ──────────────────────────────────────────────── */

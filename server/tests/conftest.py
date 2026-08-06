@@ -24,6 +24,10 @@ sys.path.insert(0, SERVER_DIR)
 TMP_DIR = os.path.join(PROJECT_ROOT, 'TMP')
 os.makedirs(TMP_DIR, exist_ok=True)
 
+# Enable file logging so tests also write logs/sd-enhance.log
+from logutil import setup_logging  # noqa: E402
+setup_logging(PROJECT_ROOT)
+
 
 # ── Session-scoped fixtures (reused across all tests) ──────────────────
 

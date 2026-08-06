@@ -13,6 +13,8 @@
 - **视频格式修复**: `parse_params` 曾把非 png/jpg 的 `output_format` 静默改写成 `'png'`，导致视频任务报荒谬的「Unsupported output format: png」——改为按任务类型白名单校验（图片 png/jpg，视频 mp4/avi/gif），格式不再被篡改
 - **ffmpeg 9.0 兼容**: 视频提取帧改用 `-fps_mode cfr`（9.0 移除了 `-vsync`，旧参数会导致提取必然失败）
 - **端到端视频测试**: 新增真实 mp4 放大测试（提取→4x→缩放→合成），此前测试无视频成功路径、两个 bug 均未被覆盖
+- **视频按尺寸修复**: 视频任务此前忽略 width/height（`target_scale` 为空时静默退回 2x），现完整支持按尺寸模式——contain 等比缩放、cover 缩放后居中裁剪，均有真实视频端到端测试
+- **运行日志**: 新增 `server/logutil.py`，每次启动自动写 `logs/sd-enhance.log`（每日轮转保留 7 天），记录启动信息、任务生命周期、引擎/ffmpeg 子进程命令与失败 stderr；GUI「关于」弹窗显示日志路径，dev/测试环境同样写日志
 
 ### 📦 缩小发行包体积
 

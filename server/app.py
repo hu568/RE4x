@@ -18,6 +18,7 @@ import webview
 from core import UpscaleService
 from engine import UpscaleEngine
 from gui_api import GuiApi
+from logutil import setup_logging, logger
 from mixer import ImageMixer
 from resizer import ImageResizer
 
@@ -51,6 +52,11 @@ def _base_path() -> str:
 def main() -> None:
     base = _base_path()
     tools = os.path.join(base, 'tools')
+
+    log_file = setup_logging(base)
+    logger.info('=== SD Enhance %s starting ===', 'frozen' if getattr(sys, 'frozen', False) else 'dev')
+    logger.info('project root: %s', base)
+    logger.info('log file: %s', log_file)
 
     engine = UpscaleEngine(
         os.path.join(tools, 'realesrgan-ncnn-vulkan.exe'),

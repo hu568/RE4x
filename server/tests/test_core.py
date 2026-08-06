@@ -257,6 +257,36 @@ def test_submit_video_mp4_end_to_end(service, project_root):
     assert os.path.isfile(t['results'][0]['path'])
 
 
+def test_submit_video_dimension_crop(service, project_root, tmp_dir):
+    """Video dimension mode with crop: 640x480 source → exact 320x180.
+
+    Regression test: dimension mode was ignored by video tasks (fell back
+    to 2x scale). Cover path scales the 4x frame to fill the target box
+    then center-crops to the exact requested size.
+    """
+    video = os.path.join(project_root, 'test-data', 'onepiece_demo.mp4')
+    if not os.path.isfile(video):
+        pytest.skip('test-data/onepiece_demo.mp4 missing')
+
+    from subprocess import run as subprocess_run  # noqa: PLC0415
+
+    tid = service.submit_video(
+        video, {'width': 320, 'height': 180, 'crop': True,
+                'output_format': 'mp4'})
+    t = _wait_done(service, tid, timeout=420)
+    assert t['status'] == 'done', t.get('error')
+    assert len(t['results']) == 1
+
+    out = t['results'][0]['path']
+    frame = os.path.join(tmp_dir, 'verify_dim_crop.jpg')
+    subprocess_run(
+        [service.resizer._ffmpeg_path, '-y', '-i', out,
+         '-frames:v', '1', frame],
+        capture_output=True)
+    with Image.open(frame) as img:
+        assert img.size == (320, 180), f'crop mode should be 320x180, got {img.size}'
+
+
 # ── Zip results ──────────────────────────────────────────────────────────
 
 

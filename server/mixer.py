@@ -1,11 +1,14 @@
 """ImageMixer — wraps ffmpeg blend filter for mixing two upscaled images."""
 
+import logging
 import os
 import sys
 import subprocess
 import shutil
 
 from PIL import Image
+
+logger = logging.getLogger('sd_enhance.mixer')
 
 
 class ImageMixer:
@@ -159,6 +162,7 @@ class ImageMixer:
             "-y",
             abs_output,
         ]
+        logger.debug('ffmpeg blend: %s', ' '.join(args))
 
         # --- Execute ffmpeg ---------------------------------------------------
         process = None
@@ -173,6 +177,8 @@ class ImageMixer:
 
             if process.returncode != 0:
                 error_msg = stderr.decode("utf-8", errors="replace").strip()
+                logger.error('ffmpeg blend failed (rc=%s): %s',
+                             process.returncode, error_msg[-2000:])
                 return {
                     "success": False,
                     "output_path": abs_output,
