@@ -93,10 +93,8 @@ def create_release_zip(version: str) -> str:
         "LICENSE",
         "RELEASE_INFO.txt",
         "tools/ffmpeg.exe",
-        "tools/ffprobe.exe",
         "tools/realesrgan-ncnn-vulkan.exe",
         "tools/vcomp140.dll",
-        "tools/vcomp140d.dll",
         "tools/sd-enhance-server",
         "tools/models",
     ]

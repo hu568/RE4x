@@ -1,2 +1,2 @@
-flask>=3.0
+pywebview>=6.0
 pillow>=10.0

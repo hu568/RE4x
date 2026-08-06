@@ -79,7 +79,7 @@ def test_engine_upscale_dir(engine, test_img, test_img2, tmp_dir):
     shutil.copy2(test_img2, os.path.join(in_dir, 'img2.jpg'))
 
     result = engine.upscale_dir(
-        in_dir, out_dir, model='realesr-animevideov3', scale=2, output_format='jpg',
+        in_dir, out_dir, model='realesrgan-x4plus-anime', scale=2, output_format='jpg',
     )
     assert result['success'], f'upscale_dir failed: {result.get("error")}'
     assert os.path.isdir(out_dir)

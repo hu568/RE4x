@@ -86,29 +86,19 @@ def resizer():
 # ── Function-scoped fixtures ───────────────────────────────────────────
 
 
-@pytest.fixture
-def client():
-    """Flask test client with real engine and mixer.
+@pytest.fixture(scope='session')
+def service(engine, mixer, resizer, project_root):
+    """Fully initialised :class:`UpscaleService` for the desktop GUI.
 
-    Temporarily changes the working directory to the project root so that
-    ``create_app()`` resolves ``tools/`` paths correctly.
-
-    Usage::
-
-        def test_something(client):
-            resp = client.get('/api/models')
-            assert resp.status_code == 200
+    Backed by the real binaries; points at the real ``tools/models/``.
     """
-    old_cwd = os.getcwd()
-    os.chdir(PROJECT_ROOT)
-    try:
-        from main import create_app  # noqa: PLC0415
-        app = create_app()
-        app.config['TESTING'] = True
-        with app.test_client() as c:
-            yield c
-    finally:
-        os.chdir(old_cwd)
+    from core import UpscaleService  # noqa: PLC0415
+
+    return UpscaleService(
+        engine, mixer, resizer,
+        models_dir=os.path.join(project_root, 'tools', 'models'),
+        base_path=project_root,
+    )
 
 
 @pytest.fixture

@@ -19,9 +19,9 @@ DISPLAY_NAMES = {
 }
 
 DESCRIPTIONS = {
-    "realesr-animevideov3": "Anime video (recommended, 2x/3x/4x)",
+    "realesr-animevideov3": "Anime video (2x/3x/4x)",
     "realesrgan-x4plus": "General image (4x)",
-    "realesrgan-x4plus-anime": "Anime image (4x)",
+    "realesrgan-x4plus-anime": "Anime image (recommended, 4x)",
 }
 
 

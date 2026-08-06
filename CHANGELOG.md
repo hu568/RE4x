@@ -1,5 +1,30 @@
 # Changelog
 
+## v2.0.0 (2026-08-06)
+
+### 🎨 重写 GUI：Web 版 → 桌面应用
+
+- **pywebview 桌面壳**: 替代 Flask + 浏览器架构，原生窗口 + 系统 WebView2 渲染，双击 exe 即用（无需浏览器、无需 HTTP）
+- **全新前端**: `server/ui/index.html` 重写为桌面风格（侧边导航 + 卡片布局 + 原生文件对话框），通过 `window.pywebview.api.*` 桥接 Python
+- **架构重构**: 删除 `routes.py` / `main.py` / Flask 依赖，业务逻辑抽取为 `server/core.py`（`UpscaleService` + `TaskManager`），新增 `gui_api.py` 桥接层
+- **本地路径直读**: 不再上传文件，直接处理本地路径，去掉 50MB 上传限制与 MIME 校验
+
+### 📦 缩小发行包体积
+
+- **精简 ffmpeg**: 全功能构建（295MB）→ gyan.dev essentials 精简构建（约 105MB）
+- **模型精简**: 移除 `realesr-animevideov3` 系列（3.7MB），发行包仅保留 `realesrgan-x4plus` + `realesrgan-x4plus-anime`
+- **移除调试运行库**: 删除 `vcomp140d.dll`
+- **打包瘦身**: 移除 Flask/Werkzeug/cryptography 依赖，`build.spec` 改用 `collect_all('pywebview')` + `console=False`
+- **默认模型调整**: `realesr-animevideov3` → `realesrgan-x4plus-anime`
+
+### ✅ 测试
+
+- `test_routes.py`（Flask API 测试）重写为 `test_core.py`（`UpscaleService` 测试：参数校验/单图管线/批量/目录/视频/zip），覆盖保持
+
+### 📝 文档
+
+- README / AGENTS.md 全面更新为新架构；修正 AGENTS.md 中"二进制已追踪"的过时描述
+
 ## v1.0.1 (2026-08-05)
 
 ### 🔒 安全加固

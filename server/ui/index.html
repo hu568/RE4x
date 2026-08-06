@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SD Enhance 图片放大工具</title>
+<style>
+  :root {
+    --bg: #1a1d24;
+    --bg2: #21252f;
+    --bg3: #2a2f3c;
+    --border: #343b4a;
+    --text: #e6e9f0;
+    --text-dim: #9aa3b5;
+    --accent: #4f8cff;
+    --accent2: #6aa5ff;
+    --ok: #3ecf8e;
+    --err: #ff6b6b;
+    --warn: #ffc94d;
+    --radius: 10px;
+    --shadow: 0 4px 16px rgba(0,0,0,.35);
+    --font: system-ui, "Segoe UI", "Microsoft YaHei", sans-serif;
+    --mono: "Cascadia Mono", Consolas, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* ── Title bar ─────────────────────────────────────────── */
+  .titlebar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .titlebar .logo { font-size: 20px; }
+  .titlebar h1 { font-size: 15px; font-weight: 600; }
+  .titlebar .ver { color: var(--text-dim); font-size: 12px; margin-left: 4px; }
+  .titlebar .spacer { flex: 1; }
+  .icon-btn {
+    background: transparent; color: var(--text-dim);
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 5px 12px; cursor: pointer; font-size: 13px;
+    font-family: var(--font);
+  }
+  .icon-btn:hover { color: var(--text); background: var(--bg3); }
+
+  /* ── Body layout ───────────────────────────────────────── */
+  .layout { flex: 1; display: flex; overflow: hidden; }
+
+  /* ── Sidebar ───────────────────────────────────────────── */
+  .sidebar {
+    width: 190px; flex-shrink: 0;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    padding: 12px 10px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .nav-btn {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; padding: 10px 12px;
+    background: transparent; border: none; border-radius: 8px;
+    color: var(--text-dim); font-size: 14px; cursor: pointer;
+    font-family: var(--font); text-align: left;
+  }
+  .nav-btn:hover { background: var(--bg3); color: var(--text); }
+  .nav-btn.active { background: rgba(79,140,255,.14); color: var(--accent2); font-weight: 600; }
+  .nav-btn .ic { font-size: 16px; width: 22px; text-align: center; }
+  .sidebar .foot { margin-top: auto; font-size: 11px; color: var(--text-dim); padding: 8px 12px; }
+
+  /* ── Main ──────────────────────────────────────────────── */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .scroll { flex: 1; overflow-y: auto; padding: 18px 20px; }
+
+  .panel {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+  .panel h2 { font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .panel h2 .tag { font-size: 11px; color: var(--text-dim); font-weight: 400; }
+
+  /* ── File drop card ────────────────────────────────────── */
+  .pick-card {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 26px 18px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+  .pick-card:hover { border-color: var(--accent); background: rgba(79,140,255,.05); }
+  .pick-card .big { font-size: 30px; margin-bottom: 8px; }
+  .pick-card .hint { color: var(--text-dim); font-size: 13px; }
+  .pick-card.filled { border-style: solid; border-color: var(--ok); }
+  .pick-card.filled .hint { color: var(--ok); }
+
+  .file-list { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+  .file-row {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--bg3); border-radius: 8px; padding: 8px 12px;
+    font-size: 13px;
+  }
+  .file-row .fname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }
+  .file-row .fmeta { color: var(--text-dim); font-size: 12px; flex-shrink: 0; }
+  .file-row .fdel { color: var(--text-dim); cursor: pointer; border: none; background: none; font-size: 14px; padding: 0 4px; }
+  .file-row .fdel:hover { color: var(--err); }
+
+  .preview-wrap { margin-top: 12px; display: none; }
+  .preview-wrap img {
+    max-width: 100%; max-height: 260px;
+    border-radius: 8px; border: 1px solid var(--border);
+    display: block; margin: 0 auto;
+  }
+
+  .path-input {
+    display: flex; gap: 8px; align-items: center; margin-bottom: 8px;
+  }
+  .path-input input {
+    flex: 1; background: var(--bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 9px 12px; font-size: 13px; font-family: var(--mono);
+    outline: none;
+  }
+  .path-input input:focus { border-color: var(--accent); }
+  .small-btn {
+    background: var(--bg3); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 14px; cursor: pointer; font-size: 13px;
+    font-family: var(--font); white-space: nowrap;
+  }
+  .small-btn:hover { background: var(--border); }
+
+  /* ── Settings grid ─────────────────────────────────────── */
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
+  .grid .full { grid-column: 1 / -1; }
+  .field label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 6px; }
+  .field select, .field input[type=number] {
+    width: 100%; background: var(--bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 10px; font-size: 13px; outline: none; font-family: var(--font);
+  }
+  .field select:focus, .field input[type=number]:focus { border-color: var(--accent); }
+
+  .mode-switch { display: flex; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .mode-switch button {
+    flex: 1; padding: 8px 0; background: transparent; border: none;
+    color: var(--text-dim); cursor: pointer; font-size: 13px; font-family: var(--font);
+  }
+  .mode-switch button.active { background: rgba(79,140,255,.18); color: var(--accent2); font-weight: 600; }
+
+  .range-wrap { display: flex; align-items: center; gap: 12px; }
+  .range-wrap input[type=range] { flex: 1; accent-color: var(--accent); }
+  .range-wrap .val { font-family: var(--mono); color: var(--accent2); min-width: 40px; text-align: right; font-size: 14px; }
+
+  .check-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); }
+  .check-row input[type=checkbox] { accent-color: var(--accent); width: 15px; height: 15px; }
+
+  .hidden { display: none !important; }
+
+  /* ── Action ────────────────────────────────────────────── */
+  .actions { display: flex; align-items: center; gap: 12px; }
+  .submit-btn {
+    background: linear-gradient(135deg, var(--accent), #3f6fd8);
+    color: #fff; border: none; border-radius: 8px;
+    padding: 11px 34px; font-size: 15px; font-weight: 600;
+    cursor: pointer; font-family: var(--font);
+    box-shadow: 0 4px 14px rgba(79,140,255,.35);
+    transition: filter .15s;
+  }
+  .submit-btn:hover { filter: brightness(1.1); }
+  .submit-btn:disabled { filter: grayscale(.7); cursor: not-allowed; opacity: .6; }
+  .status-line { display: flex; align-items: center; gap: 8px; color: var(--text-dim); font-size: 13px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--text-dim); flex-shrink: 0; }
+  .dot.ready { background: var(--text-dim); }
+  .dot.busy { background: var(--warn); animation: pulse 1s infinite; }
+  .dot.ok { background: var(--ok); }
+  .dot.err { background: var(--err); }
+  @keyframes pulse { 50% { opacity: .35; } }
+
+  /* ── Progress ──────────────────────────────────────────── */
+  .progress-wrap { margin-top: 10px; display: none; }
+  .progress-track { height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; }
+  .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--ok)); border-radius: 4px; transition: width .3s; }
+  .progress-text { margin-top: 6px; font-size: 12px; color: var(--text-dim); }
+
+  /* ── Results ───────────────────────────────────────────── */
+  .results { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+  .result-card {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 14px;
+  }
+  .result-card .rname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+  .result-card .rname .path { color: var(--text-dim); font-size: 11px; margin-left: 8px; }
+  .result-card .rbtns { display: flex; gap: 6px; flex-shrink: 0; }
+  .result-card .rbtn {
+    background: transparent; color: var(--text-dim);
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 4px 10px; font-size: 12px; cursor: pointer; font-family: var(--font);
+  }
+  .result-card .rbtn:hover { color: var(--text); border-color: var(--accent); }
+  .result-card .rbtn.primary { color: var(--accent2); border-color: rgba(79,140,255,.5); }
+
+  .error-box {
+    margin-top: 10px; background: rgba(255,107,107,.1);
+    border: 1px solid rgba(255,107,107,.4); color: var(--err);
+    border-radius: 8px; padding: 10px 14px; font-size: 13px;
+    white-space: pre-wrap; word-break: break-all;
+    font-family: var(--mono);
+  }
+
+  /* ── About modal ───────────────────────────────────────── */
+  .modal-mask {
+    position: fixed; inset: 0; background: rgba(0,0,0,.55);
+    display: none; align-items: center; justify-content: center; z-index: 50;
+  }
+  .modal-mask.open { display: flex; }
+  .modal {
+    width: 460px; max-width: 92vw; max-height: 84vh; overflow-y: auto;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 22px 24px; box-shadow: var(--shadow);
+  }
+  .modal h3 { font-size: 16px; margin-bottom: 10px; }
+  .modal p, .modal li { color: var(--text-dim); font-size: 13px; line-height: 1.7; }
+  .modal ul { padding-left: 18px; margin: 8px 0; }
+  .modal .close { margin-top: 16px; width: 100%; }
+  .modal code { background: var(--bg); padding: 1px 6px; border-radius: 4px; font-family: var(--mono); font-size: 12px; }
+
+  ::-webkit-scrollbar { width: 10px; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; }
+  ::-webkit-scrollbar-thumb:hover { background: #455064; }
+</style>
+</head>
+<body>
+
+<!-- ══ Title bar ══ -->
+<div class="titlebar">
+  <span class="logo">🖼</span>
+  <h1>SD Enhance 图片放大工具</h1>
+  <span class="ver">v2.0 · 桌面版</span>
+  <span class="spacer"></span>
+  <button class="icon-btn" onclick="openAbout()">关于</button>
+</div>
+
+<div class="layout">
+  <!-- ══ Sidebar ══ -->
+  <nav class="sidebar">
+    <button class="nav-btn active" data-tab="single" onclick="switchTab('single')">
+      <span class="ic">🖼</span>单张图片
+    </button>
+    <button class="nav-btn" data-tab="batch" onclick="switchTab('batch')">
+      <span class="ic">🗂</span>批量处理
+    </button>
+    <button class="nav-btn" data-tab="dir" onclick="switchTab('dir')">
+      <span class="ic">📁</span>目录批量
+    </button>
+    <button class="nav-btn" data-tab="video" onclick="switchTab('video')">
+      <span class="ic">🎬</span>视频处理
+    </button>
+    <div class="foot">AI 放大 · 基于 Real-ESRGAN<br>引擎 + ffmpeg 两步管线</div>
+  </nav>
+
+  <!-- ══ Main ══ -->
+  <div class="main">
+    <div class="scroll">
+
+      <!-- ── Single ── -->
+      <section id="page-single">
+        <div class="panel">
+          <h2>选择图片 <span class="tag">单张图片放大</span></h2>
+          <div class="pick-card" id="single-pick" onclick="pickSingle()">
+            <div class="big">📷</div>
+            <div class="hint" id="single-hint">点击选择图片文件…</div>
+          </div>
+          <div class="preview-wrap" id="single-preview-wrap">
+            <img id="single-preview" alt="preview">
+          </div>
+        </div>
+        <div id="single-params"></div>
+      </section>
+
+      <!-- ── Batch ── -->
+      <section id="page-batch" class="hidden">
+        <div class="panel">
+          <h2>选择图片 <span class="tag">多文件批量放大</span></h2>
+          <div class="pick-card" onclick="pickBatch()">
+            <div class="big">🗂</div>
+            <div class="hint">点击选择多张图片（可多选）…</div>
+          </div>
+          <div class="file-list" id="batch-list"></div>
+        </div>
+        <div id="batch-params"></div>
+      </section>
+
+      <!-- ── Directory ── -->
+      <section id="page-dir" class="hidden">
+        <div class="panel">
+          <h2>目录批量 <span class="tag">处理整个文件夹</span></h2>
+          <div class="path-input">
+            <input type="text" id="dir-input" placeholder="输入目录路径…（或点击右侧按钮选择）">
+            <button class="small-btn" onclick="pickDirInput()">选择目录</button>
+          </div>
+          <div class="path-input">
+            <input type="text" id="dir-output" placeholder="输出目录（留空 = 自动保存到默认位置）">
+            <button class="small-btn" onclick="pickDirOutput()">选择输出目录</button>
+          </div>
+        </div>
+        <div id="dir-params"></div>
+      </section>
+
+      <!-- ── Video ── -->
+      <section id="page-video" class="hidden">
+        <div class="panel">
+          <h2>选择视频 <span class="tag">逐帧放大并合成</span></h2>
+          <div class="pick-card" id="video-pick" onclick="pickVideo()">
+            <div class="big">🎬</div>
+            <div class="hint" id="video-hint">点击选择视频文件…</div>
+          </div>
+        </div>
+        <div id="video-params"></div>
+      </section>
+
+      <!-- ── Settings (shared) ── -->
+      <div class="panel" id="settings-panel">
+        <h2>⚙ 放大设置</h2>
+        <div class="grid">
+          <div class="field">
+            <label>放大模型</label>
+            <select id="model"></select>
+          </div>
+          <div class="field">
+            <label>放大模式</label>
+            <div class="mode-switch" id="mode-switch">
+              <button data-mode="scale" class="active" onclick="setMode('scale')">按比例</button>
+              <button data-mode="dim" onclick="setMode('dim')">按尺寸</button>
+            </div>
+          </div>
+          <div class="field" id="scale-field">
+            <label>放大倍数（模型固定 4x，目标 1–8x）</label>
+            <div class="range-wrap">
+              <input type="range" id="scale" min="1" max="8" step="0.5" value="2">
+              <span class="val" id="scale-val">2.0x</span>
+            </div>
+          </div>
+          <div class="field hidden" id="dim-field">
+            <label>目标尺寸（宽 × 高，px）</label>
+            <div style="display:flex;gap:8px;">
+              <input type="number" id="dim-w" value="1024" min="1">
+              <span style="color:var(--text-dim);line-height:36px;">×</span>
+              <input type="number" id="dim-h" value="1024" min="1">
+            </div>
+          </div>
+          <div class="field full hidden" id="crop-field">
+            <label class="check-row">
+              <input type="checkbox" id="crop">
+              裁剪到目标尺寸（不勾选则等比适配）
+            </label>
+          </div>
+          <div class="field">
+            <label>混合第二模型（可选，两个模型结果 blend）</label>
+            <select id="model2">
+              <option value="">不使用</option>
+            </select>
+          </div>
+          <div class="field hidden" id="mix-field">
+            <label>混合比例（0=纯模型1，1=纯模型2）</label>
+            <div class="range-wrap">
+              <input type="range" id="mix-ratio" min="0" max="1" step="0.05" value="0.5">
+              <span class="val" id="mix-val">0.50</span>
+            </div>
+          </div>
+          <div class="field" id="fmt-field">
+            <label>输出格式</label>
+            <select id="out-format">
+              <option value="png">PNG（无损）</option>
+              <option value="jpg">JPG（更小）</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Action ── -->
+      <div class="panel">
+        <div class="actions">
+          <button class="submit-btn" id="submit-btn" onclick="startTask()">开始处理</button>
+          <div class="status-line">
+            <span class="dot ready" id="status-dot"></span>
+            <span id="status-text">就绪</span>
+          </div>
+        </div>
+        <div class="progress-wrap" id="progress-wrap">
+          <div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div>
+          <div class="progress-text" id="progress-text"></div>
+        </div>
+        <div class="error-box hidden" id="error-box"></div>
+        <div class="results" id="results"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══ About modal ══ -->
+<div class="modal-mask" id="about-mask" onclick="if(event.target===this)closeAbout()">
+  <div class="modal">
+    <h3>🖼 SD Enhance 图片放大工具 v2.0</h3>
+    <p>独立的 Stable Diffusion 图片后期处理工具。基于 Real-ESRGAN 的
+      <code>realesrgan-ncnn-vulkan</code> 引擎 + ffmpeg 两步管线：
+      模型固定 4x 放大 → ffmpeg 缩放到目标倍率。</p>
+    <ul>
+      <li>单张图片、批量、目录批量、视频逐帧放大</li>
+      <li>支持 1–8x 比例放大或精确目标尺寸</li>
+      <li>支持双模型混合（ffmpeg blend）</li>
+      <li>本地处理，无需上传，无需联网</li>
+    </ul>
+    <p style="color:var(--text-dim);font-size:12px;">引擎：realesrgan-ncnn-vulkan · 模型自动探测 <code>tools/models/</code></p>
+    <button class="small-btn close" onclick="closeAbout()">关闭</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ════════════════════════════════════════════════════════════
+   SD Enhance v2 desktop UI — talks to Python via pywebview js_api
+   ════════════════════════════════════════════════════════════ */
+
+const api = window.pywebview ? window.pywebview.api : null;
+if (!api) {
+  document.getElementById('status-text').textContent = '未检测到桌面环境（请在 pywebview 中运行）';
+}
+
+/* ── State ─────────────────────────────────────────────── */
+const state = {
+  tab: 'single',
+  singleFile: null,
+  batchFiles: [],
+  mode: 'scale',
+  models: [],
+  taskId: null,
+  pollTimer: null,
+};
+
+const $ = id => document.getElementById(id);
+
+/* ── Model loading ─────────────────────────────────────── */
+async function loadModels() {
+  if (!api) return;
+  try {
+    state.models = await api.get_models();
+    const m1 = $('model'), m2 = $('model2');
+    m1.innerHTML = ''; m2.innerHTML = '<option value="">不使用</option>';
+    for (const m of state.models) {
+      const o1 = document.createElement('option');
+      o1.value = m.name; o1.textContent = `${m.display_name}（${m.description}）`;
+      m1.appendChild(o1);
+      const o2 = document.createElement('option');
+      o2.value = m.name; o2.textContent = m.display_name;
+      m2.appendChild(o2);
+    }
+    m1.selectedIndex = 0;
+    // video 模式默认模型提示
+    if (state.models.length === 0) $('status-text').textContent = '未找到模型（检查 tools/models/）';
+  } catch (e) {
+    $('status-text').textContent = '加载模型失败: ' + e;
+  }
+}
+
+/* ── Tab switching ─────────────────────────────────────── */
+function switchTab(tab) {
+  state.tab = tab;
+  document.querySelectorAll('.nav-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.tab === tab));
+  ['single', 'batch', 'dir', 'video'].forEach(t =>
+    $('page-' + t).classList.toggle('hidden', t !== tab));
+  // 参数区由共享 settings panel 承载；按 tab 切换输出格式选项
+  const fmt = $('fmt-field');
+  if (tab === 'video') {
+    fmt.classList.remove('hidden');
+    $('out-format').innerHTML =
+      '<option value="mp4">MP4（H.264 + 原音频）</option>' +
+      '<option value="avi">AVI</option>' +
+      '<option value="gif">GIF</option>';
+    $('out-format').value = 'mp4';
+  } else {
+    fmt.classList.remove('hidden');
+    $('out-format').innerHTML =
+      '<option value="png">PNG（无损）</option>' +
+      '<option value="jpg">JPG（更小）</option>';
+  }
+}
+
+/* ── File picking ──────────────────────────────────────── */
+async function pickSingle() {
+  if (!api) return;
+  const files = await api.select_files(false);
+  if (!files || !files.length) return;
+  state.singleFile = files[0];
+  $('single-hint').textContent = state.singleFile;
+  $('single-pick').classList.add('filled');
+  const preview = await api.image_preview(state.singleFile);
+  const wrap = $('single-preview-wrap');
+  if (preview) {
+    $('single-preview').src = preview;
+    wrap.style.display = 'block';
+  } else {
+    wrap.style.display = 'none';
+  }
+}
+
+async function pickBatch() {
+  if (!api) return;
+  const files = await api.select_files(true);
+  if (!files || !files.length) return;
+  state.batchFiles = files;
+  renderBatchList();
+}
+
+function renderBatchList() {
+  const list = $('batch-list');
+  list.innerHTML = '';
+  state.batchFiles.forEach((f, i) => {
+    const row = document.createElement('div');
+    row.className = 'file-row';
+    row.innerHTML =
+      `<span class="fname" title="${escapeAttr(f)}">${escapeHtml(f)}</span>` +
+      `<span class="fmeta">${state.batchFiles.length} 个文件</span>` +
+      `<button class="fdel" onclick="removeBatch(${i})" title="移除">✕</button>`;
+    list.appendChild(row);
+  });
+}
+
+function removeBatch(i) {
+  state.batchFiles.splice(i, 1);
+  renderBatchList();
+}
+
+async function pickDirInput() {
+  if (!api) return;
+  const d = await api.select_dir();
+  if (d) $('dir-input').value = d;
+}
+async function pickDirOutput() {
+  if (!api) return;
+  const d = await api.select_dir();
+  if (d) $('dir-output').value = d;
+}
+
+async function pickVideo() {
+  if (!api) return;
+  const v = await api.select_video();
+  if (!v) return;
+  state.singleFile = v; // reuse slot for video path
+  $('video-hint').textContent = v;
+  $('video-pick').classList.add('filled');
+}
+
+/* ── Settings ──────────────────────────────────────────── */
+function setMode(mode) {
+  state.mode = mode;
+  document.querySelectorAll('#mode-switch button').forEach(b =>
+    b.classList.toggle('active', b.dataset.mode === mode));
+  $('scale-field').classList.toggle('hidden', mode !== 'scale');
+  $('dim-field').classList.toggle('hidden', mode !== 'dim');
+  $('crop-field').classList.toggle('hidden', mode !== 'dim');
+}
+
+$('scale').addEventListener('input', () => $('scale-val').textContent = $('scale').value + 'x');
+$('mix-ratio').addEventListener('input', () => $('mix-val').textContent = (+$('mix-ratio').value).toFixed(2));
+$('model2').addEventListener('change', () => $('mix-field').classList.toggle('hidden', !$('model2').value));
+
+function collectParams() {
+  const p = {
+    model: $('model').value,
+    model_2: $('model2').value || null,
+    mix_ratio: parseFloat($('mix-ratio').value),
+    output_format: $('out-format').value,
+  };
+  if (state.mode === 'dim') {
+    p.width = parseInt($('dim-w').value, 10);
+    p.height = parseInt($('dim-h').value, 10);
+    p.crop = $('crop').checked;
+  } else {
+    p.scale = parseFloat($('scale').value);
+  }
+  return p;
+}
+
+/* ── Task flow ─────────────────────────────────────────── */
+async function startTask() {
+  if (!api) return;
+  if (state.taskId) return; // already running
+  resetResults();
+  const params = collectParams();
+  let resp;
+  try {
+    if (state.tab === 'single') {
+      if (!state.singleFile) return toast('请先选择图片');
+      resp = await api.submit_single(state.singleFile, params);
+    } else if (state.tab === 'batch') {
+      if (!state.batchFiles.length) return toast('请先选择图片');
+      resp = await api.submit_files(state.batchFiles, params);
+    } else if (state.tab === 'dir') {
+      const inputDir = $('dir-input').value.trim();
+      if (!inputDir) return toast('请输入输入目录');
+      resp = await api.submit_dir(inputDir, $('dir-output').value.trim(), params);
+    } else {
+      if (!state.singleFile) return toast('请先选择视频');
+      resp = await api.submit_video(state.singleFile, params);
+    }
+  } catch (e) {
+    return showError('调用失败: ' + e);
+  }
+  if (resp.error) return showError(resp.error);
+  state.taskId = resp.task_id;
+  setStatus('busy', '任务进行中…');
+  $('progress-wrap').style.display = 'block';
+  $('submit-btn').disabled = true;
+  state.pollTimer = setInterval(pollTask, 500);
+}
+
+async function pollTask() {
+  if (!state.taskId) return;
+  let t;
+  try { t = await api.get_task(state.taskId); } catch (e) { return; }
+  if (!t) { stopPoll(); return; }
+
+  $('progress-bar').style.width = (t.progress || 0) + '%';
+  $('progress-text').textContent = t.status + ' · ' + (t.progress || 0) + '%';
+
+  if (t.status === 'done') {
+    stopPoll();
+    setStatus('ok', '完成');
+    renderResults(t.results || []);
+    $('progress-bar').style.width = '100%';
+  } else if (t.status === 'error') {
+    stopPoll();
+    setStatus('err', '失败');
+    showError(t.error || '未知错误');
+  }
+}
+
+function stopPoll() {
+  if (state.pollTimer) clearInterval(state.pollTimer);
+  state.pollTimer = null;
+  state.taskId = null;
+  $('submit-btn').disabled = false;
+}
+
+function renderResults(results) {
+  const box = $('results');
+  box.innerHTML = '';
+  if (!results.length) {
+    box.innerHTML = '<div class="error-box">没有生成结果（请查看上方错误信息）</div>';
+    return;
+  }
+  for (const r of results) {
+    const card = document.createElement('div');
+    card.className = 'result-card';
+    card.innerHTML =
+      `<span class="rname">✅ ${escapeHtml(r.filename)}<span class="path">${escapeHtml(r.path)}</span></span>` +
+      `<span class="rbtns">` +
+      `<button class="rbtn primary" onclick="openResult('${escapeJs(r.path)}')">打开</button>` +
+      `<button class="rbtn" onclick="openResultFolder('${escapeJs(r.path)}')">所在文件夹</button>` +
+      `<button class="rbtn" onclick="saveResultAs('${escapeJs(r.path)}')">另存为…</button>` +
+      `</span>`;
+    box.appendChild(card);
+  }
+}
+
+async function openResult(path) { if (api) await api.open_path(path); }
+async function openResultFolder(path) { if (api) await api.open_folder(path); }
+
+async function saveResultAs(path) {
+  if (!api) return;
+  const name = path.split(/[\\/]/).pop();
+  const dest = await api.save_path(name);
+  if (!dest) return;
+  const r = await api.copy_to(path, dest.replace(/[\\/][^\\/]+$/, ''), dest.split(/[\\/]/).pop());
+  if (r.success) setStatus('ok', '已保存: ' + r.dest);
+  else showError(r.error);
+}
+
+/* ── Status helpers ────────────────────────────────────── */
+function setStatus(cls, text) {
+  const dot = $('status-dot');
+  dot.className = 'dot ' + cls;
+  $('status-text').textContent = text;
+}
+function toast(msg) {
+  setStatus('err', msg);
+}
+function showError(msg) {
+  const box = $('error-box');
+  box.textContent = msg;
+  box.classList.remove('hidden');
+}
+function resetResults() {
+  $('results').innerHTML = '';
+  $('error-box').classList.add('hidden');
+  $('progress-bar').style.width = '0%';
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escapeAttr(s) { return escapeHtml(s); }
+function escapeJs(s) {
+  return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
+/* ── About ─────────────────────────────────────────────── */
+function openAbout() { $('about-mask').classList.add('open'); }
+function closeAbout() { $('about-mask').classList.remove('open'); }
+
+/* ── Init ──────────────────────────────────────────────── */
+switchTab('single');
+loadModels();
+</script>
+</body>
+</html>

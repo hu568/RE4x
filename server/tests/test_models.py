@@ -11,18 +11,17 @@ import pytest
 def test_models_detection(project_root):
     """Detect all known models in ``tools/models/``.
 
-    Verifies that the 5 ``.param`` files are deduplicated into at least
-    3 models with the expected names.
+    Verifies that the shipped ``.param`` files are deduplicated into the
+    expected models (animevideov3 was removed from the distro in v2.0).
     """
     from models import get_available_models  # noqa: PLC0415
 
     models_dir = os.path.join(project_root, 'tools', 'models')
     models = get_available_models(models_dir)
 
-    assert len(models) >= 3
+    assert len(models) >= 2
     names = [m['name'] for m in models]
 
-    assert 'realesr-animevideov3' in names
     assert 'realesrgan-x4plus' in names
     assert 'realesrgan-x4plus-anime' in names
 
@@ -35,11 +34,9 @@ def test_models_max_scale(project_root):
     models = get_available_models(models_dir)
     by_name = {m['name']: m for m in models}
 
-    # realesr-animevideov3 has -x2, -x3, -x4 → max_scale should be 4
-    assert by_name['realesr-animevideov3']['max_scale'] == 4
-
-    # realesrgan-x4plus has only -x4plus (no numeric suffix in regex) → default 4
+    # realesrgan-x4plus / -x4plus-anime have no numeric suffix → default 4
     assert by_name['realesrgan-x4plus']['max_scale'] == 4
+    assert by_name['realesrgan-x4plus-anime']['max_scale'] == 4
 
 
 def test_models_display_names(project_root):
@@ -50,8 +47,8 @@ def test_models_display_names(project_root):
     models = get_available_models(models_dir)
     by_name = {m['name']: m for m in models}
 
-    assert by_name['realesr-animevideov3']['display_name'] == 'RealESRGAN AnimeVideo v3'
     assert by_name['realesrgan-x4plus']['display_name'] == 'R-ESRGAN 4x+'
+    assert by_name['realesrgan-x4plus-anime']['display_name'] == 'R-ESRGAN 4x+ Anime'
 
 
 def test_models_empty_dir(tmp_dir):
