@@ -93,10 +93,22 @@ def _ensure_dotnet() -> None:
     if release and release < 461808:  # 461808 == .NET Framework 4.7.2
         _fail(f'.NET Framework 版本过低（Release {release}，需要 4.7.2+）')
 
-    try:
-        import clr  # noqa: F401  # pre-load pythonnet; webview reuses it
-    except Exception as e:
-        _fail(f'{type(e).__name__}: {e}')
+    # Pre-load pythonnet. Failures here are usually transient — the DLL was
+    # just extracted and AV software is still scanning/locking it — so retry
+    # once after a short delay before giving up with the dialog.
+    import time
+
+    for attempt in (1, 2):
+        try:
+            import clr  # noqa: F401  # pre-load pythonnet; webview reuses it
+            break
+        except Exception as e:
+            logger.warning(
+                'pythonnet import failed (attempt %d/2): %s', attempt, e)
+            if attempt == 1:
+                time.sleep(2)  # let AV scan / file lock release
+            else:
+                _fail(f'{type(e).__name__}: {e}')
 
     logger.info('pythonnet OK')
 
