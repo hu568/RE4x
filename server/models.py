@@ -16,12 +16,14 @@ DISPLAY_NAMES = {
     "realesr-animevideov3": "RealESRGAN AnimeVideo v3",
     "realesrgan-x4plus": "R-ESRGAN 4x+",
     "realesrgan-x4plus-anime": "R-ESRGAN 4x+ Anime",
+    "spanv2": "SPANV2 (NTIRE2026)",
 }
 
 DESCRIPTIONS = {
     "realesr-animevideov3": "Anime video (2x/3x/4x)",
     "realesrgan-x4plus": "General image (4x)",
     "realesrgan-x4plus-anime": "Anime image (recommended, 4x)",
+    "spanv2": "NTIRE2026 Efficient SR (4x)",
 }
 
 

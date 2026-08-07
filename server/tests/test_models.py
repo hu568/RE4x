@@ -19,11 +19,12 @@ def test_models_detection(project_root):
     models_dir = os.path.join(project_root, 'tools', 'models')
     models = get_available_models(models_dir)
 
-    assert len(models) >= 2
+    assert len(models) >= 3
     names = [m['name'] for m in models]
 
     assert 'realesrgan-x4plus' in names
     assert 'realesrgan-x4plus-anime' in names
+    assert 'spanv2' in names
 
 
 def test_models_max_scale(project_root):
@@ -34,9 +35,10 @@ def test_models_max_scale(project_root):
     models = get_available_models(models_dir)
     by_name = {m['name']: m for m in models}
 
-    # realesrgan-x4plus / -x4plus-anime have no numeric suffix → default 4
+    # realesrgan-x4plus / -x4plus-anime / spanv2 have no numeric suffix → default 4
     assert by_name['realesrgan-x4plus']['max_scale'] == 4
     assert by_name['realesrgan-x4plus-anime']['max_scale'] == 4
+    assert by_name['spanv2']['max_scale'] == 4
 
 
 def test_models_display_names(project_root):
@@ -49,6 +51,7 @@ def test_models_display_names(project_root):
 
     assert by_name['realesrgan-x4plus']['display_name'] == 'R-ESRGAN 4x+'
     assert by_name['realesrgan-x4plus-anime']['display_name'] == 'R-ESRGAN 4x+ Anime'
+    assert by_name['spanv2']['display_name'] == 'SPANV2 (NTIRE2026)'
 
 
 def test_models_empty_dir(tmp_dir):

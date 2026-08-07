@@ -7,12 +7,13 @@
 
 | 文件/目录 | 体积 | 用途 |
 |-----------|------|------|
-| `realesrgan-ncnn-vulkan.exe` | 5.9 MB | AI 图片放大引擎（CPU/Vulkan 推理） |
+| `realesrgan-ncnn-vulkan.exe` | 6.4 MB | AI 图片放大引擎（CPU/Vulkan 推理，含 SPANV2 支持） |
 | `ffmpeg.exe` | 7.5 MB | 视频处理 + 图片缩放/裁剪/混合（自构建最小版，见下文） |
-| `vcomp140.dll` | 178 KB | VC++ 运行库（引擎依赖，需与 exe 同目录） |
-| `models/` | 41 MB | ESRGAN 模型（`.param` + `.bin`），GUI 自动探测 |
+| `vcomp140.dll` | 208 KB | VC++ 运行库（引擎依赖，需与 exe 同目录） |
+| `models/` | 42 MB | ESRGAN 模型（`.param` + `.bin`），GUI 自动探测 |
 | `ffmpeg-src/` | — | ffmpeg 自构建源码（非发行内容，可删） |
 | `ffmpeg.exe.bak` | 103 MB | 替换前的旧版 ffmpeg（非发行内容，可删） |
+| `realesrgan-ncnn-vulkan.exe.bak` | 5.9 MB | 替换前的原版引擎（回滚备用，可删） |
 
 发行载荷合计约 **55 MB**。
 
@@ -28,8 +29,11 @@
 |------|---------|---------|
 | `realesrgan-x4plus-anime`（默认） | 动漫图片（推荐） | 固定 4x |
 | `realesrgan-x4plus` | 通用图片 | 固定 4x |
+| `spanv2` | NTIRE2026 Efficient SR（细节增强） | 固定 4x |
 
 > v2.0 起 `animevideov3` 系列已从发行包移除，如需可自行放入 `models/`。
+> `spanv2` 来自子项目 RE+SPANV2（Real-ESRGAN-ncnn-vulkan 改造版引擎，
+> 启用 depthwise 层 + prepadding=16）；配套引擎已替换 `realesrgan-ncnn-vulkan.exe`。
 
 ### 原始 CLI 命令
 
@@ -122,6 +126,7 @@ pacman -S --needed base-devel mingw-w64-ucrt-x86_64-toolchain \
 |------|------|
 | `ffmpeg-src/` | ffmpeg 自构建源码（git 浅克隆，约 129 MB）；构建文档 [ffmpeg-features.md](ffmpeg-features.md) 在 tools/ 下已入 git，删除此目录不影响 |
 | `ffmpeg.exe.bak` | 替换前的 gyan essentials 旧版 ffmpeg（103 MB，回滚备用） |
+| `realesrgan-ncnn-vulkan.exe.bak` | 替换前的原版引擎（5.9 MB，回滚备用） |
 
 确认新版正常后可删除以节省磁盘；两者均已加入 `.gitignore`，不影响仓库。
 

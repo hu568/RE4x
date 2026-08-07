@@ -27,6 +27,7 @@ tools/ffmpeg.exe
 tools/ffprobe.exe
 tools/models/
 tools/realesrgan-ncnn-vulkan.exe
+tools/realesrgan-ncnn-vulkan.exe.bak
 tools/vcomp140.dll
 tools/vcomp140d.dll
 tools/sd-enhance-server/
