@@ -31,6 +31,10 @@ tools/vcomp140.dll
 tools/vcomp140d.dll
 tools/sd-enhance-server/
 
+# ffmpeg 自构建产物（源码与旧版备份，见 ffmpeg-features.md）
+tools/ffmpeg-src/
+tools/ffmpeg.exe.bak
+
 # 计划文件
 .sisyphus/
 

@@ -11,6 +11,8 @@ import subprocess
 
 from PIL import Image
 
+from procutils import popen
+
 logger = logging.getLogger('sd_enhance.resizer')
 
 
@@ -108,7 +110,7 @@ class ImageResizer:
 
         process = None
         try:
-            process = subprocess.Popen(
+            process = popen(
                 args,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -223,7 +225,7 @@ class ImageResizer:
 
         process = None
         try:
-            process = subprocess.Popen(
+            process = popen(
                 args,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,

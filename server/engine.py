@@ -6,6 +6,8 @@ import sys
 import subprocess
 import threading
 
+from procutils import popen
+
 logger = logging.getLogger('sd_enhance.engine')
 
 
@@ -143,7 +145,7 @@ class UpscaleEngine:
         with self.__class__._lock:
             process = None
             try:
-                process = subprocess.Popen(
+                process = popen(
                     args,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
@@ -239,7 +241,7 @@ class UpscaleEngine:
         process = None
         try:
             with self._lock:
-                process = subprocess.Popen(
+                process = popen(
                     args,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
@@ -345,7 +347,7 @@ class UpscaleEngine:
             # second engine process (e.g. a single-image upscale) can start
             # concurrently and fight over the GPU.
             with self._lock:
-                process = subprocess.Popen(
+                process = popen(
                     args,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,

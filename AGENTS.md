@@ -14,7 +14,7 @@ RE4x/
 ├── _internal/                       # PyInstaller 运行时数据（勿动）
 ├── tools/                       # 可执行工具（gitignored，需下载）
 │   ├── realesrgan-ncnn-vulkan.exe   # AI 图片放大引擎
-│   ├── ffmpeg.exe                    # 视频处理（精简版 essentials 构建，无需 ffprobe）
+│   ├── ffmpeg.exe                    # 视频处理（自构建白名单 7.5M，见 tools/ffmpeg-features.md）
 │   ├── vcomp140.dll                  # VC++ 运行库
 │   └── models/                      # ESRGAN 模型（.param + .bin）
 ├── server/                      # Python 源码（git 追踪）
@@ -205,7 +205,8 @@ server\.venv\Scripts\pyinstaller server\build.spec --distpath . --workpath tools
 | models | 45M → 42M | 移除 animevideov3 系列（3.7M），保留 x4plus + x4plus-anime |
 | vcomp140d.dll | 0.2M | 删除（调试版运行库） |
 | sd-enhance-server | 45M → ~30M | 移除 Flask/Werkzeug/cryptography，改 pywebview |
-| **tools/ 合计** | **390M → 190M** | |
+| ffmpeg.exe | 103M → **7.5M** | gyan essentials → 自构建白名单（ffmpeg 9.0 全静态，仅保留本项目所需组件，见 [ffmpeg-features.md](tools/ffmpeg-features.md)） |
+| **tools/ 合计** | **390M → 190M → 约 55M** | v2.1 ffmpeg 自构建后实际发行载荷（引擎 5.9M + models 41M + ffmpeg 7.6M + vcomp140 180K） |
 
 ## Git 状态
 

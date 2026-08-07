@@ -8,6 +8,8 @@ import shutil
 
 from PIL import Image
 
+from procutils import popen
+
 logger = logging.getLogger('sd_enhance.mixer')
 
 
@@ -167,7 +169,7 @@ class ImageMixer:
         # --- Execute ffmpeg ---------------------------------------------------
         process = None
         try:
-            process = subprocess.Popen(
+            process = popen(
                 args,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,

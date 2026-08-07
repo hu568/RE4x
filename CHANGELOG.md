@@ -15,6 +15,8 @@
 - **端到端视频测试**: 新增真实 mp4 放大测试（提取→4x→缩放→合成），此前测试无视频成功路径、两个 bug 均未被覆盖
 - **视频按尺寸修复**: 视频任务此前忽略 width/height（`target_scale` 为空时静默退回 2x），现完整支持按尺寸模式——contain 等比缩放、cover 缩放后居中裁剪，均有真实视频端到端测试
 - **运行日志**: 新增 `server/logutil.py`，每次启动自动写 `logs/sd-enhance.log`（每日轮转保留 7 天），记录启动信息、任务生命周期、引擎/ffmpeg 子进程命令与失败 stderr；GUI「关于」弹窗显示日志路径，dev/测试环境同样写日志
+- **子进程无窗口**: 新增 `server/procutils.py`，所有 ffmpeg/引擎子进程调用统一走 `popen()`（Windows 下自动加 `CREATE_NO_WINDOW`）——修复 GUI 使用时反复弹出空命令行终端的问题（共 9 处 Popen 全覆盖）
+- **ffmpeg 自构建**: 发行 ffmpeg 换为自构建白名单最小版（ffmpeg 9.0 全静态，仅本项目所需组件），`tools/ffmpeg.exe` 103M → **7.5M**；发行 zip 降至约 62MB（详见 [ffmpeg-features.md](tools/ffmpeg-features.md)）
 
 ### 📦 缩小发行包体积
 

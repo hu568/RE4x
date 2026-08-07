@@ -20,6 +20,8 @@ import zipfile
 
 from PIL import Image
 
+from procutils import popen
+
 logger = logging.getLogger('sd_enhance.core')
 
 # ── Constants ─────────────────────────────────────────────────────────────
@@ -255,7 +257,7 @@ def _detect_fps(ffmpeg_dir: str, video_path: str) -> float:
     Prefers ``avg_frame_rate`` over ``r_frame_rate``; falls back to 24.0.
     """
     import json as _json
-    from subprocess import Popen, PIPE
+    from subprocess import PIPE
 
     ffprobe_path = os.path.join(ffmpeg_dir, 'ffprobe.exe')
     if not os.path.isfile(ffprobe_path):
@@ -270,7 +272,7 @@ def _detect_fps(ffmpeg_dir: str, video_path: str) -> float:
             video_path,
         ]
         try:
-            proc = Popen(args, stdout=PIPE, stderr=PIPE, shell=False)
+            proc = popen(args, stdout=PIPE, stderr=PIPE, shell=False)
             stdout, _ = proc.communicate(timeout=30)
             if proc.returncode == 0 and stdout:
                 info = _json.loads(stdout)
@@ -291,7 +293,7 @@ def _detect_fps(ffmpeg_dir: str, video_path: str) -> float:
     ffmpeg_path = os.path.join(ffmpeg_dir, 'ffmpeg.exe')
     args = [ffmpeg_path, '-i', video_path]
     try:
-        proc = Popen(args, stdout=PIPE, stderr=PIPE, shell=False)
+        proc = popen(args, stdout=PIPE, stderr=PIPE, shell=False)
         _, stderr = proc.communicate(timeout=30)
         output = stderr.decode('utf-8', errors='replace')
         match = re.search(r'Video:.*?(\d+\.?\d*)\s*fps', output)
@@ -629,7 +631,7 @@ class UpscaleService:
 
     def submit_video(self, video_path: str, params: dict) -> str:
         """Start a video upscale task; result goes to ``TMP/results/<id>``."""
-        from subprocess import Popen, PIPE  # noqa: PLC0415
+        from subprocess import PIPE
 
         task_id = self.tasks.create_task()
 
@@ -680,7 +682,7 @@ class UpscaleService:
                     '-r', str(detected_fps), '-start_number', '1', '-y',
                     frame_pattern,
                 ]
-                proc = Popen(extract_args, stdout=PIPE, stderr=PIPE, shell=False)
+                proc = popen(extract_args, stdout=PIPE, stderr=PIPE, shell=False)
                 _, stderr = proc.communicate(timeout=600)
                 if proc.returncode != 0:
                     err = stderr.decode('utf-8', errors='replace')[:500]
@@ -833,7 +835,7 @@ class UpscaleService:
                         '-shortest', '-y', output_path,
                     ]
 
-                proc = Popen(merge_args, stdout=PIPE, stderr=PIPE, shell=False)
+                proc = popen(merge_args, stdout=PIPE, stderr=PIPE, shell=False)
                 _, stderr = proc.communicate(timeout=600)
                 if proc.returncode != 0:
                     err = stderr.decode('utf-8', errors='replace')[:500]

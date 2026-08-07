@@ -36,9 +36,9 @@ tools/
 
 > 模型自动探测：`tools/models/` 下任意 `.param` 文件都会出现在 GUI 的下拉框中，可自行增删。
 
-#### FFmpeg（精简版）
+#### FFmpeg（自构建最小版，约 7.5 MB）
 
-从 [gyan.dev FFmpeg Builds](https://www.gyan.dev/ffmpeg/builds/) 下载 `ffmpeg-release-essentials.zip`，解压后复制 **bin\ffmpeg.exe**（ffprobe 不需要，程序会自动回退）：
+推荐按 [ffmpeg-features.md](tools/ffmpeg-features.md) 自构建：ffmpeg 9.0 白名单 + 全静态，仅含本项目所需组件（ffprobe 不需要，程序会自动回退）。备选：从 [gyan.dev FFmpeg Builds](https://www.gyan.dev/ffmpeg/builds/) 下载 `ffmpeg-release-essentials.zip`，解压后复制 **bin\ffmpeg.exe**（约 103 MB）：
 
 ```
 tools/
@@ -93,7 +93,7 @@ RE4x/
 ├── _internal/                  # PyInstaller 运行时数据（勿动）
 ├── tools/                      # 运行时（需自行下载，见上）
 │   ├── realesrgan-ncnn-vulkan.exe
-│   ├── ffmpeg.exe                 # 精简版 essentials 构建（无需 ffprobe）
+│   ├── ffmpeg.exe                 # 自构建最小版（约 7.5M，无需 ffprobe，见 tools/ffmpeg-features.md）
 │   ├── vcomp140.dll
 │   ├── models/                  # 模型 .param + .bin
 ├── server/                      # Python 源码
