@@ -50,25 +50,25 @@ def _base_path() -> str:
 
 
 def _strip_motw() -> None:
-    """Strip Zone.Identifier (Mark-of-the-Web) ADS from bundled pythonnet files.
+    """Strip Zone.Identifier (Mark-of-the-Web) ADS from bundled .NET files.
 
     Files downloaded from the internet (GitHub releases) carry a ``ZoneId=3``
     alternate data stream. Windows Explorer propagates it to every extracted
     file when the user unzips the package, and .NET Framework then refuses to
-    load such "internet zone" managed assemblies — clr_loader ends up failing
-    with ``Failed to resolve Python.Runtime.Loader.Initialize``. Removing the
-    ADS (a cheap per-file delete) unblocks the load. Dev venv files never
-    carry MOTW, so this is a no-op outside frozen builds.
+    load such "internet zone" managed assemblies — clr_loader fails with
+    ``Failed to resolve Python.Runtime.Loader.Initialize`` and pywebview's
+    WebView2 interop fails with ``FileLoadException`` (CAS loadFromRemoteSources).
+    Removing the ADS (a cheap per-file delete) unblocks both. Dev venv files
+    never carry MOTW, so this is a no-op outside frozen builds.
     """
     if not getattr(sys, 'frozen', False):
         return
     base = getattr(sys, '_MEIPASS',
                    os.path.dirname(os.path.realpath(sys.executable)))
-    pkg = os.path.join(base, 'pythonnet')
-    if not os.path.isdir(pkg):
+    if not os.path.isdir(base):
         return
     removed = 0
-    for root, _dirs, files in os.walk(pkg):
+    for root, _dirs, files in os.walk(base):
         for name in files:
             ads = os.path.join(root, name) + ':Zone.Identifier'
             try:
@@ -77,8 +77,7 @@ def _strip_motw() -> None:
             except OSError:
                 pass  # file may be write-protected; original error will surface
     if removed:
-        logger.info('stripped Zone.Identifier from %d bundled pythonnet file(s)',
-                    removed)
+        logger.info('stripped Zone.Identifier from %d bundled file(s)', removed)
 
 
 def _ensure_dotnet() -> None:
