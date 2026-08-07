@@ -251,7 +251,7 @@
 <div class="titlebar">
   <span class="logo">🖼</span>
   <h1>SD Enhance 图片放大工具</h1>
-  <span class="ver">v2.0 · 桌面版</span>
+  <span class="ver" id="ver-label">v2.0 · 桌面版</span>
   <span class="spacer"></span>
   <button class="icon-btn" onclick="openAbout()">关于</button>
 </div>
@@ -417,7 +417,7 @@
 <!-- ══ About modal ══ -->
 <div class="modal-mask" id="about-mask" onclick="if(event.target===this)closeAbout()">
   <div class="modal">
-    <h3>🖼 SD Enhance 图片放大工具 v2.0</h3>
+    <h3>🖼 SD Enhance 图片放大工具 <span id="about-ver">v2.0</span></h3>
     <p>独立的 Stable Diffusion 图片后期处理工具。基于 Real-ESRGAN 的
       <code>realesrgan-ncnn-vulkan</code> 引擎 + ffmpeg 两步管线：
       模型固定 4x 放大 → ffmpeg 缩放到目标倍率。</p>
@@ -740,8 +740,19 @@ function closeAbout() { $('about-mask').classList.remove('open'); }
 // 所以初始化必须等事件触发，否则 api 为 null、模型加载被跳过。
 function initDesktop() {
   api = window.pywebview.api;
+  loadVersion();
   switchTab('single');
   loadModels();
+}
+
+async function loadVersion() {
+  try {
+    const v = await api.get_version();
+    if (v) {
+      $('ver-label').textContent = 'v' + v + ' · 桌面版';
+      $('about-ver').textContent = 'v' + v;
+    }
+  } catch (e) { /* keep hardcoded fallback */ }
 }
 window.addEventListener('pywebviewready', initDesktop);
 if (hasApi()) initDesktop(); // 兜底：页面加载晚于注入完成时

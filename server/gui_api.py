@@ -81,6 +81,11 @@ class GuiApi:
 
     # ── Info ──────────────────────────────────────────────────────────────
 
+    def get_version(self) -> str:
+        """App version shown in the UI title bar / About dialog."""
+        from core import APP_VERSION  # noqa: PLC0415
+        return APP_VERSION
+
     def get_log_path(self) -> str | None:
         """Absolute path of the on-disk log file (for the About dialog)."""
         from logutil import log_dir  # noqa: PLC0415
