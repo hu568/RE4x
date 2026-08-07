@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.1.3 (2026-08-07)
+
+### 🛠 修复
+
+- **coreclr 回退**: `_ensure_dotnet()` 此前 netfx 加载失败会直接弹窗退出，**堵死了 pywebview 自带的「netfx 失败 → 自动切 coreclr」回退机制**。现在改为：netfx 重试 2 次失败后自动切 `PYTHONNET_RUNTIME=coreclr` 再试 2 次，都失败才弹窗。实测 `Failed to resolve Python.Runtime.Loader.Initialize`（netfx 解析 Python.Runtime.dll 失败）场景下，coreclr 回退可正常启动
+
 ## v2.1.2 (2026-08-07)
 
 ### 🛠 修复

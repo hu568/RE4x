@@ -27,7 +27,7 @@ logger = logging.getLogger('sd_enhance.core')
 # ── Constants ─────────────────────────────────────────────────────────────
 
 # GUI 显示版本号（打包 release 时与 package_release.py 的版本一致）
-APP_VERSION = '2.1.2'
+APP_VERSION = '2.1.3'
 
 ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tiff'}
 VIDEO_EXTENSIONS = {'.mp4', '.webm', '.avi', '.mov', '.mkv'}

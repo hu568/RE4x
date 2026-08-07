@@ -93,22 +93,34 @@ def _ensure_dotnet() -> None:
     if release and release < 461808:  # 461808 == .NET Framework 4.7.2
         _fail(f'.NET Framework 版本过低（Release {release}，需要 4.7.2+）')
 
-    # Pre-load pythonnet. Failures here are usually transient — the DLL was
-    # just extracted and AV software is still scanning/locking it — so retry
-    # once after a short delay before giving up with the dialog.
+    # Pre-load pythonnet. Failures are usually transient (AV/file lock right
+    # after unzip) OR netfx-specific — pywebview itself falls back to the
+    # coreclr runtime when netfx fails, so mirror that here instead of
+    # aborting. Each runtime gets one retry for transient lockups.
     import time
 
-    for attempt in (1, 2):
-        try:
-            import clr  # noqa: F401  # pre-load pythonnet; webview reuses it
-            break
-        except Exception as e:
-            logger.warning(
-                'pythonnet import failed (attempt %d/2): %s', attempt, e)
-            if attempt == 1:
-                time.sleep(2)  # let AV scan / file lock release
-            else:
-                _fail(f'{type(e).__name__}: {e}')
+    def _try_clr() -> tuple[bool, str]:
+        last_err = ''
+        for attempt in (1, 2):
+            try:
+                import clr  # noqa: F401  # pre-load pythonnet; webview reuses it
+                return True, ''
+            except Exception as e:  # noqa: BLE001
+                last_err = f'{type(e).__name__}: {e}'
+                logger.warning('pythonnet import failed (attempt %d/2): %s',
+                               attempt, last_err)
+                if attempt == 1:
+                    time.sleep(2)  # let AV scan / file lock release
+        return False, last_err
+
+    ok, err = _try_clr()
+    if not ok:
+        # netfx exhausted → switch to coreclr (like webview/winforms.py)
+        logger.warning('netfx failed, falling back to coreclr')
+        os.environ['PYTHONNET_RUNTIME'] = 'coreclr'
+        ok, err = _try_clr()
+    if not ok:
+        _fail(err)
 
     logger.info('pythonnet OK')
 
