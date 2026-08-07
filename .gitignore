@@ -21,6 +21,8 @@ __pycache__/
 /sd-enhance-server.exe
 /_internal/
 tools/build/
+# 误把 workpath 写成 ..toolsbuild 时产生的产物
+server/..toolsbuild/
 
 # 大型二进制文件（需用户自行下载，详见 README.md）
 tools/ffmpeg.exe
