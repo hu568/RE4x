@@ -53,7 +53,8 @@ tools/
 
 直接双击 **`sd-enhance-server.exe`**（位于程序根目录，与 `tools/` 平级）即可。
 
-> 要求 Windows 10/11（自带 WebView2 运行时）。
+> **系统要求**：Windows 10/11（自带 WebView2 运行时 + .NET Framework 4.8）。
+> 启动时会自动检测 .NET Framework（需 4.7.2+）与 pythonnet 桥接，若缺失会弹出明确提示与安装指引（而非报错退出）。
 
 ## 可用模型
 

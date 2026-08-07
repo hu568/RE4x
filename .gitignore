@@ -55,3 +55,6 @@ sd-enhance-server.exe.WebView2/
 
 # 运行日志
 logs/
+
+# 性能测试输出
+perf-test/

@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.1.1 (2026-08-07)
+
+### 🛠 修复
+
+- **启动自检（.NET 环境）**: 新增 `_ensure_dotnet()`——启动时检测 .NET Framework 版本（需 4.7.2+，读取注册表 Release 值）并预加载 pythonnet（`import clr`）。此前若 .NET 组件缺失/过旧，`webview.start()` 会以晦涩的 traceback 崩溃（`Failed to resolve Python.Runtime.Loader.Initialize`）；现在会弹出明确的中文提示框（附 .NET Framework 4.8 下载指引）并记录日志，不再裸报错
+- **文档**: README 补充系统要求（Win10/11 + .NET Framework 4.8 + WebView2）；RELEASE_INFO 版本号更新
+
 ## v2.1.0 (2026-08-07)
 
 ### ✨ 新功能：SPANV2 引擎与模型
