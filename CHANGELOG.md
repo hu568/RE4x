@@ -1,5 +1,18 @@
 # Changelog
 
+## v2.1.0 (2026-08-07)
+
+### ✨ 新功能：SPANV2 引擎与模型
+
+- **SPANV2 引擎**: 引入子项目 RE+SPANV2（NTIRE2026）的引擎源码到 `engine-src/`——Real-ESRGAN-ncnn-vulkan 改造版（`WITH_LAYER_convolutiondepthwise` + prepadding=16），配套编译产物替换 `tools/realesrgan-ncnn-vulkan.exe`（5.9MB → 6.4MB）
+- **spanv2 模型**: 新增 `tools/models/spanv2`（NTIRE2026 Efficient SR，param + bin 仅 0.5MB），GUI 模型下拉自动探测并显示 "SPANV2 (NTIRE2026)"；实测 220×220 → 440×440 放大成功
+- **测试**: `test_models` 增加 spanv2 检测断言（≥3 模型）
+- **文档**: README 下载指引改为「自构建 SPANV2 引擎 / 原版引擎」双方案；TOOLS.md 记录 spanv2 与引擎更新；`.gitignore` 忽略引擎 .bak 备份
+
+### 📜 合规
+
+- **GPL 合规记录**: `tools/ffmpeg-features.md` 记录 libx264 具体版本（MSYS2 0.165.r3222）与 zlib 外部依赖、对应源码获取途径，说明本项目代码不构成衍生作品
+
 ## v2.0.0 (2026-08-06)
 
 ### 🎨 重写 GUI：Web 版 → 桌面应用

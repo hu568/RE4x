@@ -21,17 +21,21 @@
 
 #### Real-ESRGAN 引擎 + 模型
 
-从 [Real-ESRGAN Releases](https://github.com/xinntao/Real-ESRGAN/releases) 下载最新 Windows 包，解压后复制：
+**方案 A（推荐，支持 spanv2）**：按 [engine-src/README.md](engine-src/README.md) 自构建 SPANV2 版引擎（Real-ESRGAN-ncnn-vulkan 改造，启用 depthwise + prepadding=16），编译出的 `realesrgan-ncnn-vulkan.exe` 放入 `tools/`。
+
+**方案 B（原版）**：从 [Real-ESRGAN Releases](https://github.com/xinntao/Real-ESRGAN/releases) 下载最新 Windows 包，解压后复制（不含 spanv2 支持）：
 
 ```
 tools/
 ├── realesrgan-ncnn-vulkan.exe    # 引擎主程序
 ├── vcomp140.dll                   # VC++ 运行库
-└── models/                        # 模型文件（保留两个即可）
+└── models/                        # 模型文件（自动探测）
     ├── realesrgan-x4plus.bin
     ├── realesrgan-x4plus.param
     ├── realesrgan-x4plus-anime.bin
-    └── realesrgan-x4plus-anime.param
+    ├── realesrgan-x4plus-anime.param
+    ├── spanv2.bin                 # 可选：需 SPANV2 版引擎
+    └── spanv2.param
 ```
 
 > 模型自动探测：`tools/models/` 下任意 `.param` 文件都会出现在 GUI 的下拉框中，可自行增删。
@@ -57,8 +61,10 @@ tools/
 |------|---------|------|
 | `realesrgan-x4plus-anime` | 动漫图片（默认推荐）| 4x |
 | `realesrgan-x4plus` | 通用图片 | 4x |
+| `spanv2` | 高效细节增强（NTIRE2026 Efficient SR，仅 0.5MB）| 4x |
 
 > 统一管线：引擎固定跑 4x，再由 ffmpeg 缩放到用户目标（1–8x），任意倍率都能精确输出。
+> `spanv2` 需配套 SPANV2 版引擎（见 [TOOLS.md](tools/TOOLS.md)）；引擎源码在 `engine-src/`。
 
 ## 开发
 

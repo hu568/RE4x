@@ -12,8 +12,9 @@
 RE4x/
 ├── sd-enhance-server.exe           # 桌面应用（根目录，双击即用，PyInstaller onedir）
 ├── _internal/                       # PyInstaller 运行时数据（勿动）
+├── engine-src/                      # SPANV2 引擎源码（NTIRE2026，Real-ESRGAN-ncnn-vulkan fork）
 ├── tools/                       # 可执行工具（gitignored，需下载）
-│   ├── realesrgan-ncnn-vulkan.exe   # AI 图片放大引擎
+│   ├── realesrgan-ncnn-vulkan.exe   # AI 图片放大引擎（SPANV2 支持版）
 │   ├── ffmpeg.exe                    # 视频处理（自构建白名单 7.5M，见 tools/ffmpeg-features.md）
 │   ├── vcomp140.dll                  # VC++ 运行库
 │   └── models/                      # ESRGAN 模型（.param + .bin）
@@ -87,8 +88,9 @@ ffmpeg -i out_frames/frame%08d.jpg -i onepiece_demo.mp4 -map 0:v:0 -map 1:a:0 -c
 |------|---------|
 | `realesrgan-x4plus-anime`（默认） | 动漫图片（推荐） |
 | `realesrgan-x4plus` | 通用图片 |
+| `spanv2` | 高效细节增强（NTIRE2026，需 SPANV2 版引擎） |
 
-> 所有模型固定 4x 输出。GUI 模型下拉框**自动检测** `tools/models/` 目录中的 .param 文件，支持用户自行添加新模型（v2.0 起 animevideov3 已从发行包移除，可自行放回）。
+> 所有模型固定 4x 输出。GUI 模型下拉框**自动检测** `tools/models/` 目录中的 .param 文件，支持用户自行添加新模型（v2.0 起 animevideov3 已从发行包移除，可自行放回；v2.1 起 spanv2 需要配套 SPANV2 引擎，源码在 `engine-src/`）。
 
 ## 桌面 GUI（`server/ui/index.html`）
 
@@ -206,7 +208,8 @@ server\.venv\Scripts\pyinstaller server\build.spec --distpath . --workpath tools
 | vcomp140d.dll | 0.2M | 删除（调试版运行库） |
 | sd-enhance-server | 45M → ~30M | 移除 Flask/Werkzeug/cryptography，改 pywebview |
 | ffmpeg.exe | 103M → **7.5M** | gyan essentials → 自构建白名单（ffmpeg 9.0 全静态，仅保留本项目所需组件，见 [ffmpeg-features.md](tools/ffmpeg-features.md)） |
-| **tools/ 合计** | **390M → 190M → 约 55M** | v2.1 ffmpeg 自构建后实际发行载荷（引擎 5.9M + models 41M + ffmpeg 7.6M + vcomp140 180K） |
+| 引擎（v2.1） | 5.9M → **6.4M** | 原版引擎 → SPANV2 版（depthwise + prepadding=16），新增 spanv2 模型（0.5M） |
+| **tools/ 合计** | **390M → 190M → 约 55M** | v2.1 实际发行载荷（引擎 6.4M + models 42M + ffmpeg 7.6M + vcomp140 210K） |
 
 ## Git 状态
 

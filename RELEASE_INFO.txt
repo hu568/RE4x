@@ -1,6 +1,6 @@
 ================================================================
   RE4x SD Enhance — 便携式 AI 图片/视频放大工具包
-  v2.0 — 桌面应用版（pywebview）
+  v2.1 — 桌面应用版（pywebview）
 ================================================================
 
 项目主页:
@@ -23,5 +23,6 @@
   - FFmpeg           (LGPL/GPL)      https://ffmpeg.org
   - ncnn             (BSD-3-Clause)  https://github.com/Tencent/ncnn
   - pywebview        (BSD-3-Clause)  https://github.com/r0x0r/pywebview
+  - RE+SPANV2        (详见 engine-src/LICENSE)  NTIRE2026 高效超分引擎/模型
 
 ================================================================
