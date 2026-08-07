@@ -40,6 +40,7 @@ RE4x（SD Enhance 便携工具包）使用**自构建最小化 ffmpeg**。本文
 - **filter**：`scale, crop, blend, pad, split, fps, palettegen, paletteuse`
 - **parser**：`h264, hevc, mpeg4, vp8, vp9, aac, mp3`（音频 `-c:a copy` 仅需 parser）
 - **protocol**：`file`
+- **外部库**：`libx264`（静态链接，MSYS2 包 `mingw-w64-ucrt-x86_64-x264` **0.165.r3222.b35605a-2**，即 0.165.3222M）与 `zlib`（静态链接）
 - **其他**：`-fps_mode cfr` 需 ffmpeg ≥ 6.0（本项目锁定 9.0 分支，`-vsync` 已被移除）
 
 **明确不需要**：ffprobe / ffplay 程序、全部网络协议（http/rtmp/rtsp/udp/srt/ssh…）、
@@ -137,7 +138,23 @@ server\.venv\Scripts\python -m pytest server\tests\ -v
 - **不带 ffprobe/ffplay**：`server/core.py` 的 `_detect_fps` 已实现 ffprobe 缺失回退
 - 旧 exe 保留 `.bak` 便于回滚
 
-## 8. 体积记录
+## 8. GPL 合规说明
+
+`tools/ffmpeg.exe` 为 **GPL v2 或更高版本**作品（`configure` 输出 `License: GPL version 2 or later`）：
+
+- **GPL 成分**：ffmpeg 本体（LGPL 代码按 GPL 构建）+ 静态链接的 `libx264`（GPL）
+- **对应源码获取途径**（GPLv2 第 3 条）：
+  - ffmpeg：`https://github.com/FFmpeg/FFmpeg` 的 `n9.0` tag（本仓库构建所用，HEAD=d32b387），
+    或 `https://git.ffmpeg.org/ffmpeg.git`；完整 configure 参数见本文档第 4 节，构建步骤见第 5 节
+  - libx264：MSYS2 包 `mingw-w64-ucrt-x86_64-x264`（0.165.r3222.b35605a-2），
+    源码见 `https://code.videolan.org/videolan/x264`（tag `b35605a`）
+- **本项目自身代码不构成衍生作品**：RE4x 以子进程隔离方式调用 `ffmpeg.exe`（
+  `server/core.py` / `server/resizer.py` / `server/mixer.py` 中 `subprocess` 调用），
+  仅以标准命令行接口传参、无链接、无修改，不受 GPL 传染，本项目源码可继续使用自己的许可证
+- **随包分发建议**：发行包中附 GPLv2 许可证文本（源码内 `COPYING.GPLv2`），
+  并在 README 中声明 ffmpeg 为 GPLv2+ 及其源码获取途径（见上文）
+
+## 9. 体积记录
 
 | 项 | 大小 |
 |----|------|
