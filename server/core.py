@@ -226,6 +226,27 @@ def _run_upscale_pipeline(
     return result
 
 
+def _even_dimension(n: int) -> int:
+    """Round *n* down to the nearest even number (minimum 2).
+
+    libx264 + yuv420p require even width/height (4:2:0 chroma
+    subsampling), so an odd dimension from ``round()`` makes the video
+    frame merge fail with "width not divisible by 2".
+    """
+    return max(2, n & ~1)
+
+
+def _ffmpeg_error(stderr: bytes, limit: int = 500) -> str:
+    """Decode ffmpeg stderr for error reporting.
+
+    Keeps the TAIL of the output: ffmpeg prints its banner first and the
+    real error (e.g. "width not divisible by 2") last, so head-truncation
+    used to lose the actual message.
+    """
+    text = stderr.decode('utf-8', errors='replace').strip()
+    return text[-limit:] if len(text) > limit else text
+
+
 def _compute_dimension_upscale(
     input_path: str,
     target_w: int,
@@ -236,6 +257,9 @@ def _compute_dimension_upscale(
 
     Returns ``(final_w, final_h, effective_scale)``. ``crop=True`` → cover
     (fill target box, crop overflow); ``crop=False`` → contain (fit inside).
+
+    ``final_w``/``final_h`` are always even so the result can be encoded
+    with libx264 + yuv420p (see :func:`_even_dimension`).
     """
     with Image.open(input_path) as img:
         src_w, src_h = img.size
@@ -245,11 +269,11 @@ def _compute_dimension_upscale(
 
     if crop:
         effective_scale = max(w_ratio, h_ratio)
-        final_w, final_h = target_w, target_h
+        final_w, final_h = _even_dimension(target_w), _even_dimension(target_h)
     else:
         effective_scale = min(w_ratio, h_ratio)
-        final_w = max(1, round(src_w * effective_scale))
-        final_h = max(1, round(src_h * effective_scale))
+        final_w = _even_dimension(round(src_w * effective_scale))
+        final_h = _even_dimension(round(src_h * effective_scale))
 
     return final_w, final_h, effective_scale
 
@@ -499,8 +523,11 @@ class UpscaleService:
             final_path = os.path.join(
                 single_dir, f"out_{uuid.uuid4().hex}.{ext}")
             if parsed['crop']:
+                # Use the even-adjusted dimensions from
+                # ``_compute_dimension_upscale`` (odd targets would break
+                # libx264/yuv420p encoding downstream).
                 adj = self.resizer.crop(pre, final_path,
-                                        parsed['final_w'], parsed['final_h'])
+                                        final_w, final_h)
             else:
                 adj = self.resizer.resize(pre, final_path,
                                           final_w, final_h)
@@ -688,7 +715,7 @@ class UpscaleService:
                 proc = popen(extract_args, stdout=PIPE, stderr=PIPE, shell=False)
                 _, stderr = proc.communicate(timeout=600)
                 if proc.returncode != 0:
-                    err = stderr.decode('utf-8', errors='replace')[:500]
+                    err = _ffmpeg_error(stderr)
                     tm.update_task(tid, status='error',
                                    error=f'Frame extraction failed: {err}')
                     return []
@@ -841,7 +868,7 @@ class UpscaleService:
                 proc = popen(merge_args, stdout=PIPE, stderr=PIPE, shell=False)
                 _, stderr = proc.communicate(timeout=600)
                 if proc.returncode != 0:
-                    err = stderr.decode('utf-8', errors='replace')[:500]
+                    err = _ffmpeg_error(stderr)
                     tm.update_task(tid, status='error',
                                    error=f'Frame merge failed: {err}')
                     return []

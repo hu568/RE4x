@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.1.5 (2026-08-08)
+
+### 🛠 修复
+
+- **视频尺寸模式奇数宽高导致合并失败**（[issue #1](https://github.com/hu568/RE4x/issues/1)）: 尺寸模式（contain/crop）计算最终尺寸时只做 `round()`，可能得到奇数宽高（如 `round(960×2.2222)=2133`），而 libx264 + yuv420p 要求宽高为偶数，视频帧合并报 `width not divisible by 2` 失败。现在 `_compute_dimension_upscale()` 将最终宽高向下取整为偶数（`max(2, n & ~1)`），单图 crop 分支同步使用取偶后的尺寸（奇数目标输出与用户设定最多差 1px，属有意行为，保证任意尺寸模式结果均可直接编码）
+- **错误日志截断丢失真实报错**: 帧提取/合并失败时 stderr 用 `[:500]` 截断头部，ffmpeg banner 占满后真正的报错行（如 `width not divisible by 2`）被截掉。改为 `_ffmpeg_error()` 保留 stderr 尾部
+
 ## v2.1.3 (2026-08-07)
 
 ### 🛠 修复

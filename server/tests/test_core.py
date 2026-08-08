@@ -300,3 +300,149 @@ def test_zip_results_unknown_task(service, tmp_dir):
     dest = os.path.join(tmp_dir, 'unknown.zip')
     r = service.zip_results('deadbeef', dest)
     assert not r['success']
+
+
+# ── Dimension-mode even sizing (issue #1) ───────────────────────────────
+# Regression: contain/crop dimension mode could compute ODD dimensions
+# (e.g. round(960×2.2222)=2133), which libx264 + yuv420p reject with
+# "width not divisible by 2" during the video frame merge.
+
+
+def test_even_dimension():
+    """_even_dimension rounds down to the nearest even number (min 2)."""
+    from core import _even_dimension  # noqa: PLC0415
+
+    assert _even_dimension(2133) == 2132
+    assert _even_dimension(7) == 6
+    assert _even_dimension(2) == 2
+    assert _even_dimension(1) == 2   # never 0
+    assert _even_dimension(0) == 2   # never 0
+
+
+def test_ffmpeg_error_keeps_tail():
+    """Error text keeps the TAIL of stderr (the real error, not the banner)."""
+    from core import _ffmpeg_error  # noqa: PLC0415
+
+    banner = b'ffmpeg version 9.0 ' + b'x' * 600 + b'\n'
+    err = _ffmpeg_error(banner +
+                        b'width not divisible by 2 (2133x3840)\n'
+                        b'Error while opening encoder\nConversion failed!\n')
+    assert 'width not divisible by 2' in err
+    assert 'Conversion failed!' in err
+    assert len(err) <= 500
+
+
+def test_ffmpeg_error_short_untouched():
+    """Short stderr is returned in full (no truncation)."""
+    from core import _ffmpeg_error  # noqa: PLC0415
+
+    assert _ffmpeg_error(b'  short error  ') == 'short error'
+
+
+def test_compute_dimension_upscale_contain_odd(project_root, tmp_dir):
+    """Issue #1: contain with odd rounding → even output.
+
+    960×1728 source into 2160×3840: scale 2.2222 → round(960×2.2222) = 2133
+    (odd) → now rounded down to 2132.
+    """
+    from core import _compute_dimension_upscale  # noqa: PLC0415
+
+    src = os.path.join(tmp_dir, 'dim_src_960x1728.png')
+    Image.new('RGB', (960, 1728), (128, 128, 128)).save(src)
+    w, h, _ = _compute_dimension_upscale(src, 2160, 3840, crop=False)
+    assert w == 2132 and h == 3840
+    assert w % 2 == 0 and h % 2 == 0
+
+
+def test_compute_dimension_upscale_crop_odd(project_root, tmp_dir):
+    """Issue #1: odd crop targets are rounded down to even."""
+    from core import _compute_dimension_upscale  # noqa: PLC0415
+
+    src = os.path.join(tmp_dir, 'dim_src_crop.png')
+    Image.new('RGB', (100, 100), (0, 0, 0)).save(src)
+    w, h, _ = _compute_dimension_upscale(src, 2161, 3841, crop=True)
+    assert w == 2160 and h == 3840
+
+
+def test_submit_single_dimension_contain_odd(service, tmp_dir):
+    """Issue #1 (single image): contain on odd rounding → even output."""
+    src = os.path.join(tmp_dir, 'single_contain_640x480.png')
+    Image.new('RGB', (640, 480), (64, 128, 192)).save(src)
+    tid = service.submit_single(
+        src, {'width': 1000, 'height': 700, 'crop': False})
+    t = _wait_done(service, tid, timeout=180)
+    assert t['status'] == 'done', t.get('error')
+    with Image.open(t['results'][0]['path']) as img:
+        assert img.size == (932, 700), img.size
+        assert img.size[0] % 2 == 0 and img.size[1] % 2 == 0
+
+
+def test_submit_single_dimension_crop_odd(service, test_img):
+    """Issue #1 (single image): odd crop target → even output."""
+    tid = service.submit_single(
+        test_img, {'width': 601, 'height': 401, 'crop': True})
+    t = _wait_done(service, tid, timeout=180)
+    assert t['status'] == 'done', t.get('error')
+    with Image.open(t['results'][0]['path']) as img:
+        assert img.size == (600, 400), img.size
+
+
+def test_submit_video_dimension_contain_odd(service, project_root, tmp_dir):
+    """Issue #1 (video): contain on odd rounding → even output.
+
+    640×480 source into 1000×700: the h-ratio binds (1.4583) →
+    round(640×1.4583) = 933 (odd) previously broke the libx264/yuv420p
+    merge with "width not divisible by 2"; the frame is now 932×700.
+    """
+    video = os.path.join(project_root, 'test-data', 'onepiece_demo.mp4')
+    if not os.path.isfile(video):
+        pytest.skip('test-data/onepiece_demo.mp4 missing')
+
+    tid = service.submit_video(
+        video, {'width': 1000, 'height': 700, 'crop': False,
+                'output_format': 'mp4'})
+    t = _wait_done(service, tid, timeout=420)
+    assert t['status'] == 'done', t.get('error')
+    assert len(t['results']) == 1
+
+    out = t['results'][0]['path']
+    frame = os.path.join(tmp_dir, 'verify_dim_contain.jpg')
+    from subprocess import run as subprocess_run  # noqa: PLC0415
+    subprocess_run(
+        [service.resizer._ffmpeg_path, '-y', '-i', out,
+         '-frames:v', '1', frame],
+        capture_output=True)
+    with Image.open(frame) as img:
+        assert img.size == (932, 700), \
+            f'contain should be 932x700, got {img.size}'
+        assert img.size[0] % 2 == 0 and img.size[1] % 2 == 0
+
+
+def test_submit_video_dimension_crop_odd(service, project_root, tmp_dir):
+    """Issue #1 (video): odd crop target → even output (961x721 → 960x720).
+
+    Cover path: 4x frame → resize to fill box (mid) → center-crop to the
+    even-adjusted final size, so the encoded frames stay even.
+    """
+    video = os.path.join(project_root, 'test-data', 'onepiece_demo.mp4')
+    if not os.path.isfile(video):
+        pytest.skip('test-data/onepiece_demo.mp4 missing')
+
+    tid = service.submit_video(
+        video, {'width': 961, 'height': 721, 'crop': True,
+                'output_format': 'mp4'})
+    t = _wait_done(service, tid, timeout=420)
+    assert t['status'] == 'done', t.get('error')
+    assert len(t['results']) == 1
+
+    out = t['results'][0]['path']
+    frame = os.path.join(tmp_dir, 'verify_dim_crop_odd.jpg')
+    from subprocess import run as subprocess_run  # noqa: PLC0415
+    subprocess_run(
+        [service.resizer._ffmpeg_path, '-y', '-i', out,
+         '-frames:v', '1', frame],
+        capture_output=True)
+    with Image.open(frame) as img:
+        assert img.size == (960, 720), \
+            f'crop should be 960x720, got {img.size}'
+        assert img.size[0] % 2 == 0 and img.size[1] % 2 == 0
