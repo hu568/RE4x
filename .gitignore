@@ -39,6 +39,7 @@ tools/ffmpeg-src/
 tools/ffmpeg.exe.bak
 
 # 计划文件
+AGENTS.md
 .sisyphus/
 
 # Reasonix 工具（本地运行时元数据与配置）
