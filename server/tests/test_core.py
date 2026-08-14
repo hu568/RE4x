@@ -8,7 +8,7 @@ no mocking anywhere).
 import os
 import time
 
-from PIL import Image
+from PIL import Image, ImageStat
 
 # ── Param parsing (fast, no binaries) ────────────────────────────────────
 
@@ -255,6 +255,21 @@ def test_submit_video_mp4_end_to_end(service, project_root):
     assert len(t['results']) == 1
     assert t['results'][0]['filename'].endswith('.mp4')
     assert os.path.isfile(t['results'][0]['path'])
+
+    # Issue #3 regression: the frame content must be real upscaled video,
+    # not all-black (a broken model_path was silently producing black
+    # frames while all size assertions still passed).
+    from subprocess import run as subprocess_run  # noqa: PLC0415
+
+    out = t['results'][0]['path']
+    frame = os.path.join(service.tmp_dir, 'verify_mp4_content.jpg')
+    subprocess_run(
+        [service.resizer._ffmpeg_path, '-y', '-i', out,
+         '-frames:v', '1', frame],
+        capture_output=True)
+    with Image.open(frame) as img:
+        stat = ImageStat.Stat(img.convert('RGB'))
+        assert max(stat.mean) > 10, f'output frame is black: {stat.mean}'
 
 
 def test_submit_video_mov_end_to_end(service, project_root, tmp_dir):

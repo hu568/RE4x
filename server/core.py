@@ -796,7 +796,12 @@ class UpscaleService:
         model = parsed['model']
         # Relative to the project root: the ffmpeg child runs with
         # cwd=base_path, and a relative path needs no filtergraph escaping.
-        model_path = os.path.relpath(self.models_dir, self.base_path)
+        # Forward slashes only: ffmpeg filtergraph parsing eats single
+        # backslashes (two-level escaping), e.g. "tools\models" would reach
+        # the filter as "toolsmodels" and silently fail to load the model
+        # (black output frames). Windows file APIs accept '/'.
+        model_path = os.path.relpath(
+            self.models_dir, self.base_path).replace('\\', '/')
 
         sr = 'realesrgan=model={}:model_path={}'.format(
             _ffmpeg_filter_escape(model), _ffmpeg_filter_escape(model_path))
