@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.1.6 (2026-08-14)
+
+### 🛠 修复
+
+- **视频输出格式 AVI → MOV**（[issue #2](https://github.com/hu568/RE4x/issues/2)）: 原 `avi` 选项形同虚设——合并逻辑 `out_ext = 'gif' if output_format == 'gif' else 'mp4'` 把非 gif 一律输出为 `.mp4`，UI 却提供 avi 选项，功能与界面不一致。现将视频输出格式改为 `mp4 / mov / gif`：合并逻辑简化为 `out_ext = output_format`，MOV 复用 MP4 合并命令（libx264 + yuv420p + 音频 copy），ffmpeg 按 `.mov` 扩展名自动选择 mov muxer；AVI 源视频的读取（demuxer 白名单）保留不变
+- **ffmpeg 白名单显式补 mov muxer**: configure 增加 `--enable-muxer=mov` 并重新构建最小版（mov 与 mp4 同源 `movenc.c`，此前随 mp4 一并注册，此次显式化以自文档化；体积不变约 7.5MB）
+- **测试与文档**: 新增 MOV 视频端到端回归测试（真实引擎 + 抽帧验证容器可解码）；`test_parse_params_video_formats` 断言同步为 mp4/mov/gif；README / TOOLS.md / ffmpeg-features.md / AGENTS.md 同步更新
+
 ## v2.1.5 (2026-08-08)
 
 ### 🛠 修复

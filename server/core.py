@@ -27,11 +27,11 @@ logger = logging.getLogger('sd_enhance.core')
 # ── Constants ─────────────────────────────────────────────────────────────
 
 # GUI 显示版本号（打包 release 时与 package_release.py 的版本一致）
-APP_VERSION = '2.1.5'
+APP_VERSION = '2.1.6'
 
 ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tiff'}
 VIDEO_EXTENSIONS = {'.mp4', '.webm', '.avi', '.mov', '.mkv'}
-VIDEO_OUTPUT_FORMATS = ('mp4', 'avi', 'gif')
+VIDEO_OUTPUT_FORMATS = ('mp4', 'mov', 'gif')
 
 DEFAULT_MODEL = 'realesrgan-x4plus-anime'
 
@@ -374,7 +374,7 @@ class UpscaleService:
             params: Raw GUI parameter dict.
             output_formats: Allowed output formats for this task type.
                 Image tasks default to ``('png', 'jpg')``; video tasks pass
-                ``VIDEO_OUTPUT_FORMATS`` (mp4/avi/gif). The value is never
+                ``VIDEO_OUTPUT_FORMATS`` (mp4/mov/gif). The value is never
                 silently rewritten — an unsupported format raises an error.
 
         Returns ``(params, None)`` on success or ``(None, error_msg)``.
@@ -839,7 +839,9 @@ class UpscaleService:
                 tm.update_task(tid, progress=95, status='merging_frames')
                 shutil.rmtree(model_4x_dir, ignore_errors=True)
 
-                out_ext = 'gif' if output_format == 'gif' else 'mp4'
+                # gif→gif, mp4→mp4, mov→mov（mov 复用下方 MP4 合并命令，
+                # ffmpeg 按 .mov 扩展名自动选择 mov muxer，见 ffmpeg-features.md）
+                out_ext = output_format
                 output_name = f"output.{out_ext}"
                 output_path = os.path.join(results_dir, output_name)
                 out_frame_pattern = os.path.join(out_frames_dir, 'frame%08d.jpg')

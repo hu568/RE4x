@@ -61,7 +61,7 @@ def test_parse_params_bad_model(service):
 
 
 def test_parse_params_video_formats(service):
-    """Video tasks must accept mp4/avi/gif — and NOT rewrite mp4 to png.
+    """Video tasks must accept mp4/mov/gif — and NOT rewrite mp4 to png.
 
     Regression test: parse_params used to force any non-(png/jpg) value to
     'png', so video tasks reported the absurd 'Unsupported output format: png'.
@@ -255,6 +255,42 @@ def test_submit_video_mp4_end_to_end(service, project_root):
     assert len(t['results']) == 1
     assert t['results'][0]['filename'].endswith('.mp4')
     assert os.path.isfile(t['results'][0]['path'])
+
+
+def test_submit_video_mov_end_to_end(service, project_root, tmp_dir):
+    """Issue #2: output_format='mov' must produce a REAL .mov file.
+
+    Regression test: the merge logic used to force every non-gif format to
+    mp4 (out_ext = 'gif' if ... else 'mp4'), so the avi option produced .mp4.
+    Now out_ext == output_format and mov reuses the MP4 merge command
+    (libx264 + yuv420p + audio copy); the ffmpeg mov muxer (movenc.c,
+    registered together with mp4) writes the .mov container.
+    """
+    video = os.path.join(project_root, 'test-data', 'onepiece_demo.mp4')
+    if not os.path.isfile(video):
+        pytest.skip('test-data/onepiece_demo.mp4 missing')
+
+    tid = service.submit_video(
+        video, {'scale': 2, 'output_format': 'mov'})
+    t = _wait_done(service, tid, timeout=420)
+    assert t['status'] == 'done', t.get('error')
+    assert len(t['results']) == 1
+    assert t['results'][0]['filename'].endswith('.mov'), \
+        f"expected .mov output, got {t['results'][0]['filename']}"
+    assert os.path.isfile(t['results'][0]['path'])
+
+    # The container must really decode: extract frame 1 with ffmpeg itself
+    # (a broken mov/mp4 mixup would fail here).
+    from subprocess import run as subprocess_run  # noqa: PLC0415
+
+    out = t['results'][0]['path']
+    frame = os.path.join(tmp_dir, 'verify_mov.jpg')
+    subprocess_run(
+        [service.resizer._ffmpeg_path, '-y', '-i', out,
+         '-frames:v', '1', frame],
+        capture_output=True)
+    with Image.open(frame) as img:
+        assert img.size[0] > 0 and img.size[1] > 0
 
 
 def test_submit_video_dimension_crop(service, project_root, tmp_dir):

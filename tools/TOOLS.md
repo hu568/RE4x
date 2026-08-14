@@ -72,8 +72,8 @@ GUI 下拉框动态扫描 `models/` 目录中所有 `.param` 文件并提取基�
 
 - **demuxer**：`image2`（图片/帧序列）、`mov`（mp4/mov）、`matroska`（mkv/webm）、`avi`
 - **decoder**：`mjpeg, png, bmp, webp, tiff`（图片）+ `h264, hevc, mpeg4, vp8, vp9`（视频）
-- **muxer**：`image2`、`mp4`、`gif`
-- **encoder**：`libx264`（mp4，GPL）、`mjpeg`（jpg）、`png`、`gif`
+- **muxer**：`image2`、`mp4`、`mov`（与 mp4 同源 movenc.c）、`gif`
+- **encoder**：`libx264`（mp4/mov，GPL）、`mjpeg`（jpg）、`png`、`gif`
 - **filter**：`scale, crop, blend, pad, split, fps, palettegen, paletteuse`
 - **parser**：`h264, hevc, mpeg4, vp8, vp9, aac, mp3`（音频流拷贝）
 
@@ -83,7 +83,7 @@ GUI 下拉框动态扫描 `models/` 目录中所有 `.param` 文件并提取基�
 |------|------|
 | `server/resizer.py` | 图片缩放 `scale`（lanczos）、居中裁剪 `crop` |
 | `server/mixer.py` | 双模型混合 `blend`（异尺寸时 `scale`+`pad`） |
-| `server/core.py` | 视频：提取帧、合成 mp4（libx264+音频 copy）、合成 gif（palettegen/paletteuse）、FPS 探测 |
+| `server/core.py` | 视频：提取帧、合成 mp4/mov（libx264+音频 copy）、合成 gif（palettegen/paletteuse）、FPS 探测 |
 
 ### 视频处理原始命令（三步走）
 
@@ -125,7 +125,7 @@ pacman -S --needed base-devel mingw-w64-ucrt-x86_64-toolchain \
 | 路径 | 说明 |
 |------|------|
 | `ffmpeg-src/` | ffmpeg 自构建源码（git 浅克隆，约 129 MB）；构建文档 [ffmpeg-features.md](ffmpeg-features.md) 在 tools/ 下已入 git，删除此目录不影响 |
-| `ffmpeg.exe.bak` | 替换前的 gyan essentials 旧版 ffmpeg（103 MB，回滚备用） |
+| `ffmpeg.exe.bak` | 替换前的上一版自构建 ffmpeg（7.9 MB，回滚备用） |
 | `realesrgan-ncnn-vulkan.exe.bak` | 替换前的原版引擎（5.9 MB，回滚备用） |
 
 确认新版正常后可删除以节省磁盘；两者均已加入 `.gitignore`，不影响仓库。

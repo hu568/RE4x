@@ -22,20 +22,23 @@ RE4x（SD Enhance 便携工具包）使用**自构建最小化 ffmpeg**。本文
 | 3 | `server/mixer.py:142-152` | 双模型混合 | 同尺寸：`-filter_complex "[0:v][1:v]blend=all_mode=overlay:all_opacity=X"`；异尺寸：`[1:v]scale=W:H:force_original_aspect_ratio=decrease,pad=W:H:(ow-iw)/2:(oh-ih)/2[1s];[0:v][1s]blend=...` | filter `scale` / `pad` / `blend` |
 | 4 | `server/core.py:290-306` | FPS 探测回退 | `ffmpeg -i VIDEO`（解析 stderr 中 `fps` / `tbr` 文本） | 视频 demuxer + 流信息探测；**不需要 ffprobe** |
 | 5 | `server/core.py:676-682` | 提取帧 | `-i VIDEO -qscale:v 1 -fps_mode cfr -r FPS -start_number 1 -y frame%08d.jpg` | 视频 demuxer/decoder、encoder `mjpeg`、muxer `image2`、`-fps_mode`（需 ≥ 6.0） |
-| 6 | `server/core.py:825-834` | 合成 mp4 | `-start_number 1 -framerate FPS -i frame%08d.jpg -i VIDEO -map 0:v:0 -map 1:a:0? -c:a copy -c:v libx264 -r FPS -pix_fmt yuv420p -shortest -y OUT.mp4` | demuxer `image2`、encoder `libx264`（GPL）、muxer `mp4`、音频 parser（aac/mp3，`copy` 模式不转码） |
+| 6 | `server/core.py:859-866` | 合成 mp4/mov | `-start_number 1 -framerate FPS -i frame%08d.jpg -i VIDEO -map 0:v:0 -map 1:a:0? -c:a copy -c:v libx264 -r FPS -pix_fmt yuv420p -shortest -y OUT.mp4\|OUT.mov`（mov 复用同一命令，muxer 按扩展名自动选择） | demuxer `image2`、encoder `libx264`（GPL）、muxer `mp4`/`mov`、音频 parser（aac/mp3，`copy` 模式不转码） |
 | 7 | `server/core.py:816-823` | 合成 gif | `-start_number 1 -framerate FPS -i frame%08d.jpg -vf "fps=10,scale=iw:ih:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -y OUT.gif` | filter `fps`/`scale`/`split`/`palettegen`/`paletteuse`、encoder `gif`、muxer `gif` |
 | 8 | `server/tests/test_core.py:282-285` | 抽单帧验证尺寸 | `-y -i OUT -frames:v 1 frame.jpg` | decoder `h264`、encoder `mjpeg`、muxer `image2` |
 
 > **格式边界**：视频输入（`server/core.py:28`）= `.mp4 .webm .avi .mov .mkv`；
 > 图片输入（`server/core.py:27`）= `.jpg .jpeg .png .webp .bmp .tiff`。
-> 视频输出名义支持 `mp4/avi/gif`，但 `core.py:810` 把非 gif 一律输出为 mp4
-> （`out_ext = 'gif' if output_format == 'gif' else 'mp4'`）→ **不需要 avi muxer**。
+> 视频输出支持 `mp4/mov/gif`（issue #2 起 avi 选项被 mov 取代）：
+> `out_ext = output_format`，mov 复用 MP4 合并命令，ffmpeg 按 `.mov` 扩展名
+> 自动选择 mov muxer。mov 与 mp4 同源（`movenc.c`），`--enable-muxer=mp4`
+> 即注册两者——白名单显式列出 mov 仅为自文档化（防未来 ffmpeg 拆分注册）。
+> demuxer 白名单保留 `avi`（读取老 AVI 源视频不受影响）。
 
 ## 3. 组件需求矩阵（configure 白名单依据）
 
 - **demuxer**：`image2`（图片/帧序列）、`mov`（mp4/mov）、`matroska`（mkv/webm）、`avi`
 - **decoder**：`mjpeg, png, bmp, webp, tiff`（图片输入）+ `h264, hevc, mpeg4, vp8, vp9`（视频输入）
-- **muxer**：`image2`（图片输出）、`mp4`、`gif`
+- **muxer**：`image2`（图片输出）、`mp4`、`mov`（与 mp4 同源 `movenc.c`，随 mp4 一并注册）、`gif`
 - **encoder**：`libx264`（GPL，mp4 核心）、`mjpeg`（jpg）、`png`、`gif`
 - **filter**：`scale, crop, blend, pad, split, fps, palettegen, paletteuse`
 - **parser**：`h264, hevc, mpeg4, vp8, vp9, aac, mp3`（音频 `-c:a copy` 仅需 parser）
@@ -60,7 +63,7 @@ gnutls/srt/zmq/avisynth/sdl2…）。
   --pkg-config-flags=--static --extra-ldflags=-static \
   --enable-protocol=file \
   --enable-demuxer=image2,mov,matroska,avi \
-  --enable-muxer=image2,mp4,gif \
+  --enable-muxer=image2,mp4,mov,gif \
   --enable-decoder=mjpeg,png,bmp,webp,tiff,h264,hevc,mpeg4,vp8,vp9 \
   --enable-encoder=libx264,mjpeg,png,gif \
   --enable-filter=scale,crop,blend,pad,split,fps,palettegen,paletteuse \
@@ -113,6 +116,11 @@ tools/ffmpeg.exe -y -start_number 1 -framerate 23.98 \
   -i /tmp/smoke_frames/frame%08d.jpg -i test-data/onepiece_demo.mp4 \
   -map 0:v:0 -map 1:a:0? -c:a copy -c:v libx264 -r 23.98 -pix_fmt yuv420p \
   -shortest /tmp/smoke_out.mp4
+# 6b. 合成 mov（复用 mp4 命令，muxer 按 .mov 扩展名自动选择）
+tools/ffmpeg.exe -y -start_number 1 -framerate 23.98 \
+  -i /tmp/smoke_frames/frame%08d.jpg -i test-data/onepiece_demo.mp4 \
+  -map 0:v:0 -map 1:a:0? -c:a copy -c:v libx264 -r 23.98 -pix_fmt yuv420p \
+  -shortest /tmp/smoke_out.mov
 # 7. 合成 gif（palettegen/paletteuse）
 tools/ffmpeg.exe -y -start_number 1 -framerate 23.98 \
   -i /tmp/smoke_frames/frame%08d.jpg \
@@ -160,4 +168,5 @@ server\.venv\Scripts\python -m pytest server\tests\ -v
 |----|------|
 | gyan essentials `ffmpeg.exe`（9.0，102.8 MB 配置） | 102.8 MB |
 | 定制 `ffmpeg.exe`（9.0，白名单 + `--enable-small` + 全静态） | **7.53 MB（7,900,672 B，-92.7%）** |
+| 定制 `ffmpeg.exe`（v2.1.6，白名单显式补 `--enable-muxer=mov` 重建） | 7,900,672 B（与上版字节数一致——mov 随 mp4 同源注册，功能无增减） |
 | `tools/` 发行载荷合计（引擎 5.9M + models 41M + ffmpeg 7.6M + vcomp140 180K） | **约 55 MB** |
