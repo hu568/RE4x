@@ -62,7 +62,8 @@ tools/
 |------|---------|------|
 | `realesrgan-x4plus-anime` | 动漫图片（默认推荐）| 4x |
 | `realesrgan-x4plus` | 通用图片 | 4x |
-| `spanv2` | 高效细节增强（NTIRE2026 Efficient SR，仅 0.5MB）| 4x |
+| `spanv2` | 高效细节增强，速度极快（NTIRE2026 Efficient SR，仅 0.5MB）| 4x |
+| `realesr-animevideov3-x4` | 通用视频超分模型，速度快 | 4x |
 
 > 统一管线：引擎固定跑 4x，再由 ffmpeg 缩放到用户目标（1–8x），任意倍率都能精确输出。
 > `spanv2` 需配套 SPANV2 版引擎（见 [TOOLS.md](tools/TOOLS.md)）；引擎源码在 `engine-src/`。
