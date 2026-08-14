@@ -325,7 +325,7 @@
       <!-- ── Video ── -->
       <section id="page-video" class="hidden">
         <div class="panel">
-          <h2>选择视频 <span class="tag">逐帧放大并合成</span></h2>
+          <h2>选择视频 <span class="tag">AI 放大并合成</span></h2>
           <div class="pick-card" id="video-pick" onclick="pickVideo()">
             <div class="big">🎬</div>
             <div class="hint" id="video-hint">点击选择视频文件…</div>
@@ -417,12 +417,12 @@
 <!-- ══ About modal ══ -->
 <div class="modal-mask" id="about-mask" onclick="if(event.target===this)closeAbout()">
   <div class="modal">
-    <h3>🖼 SD Enhance 图片放大工具 <span id="about-ver">v2.0</span></h3>
+    <h3>🖼 SD Enhance 图片放大工具 <span id="about-ver">v2.2.0</span></h3>
     <p>独立的 Stable Diffusion 图片后期处理工具。基于 Real-ESRGAN 的
       <code>realesrgan-ncnn-vulkan</code> 引擎 + ffmpeg 两步管线：
       模型固定 4x 放大 → ffmpeg 缩放到目标倍率。</p>
     <ul>
-      <li>单张图片、批量、目录批量、视频逐帧放大</li>
+      <li>单张图片、批量、目录批量、视频单命令放大（无中间帧）</li>
       <li>支持 1–8x 比例放大或精确目标尺寸</li>
       <li>支持双模型混合（ffmpeg blend）</li>
       <li>本地处理，无需上传，无需联网</li>

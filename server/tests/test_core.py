@@ -323,6 +323,47 @@ def test_submit_video_dimension_crop(service, project_root, tmp_dir):
         assert img.size == (320, 180), f'crop mode should be 320x180, got {img.size}'
 
 
+# ── Issue #3: in-process realesrgan filter (single-pass video) ────────
+
+
+def test_detect_realesrgan_filter(service):
+    """Issue #3: the custom ffmpeg build registers the realesrgan filter."""
+    from core import _detect_realesrgan_filter  # noqa: PLC0415
+
+    assert _detect_realesrgan_filter(service.resizer._ffmpeg_path) is True
+
+
+def test_submit_video_single_pass_no_intermediate_frames(
+        service, project_root):
+    """Issue #3: video upscale runs as ONE ffmpeg command.
+
+    The two-pass pipeline used to create TMP/frames/<id> and
+    TMP/out_frames/<id> (tens of GB for long videos). With the in-process
+    realesrgan filter those directories must never be created.
+    """
+    from core import _detect_realesrgan_filter  # noqa: PLC0415
+
+    if not _detect_realesrgan_filter(service.resizer._ffmpeg_path):
+        pytest.skip('ffmpeg build without the realesrgan filter')
+
+    video = os.path.join(project_root, 'test-data', 'onepiece_demo.mp4')
+    if not os.path.isfile(video):
+        pytest.skip('test-data/onepiece_demo.mp4 missing')
+
+    tid = service.submit_video(video, {'scale': 2, 'output_format': 'mp4'})
+    t = _wait_done(service, tid, timeout=420)
+    assert t['status'] == 'done', t.get('error')
+    assert len(t['results']) == 1
+    assert t['results'][0]['filename'].endswith('.mp4')
+    assert os.path.isfile(t['results'][0]['path'])
+
+    # Zero intermediate frames: the two-pass frame directories are absent.
+    assert not os.path.exists(os.path.join(service.tmp_dir, 'frames', tid))
+    assert not os.path.exists(
+        os.path.join(service.tmp_dir, 'out_frames', tid))
+    assert not os.path.exists(os.path.join(service.tmp_dir, 'frames_4x', tid))
+
+
 # ── Zip results ──────────────────────────────────────────────────────────
 
 

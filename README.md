@@ -9,7 +9,7 @@
 - **图片放大**：基于 Real-ESRGAN ncnn Vulkan 引擎 + ffmpeg 两步管线（模型固定 4x → 缩放到目标），支持 1–8x 比例或精确目标尺寸
 - **双模型混合**：两个模型的结果按比例 blend，兼顾清晰度与观感
 - **批量处理**：单张、多文件、整个目录
-- **视频放大**：提取帧 → AI 放大 → 合成视频（保留原音频，支持 MP4/MOV/GIF 输出）
+- **视频放大**：FFmpeg 滤镜链内嵌 Real-ESRGAN（ncnn-Vulkan），**一条命令走完**——不再抽取中间帧，零临时文件、零二次磁盘 IO（保留原音频，支持 MP4/MOV/GIF 输出；旧版 ffmpeg 自动回退「提取帧 → AI 放大 → 合成」两步管线）
 - **桌面 GUI**：原生窗口 + 文件选择对话框，结果一键打开 / 另存为
 - **运行日志**：每次使用自动写入 `logs/sd-enhance.log`（保留 7 天），「关于」弹窗可查看日志路径，出问题贴日志即可排查
 
@@ -40,9 +40,9 @@ tools/
 
 > 模型自动探测：`tools/models/` 下任意 `.param` 文件都会出现在 GUI 的下拉框中，可自行增删。
 
-#### FFmpeg（自构建最小版，约 7.5 MB）
+#### FFmpeg（自构建最小版，含 realesrgan 滤镜）
 
-推荐按 [ffmpeg-features.md](tools/ffmpeg-features.md) 自构建：ffmpeg 9.0 白名单 + 全静态，仅含本项目所需组件（ffprobe 不需要，程序会自动回退）。备选：从 [gyan.dev FFmpeg Builds](https://www.gyan.dev/ffmpeg/builds/) 下载 `ffmpeg-release-essentials.zip`，解压后复制 **bin\ffmpeg.exe**（约 103 MB）：
+推荐按 [ffmpeg-features.md](tools/ffmpeg-features.md) + [ffmpeg-realesrgan/README.md](ffmpeg-realesrgan/README.md) 自构建：ffmpeg 9.0 白名单 + 全静态，**内嵌 ncnn-Vulkan 的 `realesrgan` 滤镜**（v2.2 起视频放大单命令完成）。备选：从 [gyan.dev FFmpeg Builds](https://www.gyan.dev/ffmpeg/builds/) 下载 `ffmpeg-release-essentials.zip`，解压后复制 **bin\ffmpeg.exe**（约 103 MB，不含 realesrgan 滤镜，视频任务自动回退旧两步管线）：
 
 ```
 tools/
@@ -100,9 +100,12 @@ RE4x/
 ├── _internal/                  # PyInstaller 运行时数据（勿动）
 ├── tools/                      # 运行时（需自行下载，见上）
 │   ├── realesrgan-ncnn-vulkan.exe
-│   ├── ffmpeg.exe                 # 自构建最小版（约 7.5M，无需 ffprobe，见 tools/ffmpeg-features.md）
+│   ├── ffmpeg.exe                 # 自构建最小版（v2.2 约 20M，含 realesrgan 滤镜；无需 ffprobe，见 tools/ffmpeg-features.md）
 │   ├── vcomp140.dll
 │   ├── models/                  # 模型 .param + .bin
+├── ffmpeg-realesrgan/           # issue #3：ffmpeg 内嵌 Real-ESRGAN 滤镜源码
+│   ├── vf_realesrgan.c          # 滤镜（C）+ C++ 桥接 + 引擎实现
+│   └── build_filter.sh          # 自构建脚本（产出 tools/ffmpeg.exe）
 ├── server/                      # Python 源码
 │   ├── app.py                   # pywebview 桌面入口
 │   ├── core.py                  # 核心服务（管线/任务，无 Flask）

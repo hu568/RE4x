@@ -38,6 +38,10 @@ tools/sd-enhance-server/
 tools/ffmpeg-src/
 tools/ffmpeg.exe.bak
 
+# realesrgan 滤镜构建输入/产物（ncnn 源码副本与静态库，见 ffmpeg-realesrgan/）
+tools/ncnn-src/
+tools/ncnn-build/
+
 # 计划文件
 AGENTS.md
 .sisyphus/

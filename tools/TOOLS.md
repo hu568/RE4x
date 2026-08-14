@@ -8,7 +8,7 @@
 | 文件/目录 | 体积 | 用途 |
 |-----------|------|------|
 | `realesrgan-ncnn-vulkan.exe` | 6.4 MB | AI 图片放大引擎（CPU/Vulkan 推理，含 SPANV2 支持） |
-| `ffmpeg.exe` | 7.5 MB | 视频处理 + 图片缩放/裁剪/混合（自构建最小版，见下文） |
+| `ffmpeg.exe` | 20.0 MB（v2.2，含 realesrgan 滤镜；v2.1.6 为 7.5 MB） | 视频处理 + 图片缩放/裁剪/混合（自构建最小版，见下文） |
 | `vcomp140.dll` | 208 KB | VC++ 运行库（引擎依赖，需与 exe 同目录） |
 | `models/` | 42 MB | ESRGAN 模型（`.param` + `.bin`），GUI 自动探测 |
 | `ffmpeg-src/` | — | ffmpeg 自构建源码（非发行内容，可删） |
@@ -74,7 +74,7 @@ GUI 下拉框动态扫描 `models/` 目录中所有 `.param` 文件并提取基�
 - **decoder**：`mjpeg, png, bmp, webp, tiff`（图片）+ `h264, hevc, mpeg4, vp8, vp9`（视频）
 - **muxer**：`image2`、`mp4`、`mov`（与 mp4 同源 movenc.c）、`gif`
 - **encoder**：`libx264`（mp4/mov，GPL）、`mjpeg`（jpg）、`png`、`gif`
-- **filter**：`scale, crop, blend, pad, split, fps, palettegen, paletteuse`
+- **filter**：`scale, crop, blend, pad, split, fps, palettegen, paletteuse, realesrgan`（v2.2 起，内嵌 ncnn-Vulkan，见 [ffmpeg-realesrgan/](../ffmpeg-realesrgan/)）
 - **parser**：`h264, hevc, mpeg4, vp8, vp9, aac, mp3`（音频流拷贝）
 
 ### 项目内用途
@@ -83,9 +83,20 @@ GUI 下拉框动态扫描 `models/` 目录中所有 `.param` 文件并提取基�
 |------|------|
 | `server/resizer.py` | 图片缩放 `scale`（lanczos）、居中裁剪 `crop` |
 | `server/mixer.py` | 双模型混合 `blend`（异尺寸时 `scale`+`pad`） |
-| `server/core.py` | 视频：提取帧、合成 mp4/mov（libx264+音频 copy）、合成 gif（palettegen/paletteuse）、FPS 探测 |
+| `server/core.py` | 视频（v2.2 单遍管线）：`realesrgan` 滤镜一条命令放大 + libx264/音频 copy 合成；旧版 ffmpeg 自动回退提取帧/合并两步管线 |
 
-### 视频处理原始命令（三步走）
+### 视频处理原始命令
+
+**v2.2 起（realesrgan 滤镜版，推荐）**：一条命令走完，零中间帧：
+
+```bash
+# realesrgan 滤镜 4x 放大 → lanczos 缩回 2x → libx264 合成（保留原音频）
+ffmpeg -i onepiece_demo.mp4 \
+  -vf "realesrgan=model=realesrgan-x4plus-anime:model_path=tools/models,scale=trunc(iw*2/8)*2:trunc(ih*2/8)*2:flags=lanczos" \
+  -map 0:v:0 -map 0:a:0? -c:a copy -c:v libx264 -pix_fmt yuv420p output_w_audio.mp4
+```
+
+**旧版 ffmpeg（无 realesrgan 滤镜时程序自动回退，三步走）**：
 
 ```bash
 # 1. 提取帧（先建 tmp_frames/）
@@ -111,8 +122,11 @@ ffmpeg -i out_frames/frame%08d.jpg -i onepiece_demo.mp4 \
 # MSYS2 ucrt64 环境
 pacman -S --needed base-devel mingw-w64-ucrt-x86_64-toolchain \
   mingw-w64-ucrt-x86_64-x264 mingw-w64-ucrt-x86_64-nasm \
-  mingw-w64-ucrt-x86_64-pkgconf
-# 克隆 n9.0 源码后执行 ffmpeg-features.md 第 4 节的 configure + make
+  mingw-w64-ucrt-x86_64-pkgconf \
+  mingw-w64-ucrt-x86_64-vulkan-headers mingw-w64-ucrt-x86_64-vulkan-loader \
+  mingw-w64-ucrt-x86_64-glslang cmake
+# v2.2 滤镜构建：先 bash tools/build_ncnn.sh，再 bash ffmpeg-realesrgan/build_filter.sh
+# （旧版无滤镜构建：克隆 n9.0 源码后执行 ffmpeg-features.md 第 4 节的 configure + make）
 ```
 
 ## 4. 运行库 `vcomp140.dll`

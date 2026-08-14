@@ -27,7 +27,7 @@ logger = logging.getLogger('sd_enhance.core')
 # ── Constants ─────────────────────────────────────────────────────────────
 
 # GUI 显示版本号（打包 release 时与 package_release.py 的版本一致）
-APP_VERSION = '2.1.6'
+APP_VERSION = '2.2.0'
 
 ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tiff'}
 VIDEO_EXTENSIONS = {'.mp4', '.webm', '.avi', '.mov', '.mkv'}
@@ -247,6 +247,36 @@ def _ffmpeg_error(stderr: bytes, limit: int = 500) -> str:
     return text[-limit:] if len(text) > limit else text
 
 
+def _compute_dimension_from_size(
+    src_w: int,
+    src_h: int,
+    target_w: int,
+    target_h: int,
+    crop: bool,
+) -> tuple[int, int, float, int, int]:
+    """Pure-size variant of :func:`_compute_dimension_upscale` (no image IO).
+
+    Returns ``(final_w, final_h, effective_scale, mid_w, mid_h)`` where
+    mid is the cover intermediate used by the crop path.
+    """
+    w_ratio = target_w / src_w
+    h_ratio = target_h / src_h
+
+    cover_scale = max(w_ratio, h_ratio)
+    mid_w = max(1, round(src_w * cover_scale))
+    mid_h = max(1, round(src_h * cover_scale))
+
+    if crop:
+        effective_scale = cover_scale
+        final_w, final_h = _even_dimension(target_w), _even_dimension(target_h)
+    else:
+        effective_scale = min(w_ratio, h_ratio)
+        final_w = _even_dimension(round(src_w * effective_scale))
+        final_h = _even_dimension(round(src_h * effective_scale))
+
+    return final_w, final_h, effective_scale, mid_w, mid_h
+
+
 def _compute_dimension_upscale(
     input_path: str,
     target_w: int,
@@ -264,27 +294,50 @@ def _compute_dimension_upscale(
     with Image.open(input_path) as img:
         src_w, src_h = img.size
 
-    w_ratio = target_w / src_w
-    h_ratio = target_h / src_h
-
-    if crop:
-        effective_scale = max(w_ratio, h_ratio)
-        final_w, final_h = _even_dimension(target_w), _even_dimension(target_h)
-    else:
-        effective_scale = min(w_ratio, h_ratio)
-        final_w = _even_dimension(round(src_w * effective_scale))
-        final_h = _even_dimension(round(src_h * effective_scale))
-
+    final_w, final_h, effective_scale, _mid_w, _mid_h = (
+        _compute_dimension_from_size(src_w, src_h, target_w, target_h, crop))
     return final_w, final_h, effective_scale
 
 
-def _detect_fps(ffmpeg_dir: str, video_path: str) -> float:
-    """Detect frame-rate of *video_path* using ffprobe or ffmpeg.
+def _detect_realesrgan_filter(ffmpeg_path: str) -> bool:
+    """Return True when *ffmpeg_path* registers the in-process ``realesrgan`` filter.
 
-    Prefers ``avg_frame_rate`` over ``r_frame_rate``; falls back to 24.0.
+    The filter only exists in the issue #3 custom build (built from
+    ``ffmpeg-realesrgan/``); the plain whitelist build returns False and
+    video tasks fall back to the legacy two-pass pipeline.
+    """
+    from subprocess import PIPE
+
+    try:
+        proc = popen(
+            [ffmpeg_path, '-hide_banner', '-filters'],
+            stdout=PIPE, stderr=PIPE, shell=False,
+        )
+        stdout, _ = proc.communicate(timeout=30)
+        if proc.returncode != 0:
+            return False
+    except Exception:
+        return False
+
+    text = stdout.decode('utf-8', errors='replace')
+    for line in text.splitlines():
+        parts = line.split()
+        if len(parts) >= 2 and parts[1] == 'realesrgan':
+            return True
+    return False
+
+
+def _probe_video_info(ffmpeg_dir: str, video_path: str) -> dict:
+    """Probe fps / duration / width / height of *video_path*.
+
+    Prefers ffprobe JSON when available (the whitelist ffmpeg build ships
+    none); falls back to parsing ``ffmpeg -i`` stderr. Unknown fields are
+    None; fps falls back to 24.0.
     """
     import json as _json
     from subprocess import PIPE
+
+    info: dict = {'fps': 24.0, 'duration': None, 'width': None, 'height': None}
 
     ffprobe_path = os.path.join(ffmpeg_dir, 'ffprobe.exe')
     if not os.path.isfile(ffprobe_path):
@@ -292,18 +345,16 @@ def _detect_fps(ffmpeg_dir: str, video_path: str) -> float:
 
     if os.path.isfile(ffprobe_path):
         args = [
-            ffprobe_path,
-            '-v', 'quiet',
-            '-print_format', 'json',
-            '-show_streams',
+            ffprobe_path, '-v', 'quiet',
+            '-print_format', 'json', '-show_streams', '-show_format',
             video_path,
         ]
         try:
             proc = popen(args, stdout=PIPE, stderr=PIPE, shell=False)
             stdout, _ = proc.communicate(timeout=30)
             if proc.returncode == 0 and stdout:
-                info = _json.loads(stdout)
-                for stream in info.get('streams', []):
+                data = _json.loads(stdout)
+                for stream in data.get('streams', []):
                     if stream.get('codec_type') == 'video':
                         for key in ('avg_frame_rate', 'r_frame_rate'):
                             fps_str = stream.get(key, '')
@@ -312,31 +363,69 @@ def _detect_fps(ffmpeg_dir: str, video_path: str) -> float:
                                 if int(den) != 0:
                                     fps = float(num) / float(den)
                                     if fps > 0:
-                                        return round(fps, 2)
+                                        info['fps'] = round(fps, 2)
+                                        break
+                        info['width'] = stream.get('width')
+                        info['height'] = stream.get('height')
+                        break
+                fmt = data.get('format', {})
+                if fmt.get('duration'):
+                    try:
+                        info['duration'] = float(fmt['duration'])
+                    except (TypeError, ValueError):
+                        pass
+                return info
         except Exception:
             pass
 
-    # Fallback: parse ffmpeg -i output
+    # Fallback: parse ffmpeg -i stderr
     ffmpeg_path = os.path.join(ffmpeg_dir, 'ffmpeg.exe')
     args = [ffmpeg_path, '-i', video_path]
     try:
         proc = popen(args, stdout=PIPE, stderr=PIPE, shell=False)
         _, stderr = proc.communicate(timeout=30)
         output = stderr.decode('utf-8', errors='replace')
+        match = re.search(r'Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)', output)
+        if match:
+            info['duration'] = (
+                int(match.group(1)) * 3600
+                + int(match.group(2)) * 60
+                + float(match.group(3))
+            )
         match = re.search(r'Video:.*?(\d+\.?\d*)\s*fps', output)
+        if not match:
+            match = re.search(r'Video:.*?(\d+\.?\d*)\s*tbr', output)
         if match:
             fps = float(match.group(1))
             if fps > 0:
-                return fps
-        match = re.search(r'Video:.*?(\d+\.?\d*)\s*tbr', output)
+                info['fps'] = round(fps, 2)
+        match = re.search(r'Video:.*?\b(\d{2,5})x(\d{2,5})\b', output)
         if match:
-            fps = float(match.group(1))
-            if fps > 0:
-                return fps
+            info['width'] = int(match.group(1))
+            info['height'] = int(match.group(2))
     except Exception:
         pass
 
-    return 24.0
+    return info
+
+
+def _detect_fps(ffmpeg_dir: str, video_path: str) -> float:
+    """Detect frame-rate of *video_path* using ffprobe or ffmpeg.
+
+    Prefers ``avg_frame_rate`` over ``r_frame_rate``; falls back to 24.0.
+    """
+    return _probe_video_info(ffmpeg_dir, video_path)['fps']
+
+
+def _ffmpeg_filter_escape(value: str) -> str:
+    """Escape *value* for use as a filter option inside a filtergraph string."""
+    out = []
+    for ch in value:
+        if ch in "\\':":
+            out.append('\\' + ch)
+        else:
+            out.append(ch)
+    return ''.join(out)
 
 
 # ── Upscale Service ───────────────────────────────────────────────────────
@@ -355,6 +444,8 @@ class UpscaleService:
         self.base_path = base_path or _get_base_path()
         self.tmp_dir = os.path.join(self.base_path, 'TMP')
         self.tasks = TaskManager()
+        # None = not probed yet; issue #3 single-pass filter availability
+        self._realesrgan_filter: bool | None = None
 
         os.makedirs(self.tmp_dir, exist_ok=True)
 
@@ -659,6 +750,163 @@ class UpscaleService:
 
     # ── Video (async) ─────────────────────────────────────────────────────
 
+    def _realesrgan_filter_available(self, ffmpeg_path: str) -> bool:
+        """Cached detection of the in-process ``realesrgan`` ffmpeg filter.
+
+        Issue #3: when the custom ffmpeg build is present, video upscale
+        runs as ONE ffmpeg command with zero intermediate frame files;
+        otherwise the legacy two-pass pipeline is used.
+        """
+        if self._realesrgan_filter is None:
+            self._realesrgan_filter = _detect_realesrgan_filter(ffmpeg_path)
+            logger.info(
+                'ffmpeg realesrgan filter: %s',
+                'available (single-pass video pipeline)'
+                if self._realesrgan_filter
+                else 'NOT available (legacy two-pass video pipeline)',
+            )
+        return self._realesrgan_filter
+
+    def _run_video_single_pass(
+        self,
+        abs_video: str,
+        output_path: str,
+        parsed: dict,
+        scale: float,
+        dim_mode: bool,
+        detected_fps: float,
+        src_w: int | None,
+        src_h: int | None,
+        duration: float | None,
+        output_format: str,
+        task_id: str,
+        tm,
+    ) -> dict:
+        """Issue #3: one single ffmpeg command upscales the whole video.
+
+        ``realesrgan`` (in-process ncnn-Vulkan, fixed 4x) → ``scale``/``crop``
+        to the requested target → encode (libx264 + audio copy, or gif
+        palette). Frames flow through the filter graph as AVFrame pointers;
+        no intermediate frame files touch the disk. Progress is parsed from
+        ``ffmpeg -progress`` (out_time_us against the source duration).
+        """
+        from subprocess import PIPE
+
+        ffmpeg = self.resizer._ffmpeg_path
+        model = parsed['model']
+        # Relative to the project root: the ffmpeg child runs with
+        # cwd=base_path, and a relative path needs no filtergraph escaping.
+        model_path = os.path.relpath(self.models_dir, self.base_path)
+
+        sr = 'realesrgan=model={}:model_path={}'.format(
+            _ffmpeg_filter_escape(model), _ffmpeg_filter_escape(model_path))
+
+        if dim_mode:
+            if not src_w or not src_h:
+                return {
+                    'success': False, 'output_path': output_path,
+                    'error': 'Could not probe source video dimensions',
+                }
+            final_w, final_h, _eff_scale, mid_w, mid_h = (
+                _compute_dimension_from_size(
+                    src_w, src_h,
+                    parsed['final_w'], parsed['final_h'], parsed['crop']))
+            if parsed['crop']:
+                # cover: 4x -> mid (fills the target box) -> center-crop
+                chain = (f'{sr},scale={mid_w}:{mid_h}:flags=lanczos,'
+                         f'crop={final_w}:{final_h}')
+            else:
+                # contain: exact-size resize
+                chain = f'{sr},scale={final_w}:{final_h}:flags=lanczos'
+        else:
+            # 4x model output (iw/ih) -> target = source * scale, even-sized
+            # (iw = 4*src_w, so iw*scale/8*2 = even(src_w*scale))
+            chain = (f'{sr},scale=trunc(iw*{scale}/8)*2:trunc(ih*{scale}/8)*2:'
+                     f'flags=lanczos')
+
+        if output_format == 'gif':
+            chain = (f'{chain},fps=10,split[s0][s1];'
+                     f'[s0]palettegen[p];[s1][p]paletteuse')
+            args = [
+                ffmpeg, '-hide_banner', '-i', abs_video,
+                '-vf', chain,
+                '-progress', 'pipe:1', '-nostats', '-y', output_path,
+            ]
+        else:
+            args = [
+                ffmpeg, '-hide_banner', '-i', abs_video,
+                '-vf', chain,
+                '-map', '0:v:0', '-map', '0:a:0?',
+                '-c:a', 'copy', '-c:v', 'libx264',
+                '-r', str(detected_fps), '-pix_fmt', 'yuv420p',
+                '-progress', 'pipe:1', '-nostats', '-y', output_path,
+            ]
+
+        logger.info('[%s] single-pass video: %s', task_id, ' '.join(args))
+
+        try:
+            proc = popen(
+                args, stdout=PIPE, stderr=PIPE, shell=False,
+                cwd=self.base_path,
+            )
+        except Exception as e:
+            return {'success': False, 'output_path': output_path,
+                    'error': f'Failed to start ffmpeg: {e}'}
+
+        stderr_chunks: list[bytes] = []
+
+        def _drain_stderr() -> None:
+            for chunk in iter(proc.stderr.readline, b''):
+                stderr_chunks.append(chunk)
+
+        err_thread = threading.Thread(target=_drain_stderr, daemon=True)
+        err_thread.start()
+
+        try:
+            frame_no = 0
+            last_pct = 0
+            for line in proc.stdout:
+                text = line.decode('utf-8', errors='replace').strip()
+                if text.startswith('frame='):
+                    try:
+                        frame_no = int(text.split('=', 1)[1])
+                    except ValueError:
+                        pass
+                elif text.startswith('out_time_us=') and duration:
+                    try:
+                        secs = int(text.split('=', 1)[1]) / 1_000_000.0
+                        pct = min(99, max(2, int(secs / duration * 98) + 1))
+                        if pct > last_pct:
+                            tm.update_task(
+                                task_id, progress=pct,
+                                status=f'upscaling_frame_{frame_no}')
+                            last_pct = pct
+                    except (ValueError, ZeroDivisionError):
+                        pass
+        except Exception:
+            pass
+        finally:
+            try:
+                proc.stdout.close()
+            except Exception:
+                pass
+
+        rc = proc.wait()
+        err_thread.join(timeout=10)
+        stderr = b''.join(stderr_chunks)
+
+        if rc != 0:
+            return {
+                'success': False, 'output_path': output_path,
+                'error': f'Video upscale failed: {_ffmpeg_error(stderr)}',
+            }
+        if not os.path.isfile(output_path):
+            return {
+                'success': False, 'output_path': output_path,
+                'error': 'Video upscale failed: no output file produced',
+            }
+        return {'success': True, 'output_path': output_path, 'error': None}
+
     def submit_video(self, video_path: str, params: dict) -> str:
         """Start a video upscale task; result goes to ``TMP/results/<id>``."""
         from subprocess import PIPE
@@ -690,14 +938,44 @@ class UpscaleService:
             dim_mode = bool(parsed['final_w'] and parsed['final_h'])
 
             results_dir = os.path.join(self.tmp_dir, 'results', tid)
-            frames_dir = os.path.join(self.tmp_dir, 'frames', tid)
-            out_frames_dir = os.path.join(self.tmp_dir, 'out_frames', tid)
             os.makedirs(results_dir, exist_ok=True)
-            os.makedirs(frames_dir, exist_ok=True)
-            os.makedirs(out_frames_dir, exist_ok=True)
 
             ffmpeg = self.resizer._ffmpeg_path
             ffmpeg_dir = os.path.dirname(ffmpeg)
+
+            # ── Issue #3 fast path: single-pass in-process filter pipeline ──
+            # One ffmpeg command with the realesrgan (ncnn-Vulkan) filter:
+            # zero intermediate frame files, zero engine subprocesses.
+            if self._realesrgan_filter_available(ffmpeg):
+                try:
+                    info = _probe_video_info(ffmpeg_dir, abs_video)
+                    detected_fps = info['fps']
+                    duration = info.get('duration')
+                    src_w, src_h = info.get('width'), info.get('height')
+                    output_name = f'output.{output_format}'
+                    output_path = os.path.join(results_dir, output_name)
+                    tm.update_task(tid, progress=1, status='upscaling_video')
+                    r = self._run_video_single_pass(
+                        abs_video, output_path, parsed, scale, dim_mode,
+                        detected_fps, src_w, src_h, duration,
+                        output_format, tid, tm)
+                    if not r['success']:
+                        tm.update_task(
+                            tid, status='error',
+                            error=r.get('error') or 'Video upscale failed')
+                        return []
+                    return [{'path': output_path, 'filename': output_name}]
+                except Exception as e:
+                    logger.exception(
+                        '[%s] single-pass video crashed: %s', tid, e)
+                    tm.update_task(tid, status='error', error=str(e))
+                    return []
+
+            # ── Legacy two-pass pipeline (extract → engine → resize → merge) ──
+            frames_dir = os.path.join(self.tmp_dir, 'frames', tid)
+            out_frames_dir = os.path.join(self.tmp_dir, 'out_frames', tid)
+            os.makedirs(frames_dir, exist_ok=True)
+            os.makedirs(out_frames_dir, exist_ok=True)
 
             try:
                 # ── 1. Extract frames (CFR to preserve timing) ───────────

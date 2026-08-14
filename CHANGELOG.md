@@ -1,5 +1,17 @@
 # Changelog
 
+## v2.2.0 (2026-08-14)
+
+### ✨ 新功能：FFmpeg 滤镜链内嵌 Real-ESRGAN（issue #3）
+
+- **realesrgan 滤镜**: 把 Real-ESRGAN（ncnn-Vulkan）编进自构建 ffmpeg 的 libavfilter（新增 `ffmpeg-realesrgan/` 源码目录：`vf_realesrgan.c` 滤镜 + extern "C" 桥接 + RE+SPANV2 引擎实现），一条命令完成视频放大：`ffmpeg -i in.mp4 -vf "realesrgan=model=...,scale=..." -c:v libx264 out.mp4`
+- **消除中间帧**: 视频管线从「抽帧 → 引擎逐帧放大 → 合成」两步改为**单进程单命令**——帧在滤镜链内以 AVFrame 指针传递，零中间文件、零二次磁盘 IO、不再反复拉起引擎子进程（长视频不再产生几十 GB 临时帧）
+- **自动回退**: `server/core.py` 启动时探测 `ffmpeg -filters`，无 realesrgan 滤镜（如 gyan 备选版 ffmpeg）自动回退旧两步管线，向后兼容
+- **进度可见**: 单遍管线解析 `ffmpeg -progress`（out_time_us 对照源时长），GUI 进度条照常更新
+- **视频尺寸**: scale 模式改为滤镜表达式 `trunc(iw*S/8)*2`（模型 4x 输出直接按比例缩放，顺带修复旧管线 scale 模式奇数尺寸会导致 libx264 报错的隐患）
+- **构建**: `tools/build_ncnn.sh`（MinGW 静态 libncnn.a + Vulkan）+ `ffmpeg-realesrgan/build_filter.sh`（注册滤镜 + configure + make）；链接要点：`--extra-libs` 含 `-lstdc++` 触发 C++ 链接器，`-static` 与 MinGW import lib 冲突改为 `-static-libgcc -static-libstdc++`（vulkan-1.dll 为 Windows 系统库）
+- **测试**: 新增滤镜探测断言 + 单遍管线零中间帧目录回归测试；全部视频端到端测试（mp4/mov/dimension）改走新管线自动验证
+
 ## v2.1.6 (2026-08-14)
 
 ### 🛠 修复
