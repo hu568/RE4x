@@ -69,6 +69,26 @@ tools/ffmpeg.exe -y -i test-data/onepiece_demo.mp4 \
   -map 0:v:0 -map 0:a:0? -c:a copy -c:v libx264 -pix_fmt yuv420p TMP/out_filter.mp4
 ```
 
+## 实测性能对比（本机基准）
+
+同一视频（test-data/onepiece_demo.mp4，640×480 / 23.98fps / 1 秒 24 帧，2x 放大），
+Intel RaptorLake-S iGPU（Vulkan），两条管线各跑一遍（同一 server 代码路径，
+仅切换管线分支）：
+
+| 管线 | 总耗时 | 中间帧峰值磁盘占用 |
+|------|--------|-------------------|
+| 旧两步（抽帧 → 引擎 → resize → 合并） | 83.1 s | **282.5 MB**（1 秒视频！） |
+| 新单遍（realesrgan 滤镜单命令） | **72.1 s** | **0 MB** |
+
+结论：
+
+- **速度约快 13%**：推理（GPU）是绝对瓶颈，滤镜方案省掉的是推理之外的
+  两次磁盘 IO、jpg 有损编解码、抽帧/合并两个额外 ffmpeg pass 与进程拉起开销
+- **磁盘收益是主收益**：中间帧随视频长度线性放大（长视频几十 GB），新管线恒为 0
+- 新管线还顺带消除了 jpg 中间帧的有损压缩（AVFrame 内存传递，无二次量化）
+- 未来叠加硬编（-c:v h264_nvenc / qsv 等）才有数量级提速——滤镜方案
+  正好打通了与 FFmpeg 硬件编码链的衔接（issue #3 的初衷）
+
 ## 许可
 
 - vf_realesrgan.c / realesrgan_capi.*：随 RE4x 项目许可分发
