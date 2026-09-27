@@ -49,6 +49,10 @@
       </div>
       <div class="win-nav-footer">
         <div class="win-nav-menu">
+          <div class="win-nav-item" id="nav-clear-cache" role="button" tabindex="0" title="清空 TMP 缓存文件夹">
+            <span class="icon win-font-icon">&#xE74D;</span>
+            <span class="win-text-block label">清理缓存</span>
+          </div>
           <div class="win-nav-item" id="nav-about" role="button" tabindex="0">
             <span class="icon win-font-icon">&#xE946;</span>
             <span class="win-text-block label">关于</span>
@@ -399,6 +403,26 @@
   </section>
 </div>
 
+<!-- ══ 清理缓存确认对话框(ContentDialog) ══ -->
+<div class="content-dialog-overlay win-theme-scope app-modal" id="confirm-mask">
+  <section class="content-dialog" role="dialog" aria-modal="true">
+    <div class="content-dialog-content">
+      <span class="win-text-block content-dialog-title">清理缓存</span>
+      <div class="content-dialog-body">
+        <p>将删除 TMP 文件夹中的全部临时文件与历史结果缓存,此操作不可恢复。确定继续吗?</p>
+      </div>
+    </div>
+    <div class="content-dialog-command-space primary-secondary-visible">
+      <button class="win-btn AccentButtonStyle content-dialog-button content-dialog-primary" id="confirm-ok" type="button">
+        <span class="win-text-block">清理</span>
+      </button>
+      <button class="win-btn content-dialog-button content-dialog-secondary" id="confirm-cancel" type="button">
+        <span class="win-text-block">取消</span>
+      </button>
+    </div>
+  </section>
+</div>
+
 <script>
 'use strict';
 /* ════════════════════════════════════════════════════════════
@@ -632,7 +656,7 @@ const cbFormat = new WinComboBox($('combo-format'), {
   value: 'png',
 });
 const sliderScale = new WinSlider($('slider-scale'), {
-  min: 1, max: 8, step: 0.5, value: 2,
+  min: 1, max: 8, step: 0.5, value: 4,
   onInput: v => $('scale-val').textContent = v.toFixed(1) + 'x',
 });
 const sliderMix = new WinSlider($('slider-mix'), {
@@ -1040,6 +1064,48 @@ function closeAbout() {
   }, 180);
 }
 
+/* ── 清理缓存 ───────────────────────────────────────────── */
+function fmtBytes(n) {
+  n = Number(n) || 0;
+  if (n < 1024) return n + ' B';
+  const units = ['KB', 'MB', 'GB', 'TB'];
+  let i = -1;
+  do { n /= 1024; i++; } while (n >= 1024 && i < units.length - 1);
+  return n.toFixed(n >= 100 ? 0 : 1) + ' ' + units[i];
+}
+function openConfirm() {
+  const mask = $('confirm-mask');
+  if (mask.classList.contains('is-open')) return;
+  mask.classList.add('is-open');
+  mask.classList.add('content-dialog-enter-active');
+  setTimeout(() => mask.classList.remove('content-dialog-enter-active'), 300);
+}
+function closeConfirm() {
+  const mask = $('confirm-mask');
+  mask.classList.add('content-dialog-leave-active', 'content-dialog-leave-to');
+  setTimeout(() => {
+    mask.classList.remove('is-open', 'content-dialog-leave-active', 'content-dialog-leave-to');
+  }, 180);
+}
+async function clearCache() {
+  closeConfirm();
+  if (!api) return;
+  setBusy(true, '正在清理缓存…');
+  try {
+    const r = await api.clear_cache();
+    if (r && r.success) {
+      showInfoBar('success', '已释放 ' + fmtBytes(r.freed_bytes), '缓存已清理');
+    } else if (r && r.error === 'tasks-running') {
+      showInfoBar('warning', '有任务正在处理,请等待完成后再清理缓存。', '无法清理');
+    } else {
+      showError((r && r.error) || '清理缓存失败');
+    }
+  } catch (e) {
+    showError(String(e));
+  }
+  setBusy(false, '就绪');
+}
+
 /* ── 主题 ───────────────────────────────────────────────── */
 const THEME_KEY = 're4x-theme';
 
@@ -1073,6 +1139,13 @@ document.querySelectorAll('.win-nav-item[data-tab]').forEach(item => {
   });
 });
 $('nav-about').addEventListener('click', openAbout);
+$('nav-clear-cache').addEventListener('click', openConfirm);
+$('nav-clear-cache').addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openConfirm(); }
+});
+$('confirm-ok').addEventListener('click', clearCache);
+$('confirm-cancel').addEventListener('click', closeConfirm);
+$('confirm-mask').addEventListener('click', e => { if (e.target === e.currentTarget) closeConfirm(); });
 // 汉堡 = 收起;内容区左上角按钮 = 展开(WinUI minimal 模式行为)
 // 收起/展开走 CSS 过渡(负 margin 平移),过渡结束后才真正 display:none
 const PANE_ANIM_MS = 280;
@@ -1115,7 +1188,9 @@ $('error-close').addEventListener('click', () => $('error-infobar').classList.ad
 $('about-close').addEventListener('click', closeAbout);
 $('about-mask').addEventListener('click', e => { if (e.target === e.currentTarget) closeAbout(); });
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && $('about-mask').classList.contains('is-open')) closeAbout();
+  if (e.key !== 'Escape') return;
+  if ($('confirm-mask').classList.contains('is-open')) closeConfirm();
+  else if ($('about-mask').classList.contains('is-open')) closeAbout();
 });
 window.addEventListener('resize', moveNavIndicator);
 

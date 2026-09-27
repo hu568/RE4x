@@ -458,6 +458,49 @@ def test_zip_results_unknown_task(service, tmp_dir):
     assert not r['success']
 
 
+# ── Clear cache (TMP/) ───────────────────────────────────────────────────
+
+
+def test_clear_cache_removes_temp_files(service, tmp_dir):
+    """clear_cache empties TMP/ but keeps the folder itself."""
+    junk = os.path.join(tmp_dir, 'single')
+    os.makedirs(junk, exist_ok=True)
+    p = os.path.join(junk, 'junk.bin')
+    with open(p, 'wb') as f:
+        f.write(b'\0' * 4096)
+
+    r = service.clear_cache()
+
+    assert r['success'] is True
+    assert r['error'] is None
+    assert r['freed_bytes'] >= 4096
+    assert not os.path.exists(p)
+    assert os.path.isdir(tmp_dir)          # TMP/ itself is kept
+
+
+def test_clear_cache_refuses_while_task_running(service, tmp_dir):
+    """clear_cache refuses when a task is queued/processing."""
+    junk = os.path.join(tmp_dir, 'results', 'keepme')
+    os.makedirs(junk, exist_ok=True)
+    with open(os.path.join(junk, 'x.bin'), 'wb') as f:
+        f.write(b'\0' * 128)
+
+    tid = service.tasks.create_task()
+    service.tasks.update_task(tid, status='processing')
+    try:
+        r = service.clear_cache()
+        assert r['success'] is False
+        assert r['error'] == 'tasks-running'
+        assert os.path.isfile(os.path.join(junk, 'x.bin'))  # untouched
+    finally:
+        service.tasks.update_task(tid, status='done')
+
+    # once the task is finished, clearing works
+    r = service.clear_cache()
+    assert r['success'] is True
+    assert not os.path.exists(junk)
+
+
 # ── Dimension-mode even sizing (issue #1) ───────────────────────────────
 # Regression: contain/crop dimension mode could compute ODD dimensions
 # (e.g. round(960×2.2222)=2133), which libx264 + yuv420p reject with

@@ -126,6 +126,15 @@ class GuiApi:
     def get_models(self) -> list[dict]:
         return self.service.get_models()
 
+    def clear_cache(self) -> dict:
+        """Empty the TMP/ cache folder → ``{"success", "freed_bytes", "error"}``.
+
+        Refused (``error == 'tasks-running'``) while any task is still
+        queued/processing.
+        """
+        logger.info('clear_cache requested')
+        return self.service.clear_cache()
+
     def image_preview(self, path: str, max_bytes: int = 512 * 1024):
         """Return a base64 data-URL preview of *path* (for <img> tags).
 

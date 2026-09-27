@@ -102,6 +102,14 @@ class TaskManager:
         with self._lock:
             self._tasks.pop(task_id, None)
 
+    def has_active_tasks(self) -> bool:
+        """True while any task is queued or still running."""
+        with self._lock:
+            return any(
+                t.get('status') not in ('done', 'error')
+                for t in self._tasks.values()
+            )
+
     # ── Background execution ──────────────────────────────────────────────
 
     def run_task(self, task_id: str, func, *args, **kwargs) -> None:
@@ -428,6 +436,18 @@ def _ffmpeg_filter_escape(value: str) -> str:
     return ''.join(out)
 
 
+def _dir_size(path: str) -> int:
+    """Total size in bytes of all files under *path* (0 when unreadable)."""
+    total = 0
+    for root, _dirs, files in os.walk(path, onerror=lambda _e: None):
+        for name in files:
+            try:
+                total += os.path.getsize(os.path.join(root, name))
+            except OSError:
+                pass
+    return total
+
+
 # ── Upscale Service ───────────────────────────────────────────────────────
 
 class UpscaleService:
@@ -573,6 +593,36 @@ class UpscaleService:
 
     def get_task(self, task_id: str) -> dict | None:
         return self.tasks.get_task(task_id)
+
+    def clear_cache(self) -> dict:
+        """Empty the ``TMP/`` folder (single/batch intermediates + result
+        caches of finished tasks).
+
+        Refused while any task is queued/running — those keep their
+        intermediate files inside ``TMP/``. The folder itself is kept;
+        locked files (e.g. open in a viewer) are skipped. Returns
+        ``{"success", "freed_bytes", "error"}`` where *error* is
+        ``'tasks-running'`` when refused.
+        """
+        if self.tasks.has_active_tasks():
+            logger.info('clear_cache refused: tasks still running')
+            return {'success': False, 'freed_bytes': 0,
+                    'error': 'tasks-running'}
+
+        os.makedirs(self.tmp_dir, exist_ok=True)
+        before = _dir_size(self.tmp_dir)
+        for name in os.listdir(self.tmp_dir):
+            path = os.path.join(self.tmp_dir, name)
+            try:
+                if os.path.isdir(path) and not os.path.islink(path):
+                    shutil.rmtree(path)
+                else:
+                    os.remove(path)
+            except OSError as e:
+                logger.warning('clear_cache: skipped %s: %s', name, e)
+        freed = max(0, before - _dir_size(self.tmp_dir))
+        logger.info('clear_cache: freed %.1f MB', freed / 1024 / 1024)
+        return {'success': True, 'freed_bytes': freed, 'error': None}
 
     # ── Single image (async task) ─────────────────────────────────────────
 
