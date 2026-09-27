@@ -87,7 +87,19 @@ realesrgan_ctx* realesrgan_create(const char* model_path, const char* model_name
         std::string modelpath = wpath + "/" + wname + ".bin";
 #endif
 
-        esrgan->load(parampath, modelpath);
+        int load_rc = esrgan->load(parampath, modelpath);
+        if (load_rc != 0)
+        {
+            delete esrgan;
+            release_gpu_instance();
+            if (errbuf && errbuf_size > 0)
+                snprintf(errbuf, errbuf_size,
+                         "model '%s' failed to load from '%s' "
+                         "(missing or corrupt .param/.bin)",
+                         model_name ? model_name : "(null)",
+                         model_path ? model_path : "(null)");
+            return NULL;
+        }
 
         esrgan->scale = 4;
 

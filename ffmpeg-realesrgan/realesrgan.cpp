@@ -70,14 +70,25 @@ RealESRGAN::~RealESRGAN()
         delete realesrgan_postproc;
     }
 
-    bicubic_2x->destroy_pipeline(net.opt);
-    delete bicubic_2x;
+    // load() may return early (model load failure) leaving these null;
+    // preproc/postproc above are plain deletes, the bicubic layers are not.
+    if (bicubic_2x)
+    {
+        bicubic_2x->destroy_pipeline(net.opt);
+        delete bicubic_2x;
+    }
 
-    bicubic_3x->destroy_pipeline(net.opt);
-    delete bicubic_3x;
+    if (bicubic_3x)
+    {
+        bicubic_3x->destroy_pipeline(net.opt);
+        delete bicubic_3x;
+    }
 
-    bicubic_4x->destroy_pipeline(net.opt);
-    delete bicubic_4x;
+    if (bicubic_4x)
+    {
+        bicubic_4x->destroy_pipeline(net.opt);
+        delete bicubic_4x;
+    }
 }
 
 #if _WIN32
@@ -86,15 +97,23 @@ int RealESRGAN::load(const std::wstring& parampath, const std::wstring& modelpat
 int RealESRGAN::load(const std::string& parampath, const std::string& modelpath)
 #endif
 {
+    // load_param/load_model failures must abort init: an unloaded net still
+    // runs its (empty) pipeline and every output frame comes out black.
 #if _WIN32
     {
         FILE* fp = _wfopen(parampath.c_str(), L"rb");
         if (!fp)
         {
             fwprintf(stderr, L"_wfopen %ls failed\n", parampath.c_str());
+            return -1;
         }
 
-        net.load_param(fp);
+        if (net.load_param(fp) != 0)
+        {
+            fclose(fp);
+            fwprintf(stderr, L"load_param %ls failed\n", parampath.c_str());
+            return -1;
+        }
 
         fclose(fp);
     }
@@ -103,15 +122,23 @@ int RealESRGAN::load(const std::string& parampath, const std::string& modelpath)
         if (!fp)
         {
             fwprintf(stderr, L"_wfopen %ls failed\n", modelpath.c_str());
+            return -1;
         }
 
-        net.load_model(fp);
+        if (net.load_model(fp) != 0)
+        {
+            fclose(fp);
+            fwprintf(stderr, L"load_model %ls failed\n", modelpath.c_str());
+            return -1;
+        }
 
         fclose(fp);
     }
 #else
-    net.load_param(parampath.c_str());
-    net.load_model(modelpath.c_str());
+    if (net.load_param(parampath.c_str()) != 0)
+        return -1;
+    if (net.load_model(modelpath.c_str()) != 0)
+        return -1;
 #endif
 
     // initialize preprocess and postprocess pipeline
