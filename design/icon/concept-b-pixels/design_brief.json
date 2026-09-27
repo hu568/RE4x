@@ -1,0 +1,10 @@
+{
+  "project": "concept-b-pixels",
+  "created_at": "2026-09-27T18:35:43.240859",
+  "prompt": "Windows 11 Fluent style app icon for RE4x, AI image upscaler: pixel-block mosaic (low-res) at bottom-left transitioning diagonally into a large smooth rounded block (high-res) at top-right, sparkle, blue gradient backplate",
+  "width": 256,
+  "height": 256,
+  "style": "fluent, geometric, layered",
+  "colors": "#6BC7F6,#3E9BEF,#1E63C8,#FFFFFF",
+  "description": ""
+}

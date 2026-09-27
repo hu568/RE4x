@@ -1,0 +1,10 @@
+{
+  "project": "concept-a-magnifier",
+  "created_at": "2026-09-27T18:35:43.176300",
+  "prompt": "Windows 11 Fluent style app icon for RE4x, an AI image upscaler: white magnifying glass with a small landscape photo inside the lens, four-point sparkle at top right, blue-to-cyan gradient rounded-square backplate",
+  "width": 256,
+  "height": 256,
+  "style": "fluent, glossy, geometric",
+  "colors": "#6BC7F6,#3E9BEF,#1E63C8,#FFFFFF",
+  "description": ""
+}

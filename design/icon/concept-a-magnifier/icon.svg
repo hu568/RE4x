@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6FC9F8"/>
+      <stop offset="0.5" stop-color="#3D93EC"/>
+      <stop offset="1" stop-color="#1B5DC4"/>
+    </linearGradient>
+    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.26"/>
+      <stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.55"/>
+      <stop offset="0.4" stop-color="#FFFFFF" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#EAF7FF"/>
+      <stop offset="1" stop-color="#BFE3FF"/>
+    </linearGradient>
+    <radialGradient id="softsh" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0.55" stop-color="#0A3A8C" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#0A3A8C" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="lens"><circle cx="116" cy="126" r="44"/></clipPath>
+  </defs>
+
+  <!-- backplate -->
+  <rect x="12" y="12" width="232" height="232" rx="54" fill="url(#bg)"/>
+  <rect x="12" y="12" width="232" height="232" rx="54" fill="url(#gloss)"/>
+  <rect x="13.5" y="13.5" width="229" height="229" rx="52.5" fill="none" stroke="url(#edge)" stroke-width="3"/>
+
+  <ellipse cx="146" cy="206" rx="86" ry="22" fill="url(#softsh)"/>
+
+  <!-- handle -->
+  <line x1="153" y1="163" x2="189" y2="199" stroke="#FFFFFF" stroke-width="16" stroke-linecap="round"/>
+
+  <!-- lens glass + scene -->
+  <circle cx="116" cy="126" r="50" fill="url(#sky)"/>
+  <g clip-path="url(#lens)">
+    <rect x="72" y="82" width="88" height="88" fill="url(#sky)"/>
+    <circle cx="138" cy="105" r="11" fill="#FFD75E"/>
+    <path d="M 66 172 L 110 116 L 154 172 Z" fill="#83B5F0"/>
+    <path d="M 98 172 L 138 126 L 178 172 Z" fill="#4A8BDD"/>
+    <path d="M 86 90 L 104 90 L 72 140 L 72 118 Z" fill="#FFFFFF" opacity="0.25"/>
+  </g>
+  <circle cx="116" cy="126" r="50" fill="none" stroke="#FFFFFF" stroke-width="13"/>
+
+  <!-- sparkles -->
+  <path d="M 196 46 Q 196 72 222 72 Q 196 72 196 98 Q 196 72 170 72 Q 196 72 196 46 Z" fill="#FFFFFF"/>
+  <path d="M 226 96 Q 226 106 236 106 Q 226 106 226 116 Q 226 106 216 106 Q 226 106 226 96 Z" fill="#FFFFFF" opacity="0.95"/>
+</svg>

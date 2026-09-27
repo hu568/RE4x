@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6FC9F8"/>
+      <stop offset="0.5" stop-color="#3D93EC"/>
+      <stop offset="1" stop-color="#1B5DC4"/>
+    </linearGradient>
+    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.26"/>
+      <stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.55"/>
+      <stop offset="0.4" stop-color="#FFFFFF" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="softsh" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0.55" stop-color="#0A3A8C" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#0A3A8C" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- backplate -->
+  <rect x="12" y="12" width="232" height="232" rx="54" fill="url(#bg)"/>
+  <rect x="12" y="12" width="232" height="232" rx="54" fill="url(#gloss)"/>
+  <rect x="13.5" y="13.5" width="229" height="229" rx="52.5" fill="none" stroke="url(#edge)" stroke-width="3"/>
+
+  <ellipse cx="128" cy="206" rx="84" ry="18" fill="url(#softsh)"/>
+
+  <!-- 4 -->
+  <g stroke="#FFFFFF" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 112 78 L 62 146" stroke-width="23"/>
+    <path d="M 54 146 L 132 146" stroke-width="25"/>
+    <path d="M 118 72 L 118 182" stroke-width="26"/>
+  </g>
+
+  <!-- multiplication sign -->
+  <g stroke="#FFFFFF" stroke-width="20" stroke-linecap="round">
+    <line x1="166" y1="109" x2="202" y2="145"/>
+    <line x1="202" y1="109" x2="166" y2="145"/>
+  </g>
+
+  <!-- sparkles -->
+  <path d="M 212 36 Q 212 52 228 52 Q 212 52 212 68 Q 212 52 196 52 Q 212 52 212 36 Z" fill="#FFFFFF"/>
+  <path d="M 234 79 Q 234 86 241 86 Q 234 86 234 93 Q 234 86 227 86 Q 234 86 234 79 Z" fill="#FFFFFF" opacity="0.95"/>
+</svg>
