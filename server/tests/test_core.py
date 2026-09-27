@@ -18,7 +18,7 @@ def test_parse_params_defaults(service):
     parsed, err = service.parse_params({})
     assert err is None
     assert parsed['model'] == 'realesrgan-x4plus-anime'
-    assert parsed['target_scale'] == 2.0
+    assert parsed['target_scale'] == 4.0
     assert parsed['model_2'] is None
     assert parsed['mix_ratio'] == 0.5
     assert parsed['output_format'] == 'png'

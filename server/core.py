@@ -566,7 +566,7 @@ class UpscaleService:
             if err:
                 return None, f'scale: {err}'
         else:
-            target_scale = 2.0
+            target_scale = 4.0
 
         return {
             'model': model,
