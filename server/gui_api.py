@@ -10,6 +10,7 @@ Native dialogs (file open / folder / save) use pywebview's
 """
 
 import base64
+import json
 import logging
 import os
 import shutil
@@ -29,6 +30,36 @@ class GuiApi:
     def set_window(self, window) -> None:
         """Attach the pywebview window (needed for native dialogs)."""
         self._window = window
+        window.events.loaded += self._on_page_loaded
+
+    # ── Drag & drop ───────────────────────────────────────────────────────
+
+    def _on_page_loaded(self, *_args, **_kwargs) -> None:
+        """Register the native drop listener once the DOM is ready.
+
+        WebView2 never exposes real file paths to JS File objects, so
+        dropped files must be resolved on the Python side (pywebview fills
+        in ``pywebviewFullPath``) and forwarded to the frontend.
+        """
+        try:
+            self._window.dom.document.events.drop += self._on_drop
+        except Exception as e:  # pragma: no cover — defensive
+            logger.warning('drag&drop unavailable: %s', e)
+
+    def _on_drop(self, event) -> None:
+        """Native drop handler → forward dropped file paths to the UI."""
+        try:
+            files = ((event or {}).get('dataTransfer') or {}).get('files') or []
+            paths = [f.get('pywebviewFullPath') or f.get('name') for f in files]
+            paths = [p for p in paths if p]
+            if not paths:
+                return
+            logger.info('drag&drop: %d file(s)', len(paths))
+            self._window.evaluate_js(
+                'window.__onFilesDropped && window.__onFilesDropped(%s)'
+                % json.dumps(paths))
+        except Exception as e:
+            logger.warning('drag&drop handling failed: %s', e)
 
     # ── Native dialogs ────────────────────────────────────────────────────
 

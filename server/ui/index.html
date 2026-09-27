@@ -82,11 +82,16 @@
       <section id="page-single" class="app-page">
         <h2 class="app-section-title">选择图片</h2>
         <div class="pick-card" id="single-pick">
-          <div><span class="pick-icon">&#xE722;</span></div>
-          <div class="hint" id="single-hint">点击选择图片文件…</div>
-        </div>
-        <div class="preview-wrap hidden" id="single-preview-wrap">
-          <img id="single-preview" alt="preview">
+          <div class="pick-empty" id="single-empty">
+            <div><span class="pick-icon">&#xE722;</span></div>
+            <div class="hint">点击选择,或将图片拖拽到此处…</div>
+          </div>
+          <div class="pick-filled hidden" id="single-filled">
+            <span class="pick-icon hidden" id="single-file-glyph">&#xE8B9;</span>
+            <img id="single-preview" class="hidden" alt="预览">
+            <div class="hint" id="single-name"></div>
+            <div class="pick-change-tip">点击更换图片</div>
+          </div>
         </div>
       </section>
 
@@ -95,7 +100,7 @@
         <h2 class="app-section-title">选择图片</h2>
         <div class="pick-card" id="batch-pick">
           <div><span class="pick-icon">&#xE8C8;</span></div>
-          <div class="hint">点击选择多张图片（可多选）…</div>
+          <div class="hint">点击选择多张图片（可多选）,或直接拖拽图片到此处…</div>
         </div>
         <div class="file-list" id="batch-list"></div>
       </section>
@@ -140,7 +145,7 @@
         <h2 class="app-section-title">选择视频</h2>
         <div class="pick-card" id="video-pick">
           <div><span class="pick-icon">&#xE714;</span></div>
-          <div class="hint" id="video-hint">点击选择视频文件…</div>
+          <div class="hint" id="video-hint">点击选择,或将视频拖拽到此处…</div>
         </div>
       </section>
 
@@ -713,21 +718,37 @@ function moveNavIndicator() {
 }
 
 /* ── 文件选择 ───────────────────────────────────────────── */
+const IMAGE_RE = /\.(png|jpe?g|webp|bmp|tiff?|gif)$/i;
+const VIDEO_RE = /\.(mp4|webm|avi|mov|mkv)$/i;
+
+async function setSingleFile(path) {
+  state.singleFile = path;
+  $('single-pick').classList.add('filled');
+  $('single-empty').classList.add('hidden');
+  $('single-filled').classList.remove('hidden');
+  $('single-name').textContent = path;
+  const img = $('single-preview');
+  const glyph = $('single-file-glyph');
+  let preview = null;
+  if (api) {
+    try { preview = await api.image_preview(path); } catch (e) { /* 无预览 */ }
+  }
+  if (preview) {
+    img.src = preview;
+    img.classList.remove('hidden');
+    glyph.classList.add('hidden');
+  } else {
+    img.removeAttribute('src');
+    img.classList.add('hidden');
+    glyph.classList.remove('hidden');
+  }
+}
+
 async function pickSingle() {
   if (!api) return;
   const files = await api.select_files(false);
   if (!files || !files.length) return;
-  state.singleFile = files[0];
-  $('single-hint').textContent = state.singleFile;
-  $('single-pick').classList.add('filled');
-  const preview = await api.image_preview(state.singleFile);
-  const wrap = $('single-preview-wrap');
-  if (preview) {
-    $('single-preview').src = preview;
-    wrap.classList.remove('hidden');
-  } else {
-    wrap.classList.add('hidden');
-  }
+  await setSingleFile(files[0]);
 }
 
 async function pickBatch() {
@@ -769,14 +790,73 @@ async function pickDirOutput() {
   if (d) $('dir-output').value = d;
 }
 
+function setVideoFile(path) {
+  state.singleFile = path; // 复用 single 槽位存视频路径
+  $('video-hint').textContent = path;
+  $('video-pick').classList.add('filled');
+}
+
 async function pickVideo() {
   if (!api) return;
   const v = await api.select_video();
   if (!v) return;
-  state.singleFile = v; // 复用 single 槽位存视频路径
-  $('video-hint').textContent = v;
-  $('video-pick').classList.add('filled');
+  setVideoFile(v);
 }
+
+/* ── 拖拽上传(原生 drop 由 Python 侧解析出真实路径后回调到这里) ── */
+let dragOverCard = null;
+
+window.__onFilesDropped = function (paths) {
+  if (!paths || !paths.length) return;
+  if (state.tab === 'single') {
+    const img = paths.find(p => IMAGE_RE.test(p));
+    if (img) setSingleFile(img);
+    else showInfoBar('warning', '请拖入图片文件(png/jpg/webp/bmp/tiff/gif)');
+  } else if (state.tab === 'batch') {
+    const imgs = paths.filter(p => IMAGE_RE.test(p));
+    if (!imgs.length) {
+      showInfoBar('warning', '拖入的文件中没有图片');
+      return;
+    }
+    let added = 0;
+    for (const p of imgs) {
+      if (!state.batchFiles.includes(p)) { state.batchFiles.push(p); added++; }
+    }
+    renderBatchList();
+    setStatusText(added ? `已添加 ${added} 张图片` : '所选图片已在列表中');
+  } else if (state.tab === 'video') {
+    const vid = paths.find(p => VIDEO_RE.test(p));
+    if (vid) setVideoFile(vid);
+    else showInfoBar('warning', '请拖入视频文件(mp4/webm/avi/mov/mkv)');
+  } else if (state.tab === 'dir') {
+    showInfoBar('warning', '目录批量页请输入文件夹路径;单张图片可拖到「单张图片」页');
+  }
+};
+
+// 浏览器要收到被阻止默认行为的 dragover 才会触发 drop;顺带高亮悬停的卡片
+document.addEventListener('dragover', e => {
+  e.preventDefault();
+  if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+  const card = e.target && e.target.closest ? e.target.closest('.pick-card') : null;
+  if (card !== dragOverCard) {
+    if (dragOverCard) dragOverCard.classList.remove('drag-over');
+    dragOverCard = card;
+    if (card) card.classList.add('drag-over');
+  }
+});
+document.addEventListener('dragleave', e => {
+  if (!e.relatedTarget && dragOverCard) {
+    dragOverCard.classList.remove('drag-over');
+    dragOverCard = null;
+  }
+});
+document.addEventListener('drop', e => {
+  e.preventDefault(); // 避免页面被拖入的文件替换
+  if (dragOverCard) {
+    dragOverCard.classList.remove('drag-over');
+    dragOverCard = null;
+  }
+});
 
 /* ── 设置 ───────────────────────────────────────────────── */
 function setMode(mode) {
@@ -994,9 +1074,31 @@ document.querySelectorAll('.win-nav-item[data-tab]').forEach(item => {
 });
 $('nav-about').addEventListener('click', openAbout);
 // 汉堡 = 收起;内容区左上角按钮 = 展开(WinUI minimal 模式行为)
+// 收起/展开走 CSS 过渡(负 margin 平移),过渡结束后才真正 display:none
+const PANE_ANIM_MS = 280;
+let paneAnimTimer = null;
+
 function setPaneHidden(hidden) {
-  $('nav-shell').classList.toggle('is-pane-hidden', hidden);
-  $('nav-restore').classList.toggle('hidden', !hidden);
+  const shell = $('nav-shell');
+  const panel = $('nav-panel');
+  if (paneAnimTimer) { clearTimeout(paneAnimTimer); paneAnimTimer = null; }
+  if (hidden) {
+    shell.classList.add('is-pane-collapsed');
+    paneAnimTimer = setTimeout(() => {
+      paneAnimTimer = null;
+      if (!shell.classList.contains('is-pane-collapsed')) return; // 动画期间被展开
+      shell.classList.add('is-pane-hidden'); // 保留 is-pane-collapsed,展开时从收起位起跳
+      $('nav-restore').classList.remove('hidden');
+    }, PANE_ANIM_MS);
+  } else {
+    $('nav-restore').classList.add('hidden');
+    if (shell.classList.contains('is-pane-hidden')) {
+      shell.classList.remove('is-pane-hidden');
+      shell.classList.add('is-pane-collapsed'); // 确保从收起位置开始过渡
+      void panel.offsetWidth;                    // 强制 reflow,让过渡生效
+    }
+    shell.classList.remove('is-pane-collapsed');
+  }
   moveNavIndicator();
 }
 $('nav-toggle').addEventListener('click', () => setPaneHidden(true));

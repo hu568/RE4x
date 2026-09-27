@@ -24,6 +24,11 @@ body {
 /* ── 导航面板 ─────────────────────────────────────────────── */
 .win-nav-left-panel {
   width: var(--win-nav-open-pane-length, 260px);
+  /* 收起/展开动画:面板整体平移出左侧(负 margin),面板内容不随动画重排 */
+  transition: margin-left var(--win-nav-pane-open-duration, 250ms) cubic-bezier(0.1, 0.9, 0.2, 1);
+}
+.win-nav-shell.is-pane-collapsed .win-nav-left-panel {
+  margin-left: calc(-1 * var(--win-nav-open-pane-length, 260px) - 10px);
 }
 
 /* 内容区可滚动(winui-controls 里默认 overflow:hidden) */
@@ -107,6 +112,26 @@ body {
   border-color: var(--accent-base);
 }
 .pick-card.filled .hint { color: var(--text-primary); }
+/* 拖拽悬停时的高亮 */
+.pick-card.drag-over {
+  border-style: solid;
+  border-color: var(--accent-base);
+  background: var(--subtle-secondary);
+}
+/* 选中文件后的预览(显示在选择框内部) */
+.pick-card .pick-filled img {
+  max-width: 100%;
+  max-height: 240px;
+  border-radius: var(--ControlCornerRadius, 4px);
+  display: block;
+  margin: 0 auto 10px;
+  user-select: none;
+}
+.pick-card .pick-change-tip {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
 
 /* ── 文件列表(batch) ────────────────────────────────────── */
 .file-list {
@@ -345,17 +370,4 @@ body {
 .win-slider-thumb:hover::after {
   background: var(--accent-hover);
   transform: scale(1.167);
-}
-
-/* 预览图 */
-.preview-wrap {
-  margin-top: 12px;
-}
-.preview-wrap img {
-  max-width: 100%;
-  max-height: 260px;
-  border-radius: var(--ControlCornerRadius, 4px);
-  border: 1px solid var(--card-stroke);
-  display: block;
-  margin: 0 auto;
 }
