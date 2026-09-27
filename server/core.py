@@ -645,6 +645,58 @@ class UpscaleService:
         self.tasks.run_task(task_id, _process)
         return task_id
 
+    def _result_filename(self, input_path: str, parsed: dict) -> str:
+        """Result filename for batch/directory tasks (scale or dimension mode)."""
+        base_name = os.path.splitext(os.path.basename(input_path))[0]
+        ext = 'jpg' if parsed['output_format'] == 'jpg' else 'png'
+        if parsed['final_w'] and parsed['final_h']:
+            return f"{base_name}_{parsed['final_w']}x{parsed['final_h']}.{ext}"
+        return f"{base_name}_x{int(parsed['target_scale'] or 2)}.{ext}"
+
+    def _upscale_to_output(self, input_path: str, output_path: str,
+                           parsed: dict) -> dict:
+        """Run one image through the unified pipeline to *output_path*.
+
+        Shared by single / batch / directory tasks. Scale mode is the plain
+        two-step pipeline; dimension mode additionally stages the 4x→scale
+        result in ``TMP/`` and then center-crops (cover) or exact-resizes
+        (contain) it into *output_path*.
+        """
+        target_scale = parsed['target_scale']
+        final_w, final_h = parsed['final_w'], parsed['final_h']
+        dim_mode = bool(final_w and final_h)
+
+        if dim_mode:
+            # Effective scale must be computed per file from its own size
+            final_w, final_h, target_scale = _compute_dimension_upscale(
+                input_path, final_w, final_h, parsed['crop'])
+            staged = os.path.join(
+                self.tmp_dir,
+                f"dim_{uuid.uuid4().hex}"
+                f"{os.path.splitext(output_path)[1] or '.png'}")
+        else:
+            staged = output_path
+
+        result = self._run_stages(input_path, staged, parsed, target_scale)
+        if not result['success']:
+            _cleanup_files(staged)
+            return result
+
+        if dim_mode:
+            if parsed['crop']:
+                # Even-adjusted dimensions from ``_compute_dimension_upscale``
+                # (odd targets would break libx264/yuv420p downstream).
+                adj = self.resizer.crop(staged, output_path,
+                                        final_w, final_h)
+            else:
+                adj = self.resizer.resize(staged, output_path,
+                                          final_w, final_h)
+            _cleanup_files(staged)
+            if not adj['success']:
+                return adj
+
+        return {'success': True, 'output_path': output_path, 'error': None}
+
     def _upscale_one(self, input_path: str, params: dict) -> dict:
         """Upscale a single file to ``TMP/single/``. Returns result dict."""
         abs_input = os.path.realpath(input_path)
@@ -665,39 +717,9 @@ class UpscaleService:
         final_path = os.path.join(
             single_dir, f"out_{uuid.uuid4().hex}.{ext}")
 
-        target_scale = parsed['target_scale']
-        final_w, final_h = parsed['final_w'], parsed['final_h']
-
-        # Dimension mode needs the effective scale computed from input size
-        if final_w and final_h:
-            final_w, final_h, effective_scale = _compute_dimension_upscale(
-                abs_input, final_w, final_h, parsed['crop'])
-            target_scale = effective_scale
-
-        result = self._run_stages(
-            abs_input, final_path, parsed, target_scale)
-
+        result = self._upscale_to_output(abs_input, final_path, parsed)
         if not result['success']:
             return result
-
-        # Dimension mode: exact crop / fit adjustment
-        if parsed['final_w'] and parsed['final_h']:
-            pre = final_path
-            final_path = os.path.join(
-                single_dir, f"out_{uuid.uuid4().hex}.{ext}")
-            if parsed['crop']:
-                # Use the even-adjusted dimensions from
-                # ``_compute_dimension_upscale`` (odd targets would break
-                # libx264/yuv420p encoding downstream).
-                adj = self.resizer.crop(pre, final_path,
-                                        final_w, final_h)
-            else:
-                adj = self.resizer.resize(pre, final_path,
-                                          final_w, final_h)
-            _cleanup_files(pre)
-            if not adj['success']:
-                return adj
-
         return {'success': True, 'output_path': final_path, 'error': None}
 
     def _run_stages(self, input_path: str, output_path: str,
@@ -753,11 +775,9 @@ class UpscaleService:
             results: list[dict] = []
             total = len(files)
             for idx, f in enumerate(files):
-                base_name = os.path.splitext(os.path.basename(f))[0]
-                out_name = f"{base_name}_x{int(parsed['target_scale'] or 2)}.png"
+                out_name = self._result_filename(f, parsed)
                 out_path = os.path.join(results_dir, out_name)
-                r = self._run_stages(f, out_path, parsed,
-                                     parsed['target_scale'] or 2.0)
+                r = self._upscale_to_output(f, out_path, parsed)
                 if r['success']:
                     results.append({'path': out_path, 'filename': out_name})
                 tm.update_task(tid, progress=int((idx + 1) / max(total, 1) * 100))
@@ -807,11 +827,9 @@ class UpscaleService:
             results: list[dict] = []
             for idx, fname in enumerate(image_files):
                 in_path = os.path.join(resolved_input, fname)
-                base_name = os.path.splitext(fname)[0]
-                out_name = f"{base_name}_x{int(parsed['target_scale'] or 2)}.png"
+                out_name = self._result_filename(in_path, parsed)
                 out_path = os.path.join(results_dir, out_name)
-                r = self._run_stages(in_path, out_path, parsed,
-                                     parsed['target_scale'] or 2.0)
+                r = self._upscale_to_output(in_path, out_path, parsed)
                 if r['success']:
                     results.append({'path': out_path, 'filename': out_name})
                 tm.update_task(tid, progress=int((idx + 1) / total * 100))

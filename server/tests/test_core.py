@@ -212,6 +212,30 @@ def test_submit_files(service, test_img, test_img2):
         assert os.path.isfile(r['path'])
 
 
+def test_submit_files_dimension_crop(service, test_img, test_img2):
+    """Regression: batch ignored dimension mode (fell back to 2x, no crop)."""
+    tid = service.submit_files(
+        [test_img, test_img2], {'width': 600, 'height': 400, 'crop': True})
+    t = _wait_done(service, tid)
+    assert t['status'] == 'done', t.get('error')
+    assert len(t['results']) == 2
+    for r in t['results']:
+        with Image.open(r['path']) as img:
+            assert img.size == (600, 400)
+
+
+def test_submit_files_dimension_fit(service, test_img, test_img2):
+    """Regression: batch contain mode — squares fit inside 600×400."""
+    tid = service.submit_files(
+        [test_img, test_img2], {'width': 600, 'height': 400, 'crop': False})
+    t = _wait_done(service, tid)
+    assert t['status'] == 'done', t.get('error')
+    assert len(t['results']) == 2
+    for r in t['results']:
+        with Image.open(r['path']) as img:
+            assert img.size == (400, 400)
+
+
 def test_submit_dir_missing(service):
     tid = service.submit_dir('/nonexistent/dir', None, {'scale': 2})
     t = _wait_done(service, tid, timeout=30)
@@ -233,6 +257,26 @@ def test_submit_dir(service, test_img, test_img2, tmp_dir):
     for r in t['results']:
         assert os.path.isfile(r['path'])
         assert os.path.dirname(os.path.realpath(r['path'])) == os.path.realpath(out_dir)
+
+
+def test_submit_dir_dimension_crop(service, test_img, test_img2, tmp_dir):
+    """Regression: directory batch ignored dimension mode too."""
+    import shutil
+    in_dir = os.path.join(tmp_dir, 'core_dir_dim_in')
+    out_dir = os.path.join(tmp_dir, 'core_dir_dim_out')
+    os.makedirs(in_dir, exist_ok=True)
+    shutil.copy2(test_img, os.path.join(in_dir, 'a.jpg'))
+    shutil.copy2(test_img2, os.path.join(in_dir, 'b.png'))
+
+    tid = service.submit_dir(
+        in_dir, out_dir, {'width': 600, 'height': 400, 'crop': True})
+    t = _wait_done(service, tid)
+    assert t['status'] == 'done', t.get('error')
+    assert len(t['results']) == 2
+    for r in t['results']:
+        assert os.path.dirname(os.path.realpath(r['path'])) == os.path.realpath(out_dir)
+        with Image.open(r['path']) as img:
+            assert img.size == (600, 400)
 
 
 # ── Video ────────────────────────────────────────────────────────────────
