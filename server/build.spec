@@ -8,8 +8,15 @@ import os
 
 from PyInstaller.utils.hooks import collect_all
 
-# Resolve the spec directory (server/) so pathex works on any machine.
+# SPECPATH is the absolute path of the directory holding this spec file
+# (server/), so dirname() is the project root — not server/ itself.
 _SPEC_DIR = os.path.dirname(os.path.abspath(SPECPATH))
+
+# App icon (source of truth: design/icon/, see its README).
+_APP_ICON = os.path.join(
+    _SPEC_DIR, 'design', 'icon', 'concept-b-pixels',
+    'concept-b-pixels.ico',
+)
 
 # pywebview (Windows edgechromium) needs its data + pythonnet/clr_loader runtimes.
 pywebview_datas, pywebview_binaries, pywebview_hidden = collect_all('pywebview')
@@ -44,6 +51,7 @@ exe = EXE(
     [],
     exclude_binaries=True,
     name='sd-enhance-server',
+    icon=_APP_ICON,
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

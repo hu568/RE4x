@@ -158,6 +158,22 @@ def _ensure_dotnet() -> None:
     logger.info('pythonnet OK')
 
 
+def _window_icon() -> str | None:
+    """Icon for the pywebview window (title bar + taskbar).
+
+    pywebview's WinForms backend reads ``webview.start(icon=...)`` despite the
+    docstring claiming GTK/QT-only. Frozen builds don't need the file — the
+    backend falls back to extracting the icon embedded in the exe — so only
+    dev mode points at the design source file.
+    """
+    if getattr(sys, 'frozen', False):
+        return None
+    return os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        'design', 'icon', 'concept-b-pixels', 'concept-b-pixels.ico',
+    )
+
+
 def main() -> None:
     base = _base_path()
     tools = os.path.join(base, 'tools')
@@ -194,7 +210,7 @@ def main() -> None:
     )
     api.set_window(window)
 
-    webview.start(debug=False)
+    webview.start(debug=False, icon=_window_icon())
 
 
 if __name__ == '__main__':
