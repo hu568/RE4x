@@ -101,3 +101,40 @@ def get_available_models(models_dir: str) -> list[dict]:
         })
 
     return result
+
+
+def resolve_model_param(models_dir: str, name: str) -> str | None:
+    """Map a GUI model base name to the on-disk ``.param`` file stem.
+
+    ``get_available_models`` collapses scale variants (``realesr-animevideov3-x2``,
+    ``-x3``, ``-x4``) into one base name, but inference needs the real file
+    stem: both the engine (``-n`` flag) and the ffmpeg ``realesrgan`` filter
+    append ``.param``/``.bin`` to the name directly. Passing the bare base
+    name loads nothing — silent black frames in the single-pass video
+    pipeline, a subprocess error in the engine.
+
+    Preference: exact ``<name>.param`` → ``<name>-x4.param`` (the unified
+    pipeline always runs models at 4x) → highest ``<name>-x<N>.param``.
+    Returns ``None`` when no file matches.
+    """
+    if not os.path.isdir(models_dir):
+        return None
+
+    if os.path.isfile(os.path.join(models_dir, name + ".param")):
+        return name
+
+    prefix = name + "-x"
+    best: tuple[int, str] | None = None
+    for entry in os.listdir(models_dir):
+        if not entry.endswith(".param") or not entry.startswith(prefix):
+            continue
+        digits = entry[len(prefix):-len(".param")]
+        if not digits.isdigit():
+            continue
+        n = int(digits)
+        if n == 4:
+            return name + "-x4"
+        if best is None or n > best[0]:
+            best = (n, entry[:-len(".param")])
+
+    return best[1] if best else None

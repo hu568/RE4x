@@ -486,6 +486,28 @@ class UpscaleService:
         if model_2 and model_2 not in available:
             return None, f'Unknown model: {model_2}'
 
+        # GUI names are collapsed base names (realesr-animevideov3 stands
+        # for realesr-animevideov3-x2/-x3/-x4); the engine and the ffmpeg
+        # realesrgan filter both need the on-disk .param stem — passing the
+        # base name loads nothing and the video comes out black.
+        from models import resolve_model_param  # noqa: PLC0415
+
+        model_file = resolve_model_param(self.models_dir, model)
+        if model_file is None:
+            return None, (
+                f"Model files (.param/.bin) not found for '{model}' "
+                f'in {self.models_dir}'
+            )
+        model = model_file
+        if model_2:
+            model_2_file = resolve_model_param(self.models_dir, model_2)
+            if model_2_file is None:
+                return None, (
+                    f"Model files (.param/.bin) not found for '{model_2}' "
+                    f'in {self.models_dir}'
+                )
+            model_2 = model_2_file
+
         mix_ratio, err = _parse_float(
             params.get('mix_ratio'), 0.5, min_val=0.0, max_val=1.0,
         )

@@ -68,3 +68,51 @@ def test_models_missing_dir():
 
     models = get_available_models('/nonexistent/path/that/does/not/exist')
     assert len(models) == 0
+
+
+# ── resolve_model_param: base name → on-disk .param stem ─────────────────
+
+
+def test_resolve_model_param_exact(tmp_path):
+    """An exact ``<name>.param`` wins (spanv2 has no scale variants)."""
+    from models import resolve_model_param  # noqa: PLC0415
+
+    (tmp_path / 'spanv2.param').write_bytes(b'')
+    (tmp_path / 'spanv2.bin').write_bytes(b'')
+    assert resolve_model_param(str(tmp_path), 'spanv2') == 'spanv2'
+
+
+def test_resolve_model_param_scale_variant(tmp_path):
+    """Collapsed base name resolves to the -x4 variant.
+
+    Regression (black video output): the GUI submits ``realesr-animevideov3``
+    while the shipped files are ``realesr-animevideov3-x2/-x3/-x4`` — the
+    bare base name loads nothing in the engine / realesrgan filter.
+    """
+    from models import resolve_model_param  # noqa: PLC0415
+
+    for name in ('realesr-animevideov3-x2.param',
+                 'realesr-animevideov3-x3.param',
+                 'realesr-animevideov3-x4.param',
+                 'realesr-animevideov3-x4.bin'):
+        (tmp_path / name).write_bytes(b'')
+    assert (resolve_model_param(str(tmp_path), 'realesr-animevideov3')
+            == 'realesr-animevideov3-x4')
+
+
+def test_resolve_model_param_no_x4_prefers_highest(tmp_path):
+    """Without a -x4 file the highest available scale variant is used."""
+    from models import resolve_model_param  # noqa: PLC0415
+
+    for name in ('mymodel-x2.param', 'mymodel-x3.param'):
+        (tmp_path / name).write_bytes(b'')
+    assert resolve_model_param(str(tmp_path), 'mymodel') == 'mymodel-x3'
+
+
+def test_resolve_model_param_missing(tmp_path):
+    """No matching file (or missing directory) resolves to None."""
+    from models import resolve_model_param  # noqa: PLC0415
+
+    (tmp_path / 'other.param').write_bytes(b'')
+    assert resolve_model_param(str(tmp_path), 'nope') is None
+    assert resolve_model_param(str(tmp_path / 'void'), 'nope') is None

@@ -8,6 +8,7 @@ no mocking anywhere).
 import os
 import time
 
+import pytest
 from PIL import Image, ImageStat
 
 # ── Param parsing (fast, no binaries) ────────────────────────────────────
@@ -58,6 +59,27 @@ def test_parse_params_bad_model(service):
     _, err = service.parse_params({'model': 'this-model-does-not-exist'})
     assert err is not None
     assert 'Unknown model' in err
+
+
+def test_parse_params_resolves_scale_variant(service):
+    """parse_params maps collapsed base names to on-disk .param stems.
+
+    Regression (black video output): the GUI submits ``realesr-animevideov3``
+    (deduplicated base name) while the files on disk are
+    ``realesr-animevideov3-x2/-x3/-x4``; the bare base name used to reach
+    the engine and the single-pass realesrgan filter, which load nothing
+    and produce black frames.
+    """
+    from models import get_available_models  # noqa: PLC0415
+
+    names = {m['name'] for m in get_available_models(service.models_dir)}
+    if 'realesr-animevideov3' not in names:
+        pytest.skip('realesr-animevideov3 not installed in tools/models')
+
+    parsed, err = service.parse_params(
+        {'model': 'realesr-animevideov3', 'scale': 2})
+    assert err is None, err
+    assert parsed['model'] == 'realesr-animevideov3-x4'
 
 
 def test_parse_params_video_formats(service):
@@ -377,6 +399,48 @@ def test_submit_video_single_pass_no_intermediate_frames(
     assert not os.path.exists(
         os.path.join(service.tmp_dir, 'out_frames', tid))
     assert not os.path.exists(os.path.join(service.tmp_dir, 'frames_4x', tid))
+
+
+def test_submit_video_base_name_model_not_black(service, project_root):
+    """Regression (black video): a collapsed base-name model must upscale.
+
+    submit_video('realesr-animevideov3') used to hand the bare base name to
+    the single-pass realesrgan filter; the on-disk file is
+    ``realesr-animevideov3-x4``, the model load silently failed and every
+    output frame was black (the task still reported 'done'). parse_params
+    now resolves the stem before the filter runs — the output must contain
+    real picture content.
+    """
+    from core import _detect_realesrgan_filter  # noqa: PLC0415
+    from models import get_available_models  # noqa: PLC0415
+
+    if not _detect_realesrgan_filter(service.resizer._ffmpeg_path):
+        pytest.skip('ffmpeg build without the realesrgan filter')
+    names = {m['name'] for m in get_available_models(service.models_dir)}
+    if 'realesr-animevideov3' not in names:
+        pytest.skip('realesr-animevideov3 not installed in tools/models')
+
+    video = os.path.join(project_root, 'test-data', 'onepiece_demo.mp4')
+    if not os.path.isfile(video):
+        pytest.skip('test-data/onepiece_demo.mp4 missing')
+
+    tid = service.submit_video(
+        video,
+        {'model': 'realesr-animevideov3', 'scale': 2, 'output_format': 'mp4'})
+    t = _wait_done(service, tid, timeout=420)
+    assert t['status'] == 'done', t.get('error')
+    assert len(t['results']) == 1
+
+    from subprocess import run as subprocess_run  # noqa: PLC0415
+
+    frame = os.path.join(service.tmp_dir, f'verify_black_{tid}.jpg')
+    subprocess_run(
+        [service.resizer._ffmpeg_path, '-y', '-i', t['results'][0]['path'],
+         '-frames:v', '1', frame],
+        capture_output=True)
+    with Image.open(frame) as img:
+        mean = ImageStat.Stat(img.convert('RGB')).mean
+    assert sum(mean) / 3 > 10, f'output frame is black: mean={mean}'
 
 
 # ── Zip results ──────────────────────────────────────────────────────────
