@@ -65,3 +65,5 @@ logs/
 
 # 性能测试输出
 perf-test/
+
+.vscode

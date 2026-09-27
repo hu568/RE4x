@@ -18,7 +18,7 @@ set -e
 export MSYSTEM=UCRT64
 export PATH=/ucrt64/bin:/c/Program\ Files/CMake/bin:$PATH
 
-REPO=/e/RE4x
+REPO=${RE4X_REPO:-/e/RE4x}
 FILTER_SRC=$REPO/ffmpeg-realesrgan
 FFSRC=$REPO/tools/ffmpeg-src
 NCNN_SRC=$REPO/tools/ncnn-src
