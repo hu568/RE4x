@@ -4,448 +4,407 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SD Enhance 图片放大工具</title>
-<style>
-  :root {
-    --bg: #1a1d24;
-    --bg2: #21252f;
-    --bg3: #2a2f3c;
-    --border: #343b4a;
-    --text: #e6e9f0;
-    --text-dim: #9aa3b5;
-    --accent: #4f8cff;
-    --accent2: #6aa5ff;
-    --ok: #3ecf8e;
-    --err: #ff6b6b;
-    --warn: #ffc94d;
-    --radius: 10px;
-    --shadow: 0 4px 16px rgba(0,0,0,.35);
-    --font: system-ui, "Segoe UI", "Microsoft YaHei", sans-serif;
-    --mono: "Cascadia Mono", Consolas, monospace;
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body { height: 100%; }
-  body {
-    font-family: var(--font);
-    background: var(--bg);
-    color: var(--text);
-    font-size: 14px;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    user-select: none;
-  }
-
-  /* ── Title bar ─────────────────────────────────────────── */
-  .titlebar {
-    display: flex; align-items: center; gap: 10px;
-    padding: 10px 16px;
-    background: var(--bg2);
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-  }
-  .titlebar .logo { font-size: 20px; }
-  .titlebar h1 { font-size: 15px; font-weight: 600; }
-  .titlebar .ver { color: var(--text-dim); font-size: 12px; margin-left: 4px; }
-  .titlebar .spacer { flex: 1; }
-  .icon-btn {
-    background: transparent; color: var(--text-dim);
-    border: 1px solid var(--border); border-radius: 6px;
-    padding: 5px 12px; cursor: pointer; font-size: 13px;
-    font-family: var(--font);
-  }
-  .icon-btn:hover { color: var(--text); background: var(--bg3); }
-
-  /* ── Body layout ───────────────────────────────────────── */
-  .layout { flex: 1; display: flex; overflow: hidden; }
-
-  /* ── Sidebar ───────────────────────────────────────────── */
-  .sidebar {
-    width: 190px; flex-shrink: 0;
-    background: var(--bg2);
-    border-right: 1px solid var(--border);
-    padding: 12px 10px;
-    display: flex; flex-direction: column; gap: 4px;
-  }
-  .nav-btn {
-    display: flex; align-items: center; gap: 10px;
-    width: 100%; padding: 10px 12px;
-    background: transparent; border: none; border-radius: 8px;
-    color: var(--text-dim); font-size: 14px; cursor: pointer;
-    font-family: var(--font); text-align: left;
-  }
-  .nav-btn:hover { background: var(--bg3); color: var(--text); }
-  .nav-btn.active { background: rgba(79,140,255,.14); color: var(--accent2); font-weight: 600; }
-  .nav-btn .ic { font-size: 16px; width: 22px; text-align: center; }
-  .sidebar .foot { margin-top: auto; font-size: 11px; color: var(--text-dim); padding: 8px 12px; }
-
-  /* ── Main ──────────────────────────────────────────────── */
-  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-  .scroll { flex: 1; overflow-y: auto; padding: 18px 20px; }
-
-  .panel {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px 18px;
-    margin-bottom: 16px;
-    box-shadow: var(--shadow);
-  }
-  .panel h2 { font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-  .panel h2 .tag { font-size: 11px; color: var(--text-dim); font-weight: 400; }
-
-  /* ── File drop card ────────────────────────────────────── */
-  .pick-card {
-    border: 2px dashed var(--border);
-    border-radius: var(--radius);
-    padding: 26px 18px;
-    text-align: center;
-    cursor: pointer;
-    transition: border-color .15s, background .15s;
-  }
-  .pick-card:hover { border-color: var(--accent); background: rgba(79,140,255,.05); }
-  .pick-card .big { font-size: 30px; margin-bottom: 8px; }
-  .pick-card .hint { color: var(--text-dim); font-size: 13px; }
-  .pick-card.filled { border-style: solid; border-color: var(--ok); }
-  .pick-card.filled .hint { color: var(--ok); }
-
-  .file-list { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
-  .file-row {
-    display: flex; align-items: center; gap: 10px;
-    background: var(--bg3); border-radius: 8px; padding: 8px 12px;
-    font-size: 13px;
-  }
-  .file-row .fname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }
-  .file-row .fmeta { color: var(--text-dim); font-size: 12px; flex-shrink: 0; }
-  .file-row .fdel { color: var(--text-dim); cursor: pointer; border: none; background: none; font-size: 14px; padding: 0 4px; }
-  .file-row .fdel:hover { color: var(--err); }
-
-  .preview-wrap { margin-top: 12px; display: none; }
-  .preview-wrap img {
-    max-width: 100%; max-height: 260px;
-    border-radius: 8px; border: 1px solid var(--border);
-    display: block; margin: 0 auto;
-  }
-
-  .path-input {
-    display: flex; gap: 8px; align-items: center; margin-bottom: 8px;
-  }
-  .path-input input {
-    flex: 1; background: var(--bg); color: var(--text);
-    border: 1px solid var(--border); border-radius: 8px;
-    padding: 9px 12px; font-size: 13px; font-family: var(--mono);
-    outline: none;
-  }
-  .path-input input:focus { border-color: var(--accent); }
-  .small-btn {
-    background: var(--bg3); color: var(--text);
-    border: 1px solid var(--border); border-radius: 8px;
-    padding: 8px 14px; cursor: pointer; font-size: 13px;
-    font-family: var(--font); white-space: nowrap;
-  }
-  .small-btn:hover { background: var(--border); }
-
-  /* ── Settings grid ─────────────────────────────────────── */
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
-  .grid .full { grid-column: 1 / -1; }
-  .field label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 6px; }
-  .field select, .field input[type=number] {
-    width: 100%; background: var(--bg); color: var(--text);
-    border: 1px solid var(--border); border-radius: 8px;
-    padding: 8px 10px; font-size: 13px; outline: none; font-family: var(--font);
-  }
-  .field select:focus, .field input[type=number]:focus { border-color: var(--accent); }
-
-  .mode-switch { display: flex; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-  .mode-switch button {
-    flex: 1; padding: 8px 0; background: transparent; border: none;
-    color: var(--text-dim); cursor: pointer; font-size: 13px; font-family: var(--font);
-  }
-  .mode-switch button.active { background: rgba(79,140,255,.18); color: var(--accent2); font-weight: 600; }
-
-  .range-wrap { display: flex; align-items: center; gap: 12px; }
-  .range-wrap input[type=range] { flex: 1; accent-color: var(--accent); }
-  .range-wrap .val { font-family: var(--mono); color: var(--accent2); min-width: 40px; text-align: right; font-size: 14px; }
-
-  .check-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); }
-  .check-row input[type=checkbox] { accent-color: var(--accent); width: 15px; height: 15px; }
-
-  .hidden { display: none !important; }
-
-  /* ── Action ────────────────────────────────────────────── */
-  .actions { display: flex; align-items: center; gap: 12px; }
-  .submit-btn {
-    background: linear-gradient(135deg, var(--accent), #3f6fd8);
-    color: #fff; border: none; border-radius: 8px;
-    padding: 11px 34px; font-size: 15px; font-weight: 600;
-    cursor: pointer; font-family: var(--font);
-    box-shadow: 0 4px 14px rgba(79,140,255,.35);
-    transition: filter .15s;
-  }
-  .submit-btn:hover { filter: brightness(1.1); }
-  .submit-btn:disabled { filter: grayscale(.7); cursor: not-allowed; opacity: .6; }
-  .status-line { display: flex; align-items: center; gap: 8px; color: var(--text-dim); font-size: 13px; }
-  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--text-dim); flex-shrink: 0; }
-  .dot.ready { background: var(--text-dim); }
-  .dot.busy { background: var(--warn); animation: pulse 1s infinite; }
-  .dot.ok { background: var(--ok); }
-  .dot.err { background: var(--err); }
-  @keyframes pulse { 50% { opacity: .35; } }
-
-  /* ── Progress ──────────────────────────────────────────── */
-  .progress-wrap { margin-top: 10px; display: none; }
-  .progress-track { height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; }
-  .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--ok)); border-radius: 4px; transition: width .3s; }
-  .progress-text { margin-top: 6px; font-size: 12px; color: var(--text-dim); }
-
-  /* ── Results ───────────────────────────────────────────── */
-  .results { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
-  .result-card {
-    display: flex; align-items: center; gap: 12px;
-    background: var(--bg3); border: 1px solid var(--border);
-    border-radius: 8px; padding: 10px 14px;
-  }
-  .result-card .rname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
-  .result-card .rname .path { color: var(--text-dim); font-size: 11px; margin-left: 8px; }
-  .result-card .rbtns { display: flex; gap: 6px; flex-shrink: 0; }
-  .result-card .rbtn {
-    background: transparent; color: var(--text-dim);
-    border: 1px solid var(--border); border-radius: 6px;
-    padding: 4px 10px; font-size: 12px; cursor: pointer; font-family: var(--font);
-  }
-  .result-card .rbtn:hover { color: var(--text); border-color: var(--accent); }
-  .result-card .rbtn.primary { color: var(--accent2); border-color: rgba(79,140,255,.5); }
-
-  .error-box {
-    margin-top: 10px; background: rgba(255,107,107,.1);
-    border: 1px solid rgba(255,107,107,.4); color: var(--err);
-    border-radius: 8px; padding: 10px 14px; font-size: 13px;
-    white-space: pre-wrap; word-break: break-all;
-    font-family: var(--mono);
-  }
-
-  /* ── About modal ───────────────────────────────────────── */
-  .modal-mask {
-    position: fixed; inset: 0; background: rgba(0,0,0,.55);
-    display: none; align-items: center; justify-content: center; z-index: 50;
-  }
-  .modal-mask.open { display: flex; }
-  .modal {
-    width: 460px; max-width: 92vw; max-height: 84vh; overflow-y: auto;
-    background: var(--bg2); border: 1px solid var(--border);
-    border-radius: 12px; padding: 22px 24px; box-shadow: var(--shadow);
-  }
-  .modal h3 { font-size: 16px; margin-bottom: 10px; }
-  .modal p, .modal li { color: var(--text-dim); font-size: 13px; line-height: 1.7; }
-  .modal ul { padding-left: 18px; margin: 8px 0; }
-  .modal .close { margin-top: 16px; width: 100%; }
-  .modal code { background: var(--bg); padding: 1px 6px; border-radius: 4px; font-family: var(--mono); font-size: 12px; }
-
-  ::-webkit-scrollbar { width: 10px; }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; }
-  ::-webkit-scrollbar-thumb:hover { background: #455064; }
-</style>
+<link rel="stylesheet" href="winui-theme.css">
+<link rel="stylesheet" href="winui-animations.css">
+<link rel="stylesheet" href="winui-controls.css">
+<link rel="stylesheet" href="app.css">
 </head>
 <body>
 
-<!-- ══ Title bar ══ -->
-<div class="titlebar">
-  <span class="logo">🖼</span>
-  <h1>SD Enhance 图片放大工具</h1>
-  <span class="ver" id="ver-label">v2.0 · 桌面版</span>
-  <span class="spacer"></span>
-  <button class="icon-btn" onclick="openAbout()">关于</button>
-</div>
+<!-- ══ NavigationView(左侧导航 + 内容区,WinUIonWeb 结构) ══ -->
+<div class="win-nav-shell is-left" id="nav-shell">
 
-<div class="layout">
-  <!-- ══ Sidebar ══ -->
-  <nav class="sidebar">
-    <button class="nav-btn active" data-tab="single" onclick="switchTab('single')">
-      <span class="ic">🖼</span>单张图片
-    </button>
-    <button class="nav-btn" data-tab="batch" onclick="switchTab('batch')">
-      <span class="ic">🗂</span>批量处理
-    </button>
-    <button class="nav-btn" data-tab="dir" onclick="switchTab('dir')">
-      <span class="ic">📁</span>目录批量
-    </button>
-    <button class="nav-btn" data-tab="video" onclick="switchTab('video')">
-      <span class="ic">🎬</span>视频处理
-    </button>
-    <div class="foot">AI 放大 · 基于 Real-ESRGAN<br>引擎 + ffmpeg 两步管线</div>
+  <!-- 左侧窗格 -->
+  <nav class="win-nav-left-panel" id="nav-panel">
+    <div class="win-nav-pane-command-row">
+      <button class="win-nav-hamburger has-pane-title" id="nav-toggle" type="button">
+        <span class="icon win-font-icon animated-icon animated-icon-hamburger">&#xE700;</span>
+        <span class="win-text-block win-nav-pane-title">SD Enhance</span>
+      </button>
+    </div>
+    <div class="win-nav-pane-surface">
+      <div class="win-nav-indicator-track">
+        <div class="win-nav-indicator" id="nav-indicator"></div>
+      </div>
+      <div class="win-nav-left-scrollable" id="nav-scroll">
+        <div class="win-nav-menu">
+          <div class="win-nav-item-header">放大处理</div>
+          <div class="win-nav-item is-selected" data-tab="single" role="button" tabindex="0">
+            <span class="icon win-font-icon">&#xE722;</span>
+            <span class="win-text-block label">单张图片</span>
+          </div>
+          <div class="win-nav-item" data-tab="batch" role="button" tabindex="0">
+            <span class="icon win-font-icon">&#xE8C8;</span>
+            <span class="win-text-block label">批量处理</span>
+          </div>
+          <div class="win-nav-item" data-tab="dir" role="button" tabindex="0">
+            <span class="icon win-font-icon">&#xE8B7;</span>
+            <span class="win-text-block label">目录批量</span>
+          </div>
+          <div class="win-nav-item" data-tab="video" role="button" tabindex="0">
+            <span class="icon win-font-icon">&#xE714;</span>
+            <span class="win-text-block label">视频处理</span>
+          </div>
+        </div>
+      </div>
+      <div class="win-nav-footer">
+        <div class="win-nav-menu">
+          <div class="win-nav-item" id="nav-about" role="button" tabindex="0">
+            <span class="icon win-font-icon">&#xE946;</span>
+            <span class="win-text-block label">关于</span>
+          </div>
+        </div>
+        <div class="app-nav-theme-row">
+          <span class="win-text-block">深色模式</span>
+          <div class="win-switch-wrap" id="theme-switch">
+            <div class="win-switch">
+              <div class="track"></div>
+              <div class="knob"><div class="thumb"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="app-nav-version" id="nav-version">v2.3.0 · 桌面版</div>
+      </div>
+    </div>
   </nav>
 
-  <!-- ══ Main ══ -->
-  <div class="main">
-    <div class="scroll">
+  <!-- 内容区 -->
+  <main class="win-nav-content">
+    <button class="win-nav-hamburger nav-pane-restore hidden" id="nav-restore" type="button" title="展开导航">
+      <span class="icon win-font-icon">&#xE700;</span>
+    </button>
+    <div class="win-nav-page-header">
+      <span class="win-text-block" id="page-title">单张图片</span>
+    </div>
+    <div class="win-nav-content-inner" id="page-scroll">
 
-      <!-- ── Single ── -->
-      <section id="page-single">
-        <div class="panel">
-          <h2>选择图片 <span class="tag">单张图片放大</span></h2>
-          <div class="pick-card" id="single-pick" onclick="pickSingle()">
-            <div class="big">📷</div>
-            <div class="hint" id="single-hint">点击选择图片文件…</div>
-          </div>
-          <div class="preview-wrap" id="single-preview-wrap">
-            <img id="single-preview" alt="preview">
-          </div>
+      <!-- ── 单张图片 ── -->
+      <section id="page-single" class="app-page">
+        <h2 class="app-section-title">选择图片</h2>
+        <div class="pick-card" id="single-pick">
+          <div><span class="pick-icon">&#xE722;</span></div>
+          <div class="hint" id="single-hint">点击选择图片文件…</div>
         </div>
-        <div id="single-params"></div>
+        <div class="preview-wrap hidden" id="single-preview-wrap">
+          <img id="single-preview" alt="preview">
+        </div>
       </section>
 
-      <!-- ── Batch ── -->
-      <section id="page-batch" class="hidden">
-        <div class="panel">
-          <h2>选择图片 <span class="tag">多文件批量放大</span></h2>
-          <div class="pick-card" onclick="pickBatch()">
-            <div class="big">🗂</div>
-            <div class="hint">点击选择多张图片（可多选）…</div>
-          </div>
-          <div class="file-list" id="batch-list"></div>
+      <!-- ── 批量处理 ── -->
+      <section id="page-batch" class="app-page hidden">
+        <h2 class="app-section-title">选择图片</h2>
+        <div class="pick-card" id="batch-pick">
+          <div><span class="pick-icon">&#xE8C8;</span></div>
+          <div class="hint">点击选择多张图片（可多选）…</div>
         </div>
-        <div id="batch-params"></div>
+        <div class="file-list" id="batch-list"></div>
       </section>
 
-      <!-- ── Directory ── -->
-      <section id="page-dir" class="hidden">
-        <div class="panel">
-          <h2>目录批量 <span class="tag">处理整个文件夹</span></h2>
-          <div class="path-input">
-            <input type="text" id="dir-input" placeholder="输入目录路径…（或点击右侧按钮选择）">
-            <button class="small-btn" onclick="pickDirInput()">选择目录</button>
+      <!-- ── 目录批量 ── -->
+      <section id="page-dir" class="app-page hidden">
+        <h2 class="app-section-title">选择目录</h2>
+        <div class="app-settings">
+          <div class="win-settings-card">
+            <div class="win-settings-card-surface">
+              <div class="win-settings-card-header">
+                <div class="win-settings-card-text">
+                  <span class="win-text-block win-settings-card-title">输入目录</span>
+                  <span class="win-text-block win-settings-card-desc">处理该目录下的全部图片</span>
+                </div>
+              </div>
+              <div class="win-settings-card-content">
+                <input class="win-textbox" type="text" id="dir-input" placeholder="输入目录路径…" style="width:300px;">
+                <button class="win-btn" type="button" id="pick-dir-input"><span class="win-text-block">浏览…</span></button>
+              </div>
+            </div>
           </div>
-          <div class="path-input">
-            <input type="text" id="dir-output" placeholder="输出目录（留空 = 自动保存到默认位置）">
-            <button class="small-btn" onclick="pickDirOutput()">选择输出目录</button>
+          <div class="win-settings-card">
+            <div class="win-settings-card-surface">
+              <div class="win-settings-card-header">
+                <div class="win-settings-card-text">
+                  <span class="win-text-block win-settings-card-title">输出目录</span>
+                  <span class="win-text-block win-settings-card-desc">留空则自动保存到默认位置</span>
+                </div>
+              </div>
+              <div class="win-settings-card-content">
+                <input class="win-textbox" type="text" id="dir-output" placeholder="输出目录…" style="width:300px;">
+                <button class="win-btn" type="button" id="pick-dir-output"><span class="win-text-block">浏览…</span></button>
+              </div>
+            </div>
           </div>
         </div>
-        <div id="dir-params"></div>
       </section>
 
-      <!-- ── Video ── -->
-      <section id="page-video" class="hidden">
-        <div class="panel">
-          <h2>选择视频 <span class="tag">AI 放大并合成</span></h2>
-          <div class="pick-card" id="video-pick" onclick="pickVideo()">
-            <div class="big">🎬</div>
-            <div class="hint" id="video-hint">点击选择视频文件…</div>
-          </div>
+      <!-- ── 视频处理 ── -->
+      <section id="page-video" class="app-page hidden">
+        <h2 class="app-section-title">选择视频</h2>
+        <div class="pick-card" id="video-pick">
+          <div><span class="pick-icon">&#xE714;</span></div>
+          <div class="hint" id="video-hint">点击选择视频文件…</div>
         </div>
-        <div id="video-params"></div>
       </section>
 
-      <!-- ── Settings (shared) ── -->
-      <div class="panel" id="settings-panel">
-        <h2>⚙ 放大设置</h2>
-        <div class="grid">
-          <div class="field">
-            <label>放大模型</label>
-            <select id="model"></select>
-          </div>
-          <div class="field">
-            <label>放大模式</label>
-            <div class="mode-switch" id="mode-switch">
-              <button data-mode="scale" class="active" onclick="setMode('scale')">按比例</button>
-              <button data-mode="dim" onclick="setMode('dim')">按尺寸</button>
+      <!-- ── 放大设置(共享) ── -->
+      <section id="page-settings" class="app-page">
+        <h2 class="app-section-title">放大设置</h2>
+        <div class="app-settings">
+          <div class="win-settings-card">
+            <div class="win-settings-card-surface">
+              <div class="win-settings-card-header">
+                <div class="win-settings-card-text">
+                  <span class="win-text-block win-settings-card-title">放大模型</span>
+                  <span class="win-text-block win-settings-card-desc">从 tools/models/ 自动检测,固定 4x 输出</span>
+                </div>
+              </div>
+              <div class="win-settings-card-content">
+                <div class="win-combo-box app-combo" id="combo-model">
+                  <button class="win-btn win-combo-btn" type="button" role="combobox" aria-haspopup="listbox">
+                    <span class="win-combo-content"><span class="win-text-block">加载中…</span></span>
+                    <span class="icon chevron chevron-animate win-combo-chevron" aria-hidden="true"></span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-          <div class="field" id="scale-field">
-            <label>放大倍数（模型固定 4x，目标 1–8x）</label>
-            <div class="range-wrap">
-              <input type="range" id="scale" min="1" max="8" step="0.5" value="2">
-              <span class="val" id="scale-val">2.0x</span>
-            </div>
-          </div>
-          <div class="field hidden" id="dim-field">
-            <label>目标尺寸（宽 × 高，px）</label>
-            <div style="display:flex;gap:8px;">
-              <input type="number" id="dim-w" value="1024" min="1">
-              <span style="color:var(--text-dim);line-height:36px;">×</span>
-              <input type="number" id="dim-h" value="1024" min="1">
-            </div>
-          </div>
-          <div class="field full hidden" id="crop-field">
-            <label class="check-row">
-              <input type="checkbox" id="crop">
-              裁剪到目标尺寸（不勾选则等比适配）
-            </label>
-          </div>
-          <div class="field">
-            <label>混合第二模型（可选，两个模型结果 blend）</label>
-            <select id="model2">
-              <option value="">不使用</option>
-            </select>
-          </div>
-          <div class="field hidden" id="mix-field">
-            <label>混合比例（0=纯模型1，1=纯模型2）</label>
-            <div class="range-wrap">
-              <input type="range" id="mix-ratio" min="0" max="1" step="0.05" value="0.5">
-              <span class="val" id="mix-val">0.50</span>
-            </div>
-          </div>
-          <div class="field" id="fmt-field">
-            <label>输出格式</label>
-            <select id="out-format">
-              <option value="png">PNG（无损）</option>
-              <option value="jpg">JPG（更小）</option>
-            </select>
-          </div>
-        </div>
-      </div>
 
-      <!-- ── Action ── -->
-      <div class="panel">
-        <div class="actions">
-          <button class="submit-btn" id="submit-btn" onclick="startTask()">开始处理</button>
-          <div class="status-line">
-            <span class="dot ready" id="status-dot"></span>
-            <span id="status-text">就绪</span>
+          <div class="win-settings-card">
+            <div class="win-settings-card-surface">
+              <div class="win-settings-card-header">
+                <div class="win-settings-card-text">
+                  <span class="win-text-block win-settings-card-title">放大模式</span>
+                  <span class="win-text-block win-settings-card-desc">按倍率放大,或缩放到精确的目标尺寸</span>
+                </div>
+              </div>
+              <div class="win-settings-card-content">
+                <div role="tablist" id="mode-switch">
+                  <div class="win-selector-bar-items-view">
+                    <button class="win-selector-bar-item is-selected" data-mode="scale" role="tab" type="button">
+                      <span class="win-selector-bar-item-content">
+                        <span class="win-selector-bar-item-text">按比例</span>
+                      </span>
+                      <span class="win-selector-bar-item-selection-visual" aria-hidden="true"></span>
+                      <span class="win-selector-bar-item-common-visual" aria-hidden="true"></span>
+                    </button>
+                    <button class="win-selector-bar-item" data-mode="dim" role="tab" type="button">
+                      <span class="win-selector-bar-item-content">
+                        <span class="win-selector-bar-item-text">按尺寸</span>
+                      </span>
+                      <span class="win-selector-bar-item-selection-visual" aria-hidden="true"></span>
+                      <span class="win-selector-bar-item-common-visual" aria-hidden="true"></span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="win-settings-card" id="scale-field">
+            <div class="win-settings-card-surface">
+              <div class="win-settings-card-header">
+                <div class="win-settings-card-text">
+                  <span class="win-text-block win-settings-card-title">放大倍数</span>
+                  <span class="win-text-block win-settings-card-desc">模型固定 4x,目标 1–8x</span>
+                </div>
+              </div>
+              <div class="win-settings-card-content app-slider">
+                <div class="win-slider-root" id="slider-scale">
+                  <div class="win-slider">
+                    <div class="win-slider-track"><div class="win-slider-fill"></div></div>
+                    <div class="win-slider-thumb"></div>
+                  </div>
+                </div>
+                <span class="app-slider-value" id="scale-val">2.0x</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="win-settings-card hidden" id="dim-field">
+            <div class="win-settings-card-surface">
+              <div class="win-settings-card-header">
+                <div class="win-settings-card-text">
+                  <span class="win-text-block win-settings-card-title">目标尺寸</span>
+                  <span class="win-text-block win-settings-card-desc">宽 × 高(px)</span>
+                </div>
+              </div>
+              <div class="win-settings-card-content">
+                <div class="app-dim-row">
+                  <input class="win-textbox" type="number" id="dim-w" value="1024" min="1">
+                  <span class="win-text-block dim-x">×</span>
+                  <input class="win-textbox" type="number" id="dim-h" value="1024" min="1">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="win-settings-card hidden" id="crop-field">
+            <div class="win-settings-card-surface">
+              <div class="win-settings-card-header">
+                <div class="win-settings-card-text">
+                  <span class="win-text-block win-settings-card-title">裁剪到目标尺寸</span>
+                  <span class="win-text-block win-settings-card-desc">不开启则等比适配(contain)</span>
+                </div>
+              </div>
+              <div class="win-settings-card-content">
+                <div class="win-switch-wrap" id="crop-switch">
+                  <div class="win-switch">
+                    <div class="track"></div>
+                    <div class="knob"><div class="thumb"></div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="win-settings-card">
+            <div class="win-settings-card-surface">
+              <div class="win-settings-card-header">
+                <div class="win-settings-card-text">
+                  <span class="win-text-block win-settings-card-title">混合第二模型</span>
+                  <span class="win-text-block win-settings-card-desc">可选,两个模型的放大结果按比例混合</span>
+                </div>
+              </div>
+              <div class="win-settings-card-content">
+                <div class="win-combo-box app-combo" id="combo-model2">
+                  <button class="win-btn win-combo-btn" type="button" role="combobox" aria-haspopup="listbox">
+                    <span class="win-combo-content"><span class="win-text-block">不使用</span></span>
+                    <span class="icon chevron chevron-animate win-combo-chevron" aria-hidden="true"></span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="win-settings-card hidden" id="mix-field">
+            <div class="win-settings-card-surface">
+              <div class="win-settings-card-header">
+                <div class="win-settings-card-text">
+                  <span class="win-text-block win-settings-card-title">混合比例</span>
+                  <span class="win-text-block win-settings-card-desc">0 = 纯模型 1,1 = 纯模型 2</span>
+                </div>
+              </div>
+              <div class="win-settings-card-content app-slider">
+                <div class="win-slider-root" id="slider-mix">
+                  <div class="win-slider">
+                    <div class="win-slider-track"><div class="win-slider-fill"></div></div>
+                    <div class="win-slider-thumb"></div>
+                  </div>
+                </div>
+                <span class="app-slider-value" id="mix-val">0.50</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="win-settings-card">
+            <div class="win-settings-card-surface">
+              <div class="win-settings-card-header">
+                <div class="win-settings-card-text">
+                  <span class="win-text-block win-settings-card-title">输出格式</span>
+                  <span class="win-text-block win-settings-card-desc" id="fmt-desc">PNG 无损,JPG 体积更小</span>
+                </div>
+              </div>
+              <div class="win-settings-card-content">
+                <div class="win-combo-box app-combo" id="combo-format">
+                  <button class="win-btn win-combo-btn" type="button" role="combobox" aria-haspopup="listbox">
+                    <span class="win-combo-content"><span class="win-text-block">PNG（无损）</span></span>
+                    <span class="icon chevron chevron-animate win-combo-chevron" aria-hidden="true"></span>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="progress-wrap" id="progress-wrap">
-          <div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div>
-          <div class="progress-text" id="progress-text"></div>
+
+        <!-- ── 动作区(按钮靠右,WinUI 主按钮习惯位) ── -->
+        <h2 class="app-section-title">开始</h2>
+        <div class="app-actions">
+          <div class="win-progress-ring is-indeterminate hidden" id="status-ring" role="progressbar">
+            <div class="LayoutRoot">
+              <svg class="ProgressRingVisual" viewBox="0 0 100 100" role="presentation" aria-hidden="true">
+                <circle class="ProgressRingTrack" cx="50" cy="50" r="42"></circle>
+                <circle class="ProgressRingIndeterminateIndicator ProgressRingIndeterminateIndicatorA" cx="50" cy="50" r="42" pathLength="100"></circle>
+                <circle class="ProgressRingIndeterminateIndicator ProgressRingIndeterminateIndicatorB" cx="50" cy="50" r="42" pathLength="100"></circle>
+              </svg>
+            </div>
+          </div>
+          <span class="win-text-block app-status-text" id="status-text">就绪</span>
+          <button class="win-btn AccentButtonStyle" id="submit-btn" type="button">
+            <span class="win-text-block">开始处理</span>
+          </button>
         </div>
-        <div class="error-box hidden" id="error-box"></div>
+        <div class="app-progress hidden" id="progress-wrap">
+          <div class="win-progress-bar state-Determinate" id="progress-bar" role="progressbar">
+            <div class="LayoutRoot">
+              <div class="ProgressBarRoot">
+                <div class="ProgressBarClip">
+                  <div class="ProgressBarTrack"></div>
+                  <div class="DeterminateProgressBarIndicator" id="progress-fill"></div>
+                  <div class="IndeterminateProgressBarIndicator"></div>
+                  <div class="IndeterminateProgressBarIndicator2"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="app-progress-text"><span class="win-text-block" id="progress-text"></span></div>
+        </div>
+        <section class="win-infobar win-infobar-error app-infobar hidden" id="error-infobar" role="alert">
+          <div class="win-infobar-layout">
+            <div class="win-infobar-standard-icon-area" aria-hidden="true">
+              <span class="win-text-block win-infobar-standard-icon" id="error-icon">&#xE783;</span>
+            </div>
+            <div class="win-infobar-panel">
+              <span class="win-text-block win-infobar-title" id="error-title">出错了</span>
+              <span class="win-text-block win-infobar-message" id="error-message"></span>
+            </div>
+            <button class="win-btn win-infobar-close-button" id="error-close" type="button">
+              <span class="win-text-block win-infobar-close-glyph win-font-icon">&#xE711;</span>
+            </button>
+          </div>
+        </section>
         <div class="results" id="results"></div>
-      </div>
+      </section>
 
     </div>
-  </div>
+  </main>
 </div>
 
-<!-- ══ About modal ══ -->
-<div class="modal-mask" id="about-mask" onclick="if(event.target===this)closeAbout()">
-  <div class="modal">
-    <h3>🖼 SD Enhance 图片放大工具 <span id="about-ver">v2.2.0</span></h3>
-    <p>独立的 Stable Diffusion 图片后期处理工具。基于 Real-ESRGAN 的
-      <code>realesrgan-ncnn-vulkan</code> 引擎 + ffmpeg 两步管线：
-      模型固定 4x 放大 → ffmpeg 缩放到目标倍率。</p>
-    <ul>
-      <li>单张图片、批量、目录批量、视频单命令放大（无中间帧）</li>
-      <li>支持 1–8x 比例放大或精确目标尺寸</li>
-      <li>支持双模型混合（ffmpeg blend）</li>
-      <li>本地处理，无需上传，无需联网</li>
-    </ul>
-    <p style="color:var(--text-dim);font-size:12px;">引擎：realesrgan-ncnn-vulkan · 模型自动探测 <code>tools/models/</code></p>
-    <p style="color:var(--text-dim);font-size:12px;">日志：<span id="about-log-path">…</span></p>
-    <button class="small-btn close" onclick="closeAbout()">关闭</button>
-  </div>
+<!-- ══ 关于对话框(ContentDialog) ══ -->
+<div class="content-dialog-overlay win-theme-scope app-modal" id="about-mask">
+  <section class="content-dialog" role="dialog" aria-modal="true">
+    <div class="content-dialog-content">
+      <span class="win-text-block content-dialog-title">关于 SD Enhance <span id="about-ver">v2.3.0</span></span>
+      <div class="content-dialog-body app-about-body">
+        <p>独立的 Stable Diffusion 图片后期处理工具。基于 Real-ESRGAN 的
+          <code>realesrgan-ncnn-vulkan</code> 引擎 + ffmpeg 两步管线:
+          模型固定 4x 放大 → ffmpeg 缩放到目标倍率。</p>
+        <ul>
+          <li>单张图片、批量、目录批量、视频单命令放大(无中间帧)</li>
+          <li>支持 1–8x 比例放大或精确目标尺寸</li>
+          <li>支持双模型混合(ffmpeg blend)</li>
+          <li>本地处理,无需上传,无需联网</li>
+        </ul>
+        <p>引擎:realesrgan-ncnn-vulkan · 模型自动探测 <code>tools/models/</code></p>
+        <p class="app-about-log">日志:<span id="about-log-path">…</span></p>
+      </div>
+    </div>
+    <div class="content-dialog-command-space">
+      <button class="win-btn AccentButtonStyle content-dialog-button content-dialog-primary" id="about-close" type="button">
+        <span class="win-text-block">关闭</span>
+      </button>
+    </div>
+  </section>
 </div>
 
 <script>
 'use strict';
 /* ════════════════════════════════════════════════════════════
-   SD Enhance v2 desktop UI — talks to Python via pywebview js_api
+   SD Enhance v2 desktop UI — WinUIonWeb 样式 + 原生 JS
+   通过 pywebview js_api 与 Python 通信(window.pywebview.api.*)
    ════════════════════════════════════════════════════════════ */
 
 let api = null;
 const hasApi = () => !!(window.pywebview && window.pywebview.api);
-if (!hasApi()) {
-  document.getElementById('status-text').textContent = '未检测到桌面环境（请在 pywebview 中运行）';
-}
 
-/* ── State ─────────────────────────────────────────────── */
+/* ── 状态 ───────────────────────────────────────────────── */
 const state = {
   tab: 'single',
   singleFile: null,
@@ -458,54 +417,302 @@ const state = {
 
 const $ = id => document.getElementById(id);
 
-/* ── Model loading ─────────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════
+   WinUI 控件的 vanilla JS 实现(只复用其 CSS,交互自实现)
+   ════════════════════════════════════════════════════════════ */
+
+/* ── ComboBox:按钮 + fixed 定位弹层 ─────────────────────── */
+class WinComboBox {
+  constructor(root, { options = [], value = null, onChange = null } = {}) {
+    this.root = root;
+    this.btn = root.querySelector('.win-combo-btn');
+    this.labelEl = root.querySelector('.win-combo-content .win-text-block');
+    this.options = options;
+    this.value = value ?? (options.length ? options[0].value : null);
+    this.onChange = onChange;
+    this.flyout = this._buildFlyout();
+    this._bind();
+    this._syncLabel();
+  }
+
+  _buildFlyout() {
+    const fl = document.createElement('div');
+    fl.className = 'win-combo-flyout win-theme-scope';
+    fl.setAttribute('role', 'listbox');
+    const hit = document.createElement('div');
+    hit.className = 'win-combo-flyout-hit-root';
+    const presenter = document.createElement('div');
+    presenter.className = 'win-combo-items-presenter';
+    fl.appendChild(hit);
+    hit.appendChild(presenter);
+    this.presenter = presenter;
+    document.body.appendChild(fl);
+    return fl;
+  }
+
+  _renderItems() {
+    this.presenter.innerHTML = '';
+    for (const opt of this.options) {
+      const item = document.createElement('button');
+      item.className = 'win-combo-item' + (opt.value === this.value ? ' selected' : '');
+      item.setAttribute('role', 'option');
+      item.type = 'button';
+      const layout = document.createElement('span');
+      layout.className = 'win-combo-item-layout';
+      const pill = document.createElement('span');
+      pill.className = 'win-combo-item-pill';
+      const content = document.createElement('span');
+      content.className = 'win-combo-item-content';
+      content.textContent = opt.label;
+      layout.appendChild(pill);
+      layout.appendChild(content);
+      item.appendChild(layout);
+      item.addEventListener('pointerenter', () => item.classList.add('hovered'));
+      item.addEventListener('pointerleave', () => item.classList.remove('hovered'));
+      item.addEventListener('click', () => { this.setValue(opt.value); this.close(); });
+      this.presenter.appendChild(item);
+    }
+  }
+
+  _bind() {
+    this.btn.addEventListener('click', () => this.isOpen ? this.close() : this.open());
+    this._onDocDown = e => {
+      if (!this.isOpen) return;
+      if (this.flyout.contains(e.target) || this.btn.contains(e.target)) return;
+      this.close();
+    };
+    document.addEventListener('pointerdown', this._onDocDown);
+    this.btn.addEventListener('keydown', e => {
+      if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.open(); }
+    });
+    this.flyout.addEventListener('keydown', e => {
+      const items = [...this.presenter.querySelectorAll('.win-combo-item')];
+      const idx = items.indexOf(document.activeElement);
+      if (e.key === 'Escape') { e.preventDefault(); this.close(); this.btn.focus(); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); items[Math.min(idx + 1, items.length - 1)]?.focus(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); items[Math.max(idx - 1, 0)]?.focus(); }
+    });
+  }
+
+  get isOpen() { return this.root.classList.contains('is-drop-down-open'); }
+
+  open() {
+    if (!this.options.length) return;
+    this._renderItems();
+    this.flyout.classList.add('is-open');
+    const r = this.btn.getBoundingClientRect();
+    this.flyout.style.minWidth = r.width + 'px';
+    this.flyout.style.left = r.left + 'px';
+    this.flyout.classList.remove('edge-square-top', 'edge-square-bottom');
+    const h = this.flyout.offsetHeight;
+    const spaceBelow = window.innerHeight - r.bottom - 8;
+    const spaceAbove = r.top - 8;
+    if (spaceBelow >= Math.min(h, 200) || spaceBelow >= spaceAbove) {
+      this.flyout.style.top = (r.bottom + 4) + 'px';
+      this.flyout.classList.add('edge-square-top');
+    } else {
+      this.flyout.style.top = Math.max(8, r.top - h - 4) + 'px';
+      this.flyout.classList.add('edge-square-bottom');
+    }
+    this.root.classList.add('is-drop-down-open');
+    const sel = this.presenter.querySelector('.win-combo-item.selected');
+    if (sel) sel.scrollIntoView({ block: 'nearest' });
+  }
+
+  close() {
+    this.flyout.classList.remove('is-open');
+    this.root.classList.remove('is-drop-down-open');
+  }
+
+  setOptions(options, keepValue = true) {
+    this.options = options;
+    if (!keepValue || !options.some(o => o.value === this.value)) {
+      this.value = options.length ? options[0].value : null;
+    }
+    this._syncLabel();
+  }
+
+  setValue(v) {
+    this.value = v;
+    this._syncLabel();
+    this.onChange?.(v);
+  }
+
+  _syncLabel() {
+    const opt = this.options.find(o => o.value === this.value);
+    this.labelEl.textContent = opt ? opt.label : (this.value ?? '—');
+  }
+}
+
+/* ── Slider:指针拖动 + fill/thumb 内联定位 ──────────────── */
+class WinSlider {
+  constructor(root, { min = 0, max = 100, step = 1, value = min, onInput = null } = {}) {
+    this.track = root.querySelector('.win-slider');
+    this.fill = root.querySelector('.win-slider-fill');
+    this.thumb = root.querySelector('.win-slider-thumb');
+    Object.assign(this, { min, max, step, value, onInput });
+    this._dragging = false;
+    this.track.addEventListener('pointerdown', e => {
+      this._dragging = true;
+      this.track.setPointerCapture(e.pointerId);
+      this.thumb.classList.add('is-pressed');
+      this._fromEvent(e);
+    });
+    this.track.addEventListener('pointermove', e => { if (this._dragging) this._fromEvent(e); });
+    const end = e => {
+      this._dragging = false;
+      this.thumb.classList.remove('is-pressed');
+    };
+    this.track.addEventListener('pointerup', end);
+    this.track.addEventListener('pointercancel', end);
+    this.render();
+  }
+
+  _fromEvent(e) {
+    const r = this.track.getBoundingClientRect();
+    let pct = r.width ? (e.clientX - r.left) / r.width : 0;
+    pct = Math.min(1, Math.max(0, pct));
+    let v = this.min + pct * (this.max - this.min);
+    v = Math.round(v / this.step) * this.step;
+    v = Math.min(this.max, Math.max(this.min, v));
+    // 消除浮点误差
+    v = +v.toFixed(6);
+    if (v !== this.value) {
+      this.value = v;
+      this.render();
+      this.onInput?.(v);
+    }
+  }
+
+  setValue(v) { this.value = Math.min(this.max, Math.max(this.min, v)); this.render(); }
+
+  render() {
+    const pct = ((this.value - this.min) / (this.max - this.min)) * 100;
+    this.fill.style.width = pct + '%';
+    this.thumb.style.left = pct + '%';
+  }
+}
+
+/* ── ToggleSwitch:点击切换 is-on ────────────────────────── */
+class WinToggle {
+  constructor(root, { checked = false, onChange = null } = {}) {
+    this.root = root;           // .win-switch-wrap
+    this.sw = root.querySelector('.win-switch');
+    this.checked = checked;
+    this.onChange = onChange;
+    root.addEventListener('click', () => this.setChecked(!this.checked));
+    this.render();
+  }
+  setChecked(v, silent = false) {
+    this.checked = v;
+    this.render();
+    if (!silent) this.onChange?.(v);
+  }
+  render() { this.sw.classList.toggle('is-on', this.checked); }
+}
+
+/* ════════════════════════════════════════════════════════════
+   应用逻辑
+   ════════════════════════════════════════════════════════════ */
+
+/* ── 控件实例 ───────────────────────────────────────────── */
+const cbModel = new WinComboBox($('combo-model'), { options: [] });
+const cbModel2 = new WinComboBox($('combo-model2'), {
+  options: [{ value: '', label: '不使用' }],
+  value: '',
+  onChange: v => $('mix-field').classList.toggle('hidden', !v),
+});
+const cbFormat = new WinComboBox($('combo-format'), {
+  options: [{ value: 'png', label: 'PNG（无损）' }, { value: 'jpg', label: 'JPG（更小）' }],
+  value: 'png',
+});
+const sliderScale = new WinSlider($('slider-scale'), {
+  min: 1, max: 8, step: 0.5, value: 2,
+  onInput: v => $('scale-val').textContent = v.toFixed(1) + 'x',
+});
+const sliderMix = new WinSlider($('slider-mix'), {
+  min: 0, max: 1, step: 0.05, value: 0.5,
+  onInput: v => $('mix-val').textContent = v.toFixed(2),
+});
+const cropSwitch = new WinToggle($('crop-switch'), { checked: false });
+const themeSwitch = new WinToggle($('theme-switch'), {
+  checked: false,
+  onChange: v => {
+    localStorage.setItem(THEME_KEY, v ? 'dark' : 'light');
+    applyTheme(v);
+  },
+});
+
+/* ── 模型加载 ───────────────────────────────────────────── */
 async function loadModels() {
   if (!api) return;
   try {
     state.models = await api.get_models();
-    const m1 = $('model'), m2 = $('model2');
-    m1.innerHTML = ''; m2.innerHTML = '<option value="">不使用</option>';
-    for (const m of state.models) {
-      const o1 = document.createElement('option');
-      o1.value = m.name; o1.textContent = `${m.display_name}（${m.description}）`;
-      m1.appendChild(o1);
-      const o2 = document.createElement('option');
-      o2.value = m.name; o2.textContent = m.display_name;
-      m2.appendChild(o2);
-    }
-    m1.selectedIndex = 0;
-    // video 模式默认模型提示
-    if (state.models.length === 0) $('status-text').textContent = '未找到模型（检查 tools/models/）';
+    cbModel.setOptions(state.models.map(m => ({
+      value: m.name,
+      label: `${m.display_name}（${m.description}）`,
+    })));
+    cbModel2.setOptions(
+      [{ value: '', label: '不使用' }].concat(
+        state.models.map(m => ({ value: m.name, label: m.display_name }))
+      ), true);
+    cbModel2.setValue('', true);
+    if (state.models.length === 0) setStatusText('未找到模型(检查 tools/models/)');
   } catch (e) {
-    $('status-text').textContent = '加载模型失败: ' + e;
+    setStatusText('加载模型失败: ' + e);
   }
 }
 
-/* ── Tab switching ─────────────────────────────────────── */
+/* ── Tab 切换(NavigationView) ──────────────────────────── */
+const PAGE_TITLES = { single: '单张图片', batch: '批量处理', dir: '目录批量', video: '视频处理' };
+
 function switchTab(tab) {
   state.tab = tab;
-  document.querySelectorAll('.nav-btn').forEach(b =>
-    b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.win-nav-item[data-tab]').forEach(b =>
+    b.classList.toggle('is-selected', b.dataset.tab === tab));
   ['single', 'batch', 'dir', 'video'].forEach(t =>
     $('page-' + t).classList.toggle('hidden', t !== tab));
-  // 参数区由共享 settings panel 承载；按 tab 切换输出格式选项
-  const fmt = $('fmt-field');
+  $('page-title').textContent = PAGE_TITLES[tab];
+  // 输出格式选项:视频走 mp4/mov/gif,图片走 png/jpg
   if (tab === 'video') {
-    fmt.classList.remove('hidden');
-    $('out-format').innerHTML =
-      '<option value="mp4">MP4（H.264 + 原音频）</option>' +
-      '<option value="mov">MOV（H.264 + 原音频）</option>' +
-      '<option value="gif">GIF</option>';
-    $('out-format').value = 'mp4';
+    cbFormat.setOptions([
+      { value: 'mp4', label: 'MP4（H.264 + 原音频）' },
+      { value: 'mov', label: 'MOV（H.264 + 原音频）' },
+      { value: 'gif', label: 'GIF' },
+    ]);
+    cbFormat.setValue('mp4');
+    $('fmt-desc').textContent = 'H.264 编码,保留原音频';
   } else {
-    fmt.classList.remove('hidden');
-    $('out-format').innerHTML =
-      '<option value="png">PNG（无损）</option>' +
-      '<option value="jpg">JPG（更小）</option>';
+    cbFormat.setOptions([
+      { value: 'png', label: 'PNG（无损）' },
+      { value: 'jpg', label: 'JPG（更小）' },
+    ]);
+    cbFormat.setValue('png');
+    $('fmt-desc').textContent = 'PNG 无损,JPG 体积更小';
   }
+  moveNavIndicator();
+  // WinUI 内容入场动画
+  const page = $('page-' + tab);
+  page.classList.remove('app-page-anim');
+  void page.offsetWidth; // 重置动画
+  page.classList.add('app-page-anim');
 }
 
-/* ── File picking ──────────────────────────────────────── */
+function moveNavIndicator() {
+  const item = document.querySelector('.win-nav-item.is-selected');
+  const panel = $('nav-panel');
+  const ind = $('nav-indicator');
+  if (!item || !panel) return;
+  if ($('nav-shell').classList.contains('is-pane-hidden')) return; // 面板隐藏时指示条无意义
+  const pr = panel.getBoundingClientRect();
+  const ir = item.getBoundingClientRect();
+  ind.style.top = (ir.top - pr.top) + 'px';
+  ind.style.height = ir.height + 'px';
+  ind.style.left = '0px';
+  ind.style.width = '3px';
+}
+
+/* ── 文件选择 ───────────────────────────────────────────── */
 async function pickSingle() {
   if (!api) return;
   const files = await api.select_files(false);
@@ -517,9 +724,9 @@ async function pickSingle() {
   const wrap = $('single-preview-wrap');
   if (preview) {
     $('single-preview').src = preview;
-    wrap.style.display = 'block';
+    wrap.classList.remove('hidden');
   } else {
-    wrap.style.display = 'none';
+    wrap.classList.add('hidden');
   }
 }
 
@@ -540,7 +747,8 @@ function renderBatchList() {
     row.innerHTML =
       `<span class="fname" title="${escapeAttr(f)}">${escapeHtml(f)}</span>` +
       `<span class="fmeta">${state.batchFiles.length} 个文件</span>` +
-      `<button class="fdel" onclick="removeBatch(${i})" title="移除">✕</button>`;
+      `<button class="fdel" title="移除"><span class="win-font-icon">&#xE711;</span></button>`;
+    row.querySelector('.fdel').addEventListener('click', () => removeBatch(i));
     list.appendChild(row);
   });
 }
@@ -565,62 +773,58 @@ async function pickVideo() {
   if (!api) return;
   const v = await api.select_video();
   if (!v) return;
-  state.singleFile = v; // reuse slot for video path
+  state.singleFile = v; // 复用 single 槽位存视频路径
   $('video-hint').textContent = v;
   $('video-pick').classList.add('filled');
 }
 
-/* ── Settings ──────────────────────────────────────────── */
+/* ── 设置 ───────────────────────────────────────────────── */
 function setMode(mode) {
   state.mode = mode;
-  document.querySelectorAll('#mode-switch button').forEach(b =>
-    b.classList.toggle('active', b.dataset.mode === mode));
+  document.querySelectorAll('#mode-switch .win-selector-bar-item').forEach(b =>
+    b.classList.toggle('is-selected', b.dataset.mode === mode));
   $('scale-field').classList.toggle('hidden', mode !== 'scale');
   $('dim-field').classList.toggle('hidden', mode !== 'dim');
   $('crop-field').classList.toggle('hidden', mode !== 'dim');
 }
 
-$('scale').addEventListener('input', () => $('scale-val').textContent = $('scale').value + 'x');
-$('mix-ratio').addEventListener('input', () => $('mix-val').textContent = (+$('mix-ratio').value).toFixed(2));
-$('model2').addEventListener('change', () => $('mix-field').classList.toggle('hidden', !$('model2').value));
-
 function collectParams() {
   const p = {
-    model: $('model').value,
-    model_2: $('model2').value || null,
-    mix_ratio: parseFloat($('mix-ratio').value),
-    output_format: $('out-format').value,
+    model: cbModel.value,
+    model_2: cbModel2.value || null,
+    mix_ratio: sliderMix.value,
+    output_format: cbFormat.value,
   };
   if (state.mode === 'dim') {
     p.width = parseInt($('dim-w').value, 10);
     p.height = parseInt($('dim-h').value, 10);
-    p.crop = $('crop').checked;
+    p.crop = cropSwitch.checked;
   } else {
-    p.scale = parseFloat($('scale').value);
+    p.scale = sliderScale.value;
   }
   return p;
 }
 
-/* ── Task flow ─────────────────────────────────────────── */
+/* ── 任务流 ─────────────────────────────────────────────── */
 async function startTask() {
   if (!api) return;
-  if (state.taskId) return; // already running
+  if (state.taskId) return; // 已有任务在跑
   resetResults();
   const params = collectParams();
   let resp;
   try {
     if (state.tab === 'single') {
-      if (!state.singleFile) return toast('请先选择图片');
+      if (!state.singleFile) return showInfoBar('warning', '请先选择图片');
       resp = await api.submit_single(state.singleFile, params);
     } else if (state.tab === 'batch') {
-      if (!state.batchFiles.length) return toast('请先选择图片');
+      if (!state.batchFiles.length) return showInfoBar('warning', '请先选择图片');
       resp = await api.submit_files(state.batchFiles, params);
     } else if (state.tab === 'dir') {
       const inputDir = $('dir-input').value.trim();
-      if (!inputDir) return toast('请输入输入目录');
+      if (!inputDir) return showInfoBar('warning', '请输入输入目录');
       resp = await api.submit_dir(inputDir, $('dir-output').value.trim(), params);
     } else {
-      if (!state.singleFile) return toast('请先选择视频');
+      if (!state.singleFile) return showInfoBar('warning', '请先选择视频');
       resp = await api.submit_video(state.singleFile, params);
     }
   } catch (e) {
@@ -628,8 +832,8 @@ async function startTask() {
   }
   if (resp.error) return showError(resp.error);
   state.taskId = resp.task_id;
-  setStatus('busy', '任务进行中…');
-  $('progress-wrap').style.display = 'block';
+  setBusy(true, '任务进行中…');
+  $('progress-wrap').classList.remove('hidden');
   $('submit-btn').disabled = true;
   state.pollTimer = setInterval(pollTask, 500);
 }
@@ -640,17 +844,18 @@ async function pollTask() {
   try { t = await api.get_task(state.taskId); } catch (e) { return; }
   if (!t) { stopPoll(); return; }
 
-  $('progress-bar').style.width = (t.progress || 0) + '%';
-  $('progress-text').textContent = t.status + ' · ' + (t.progress || 0) + '%';
+  const pct = t.progress || 0;
+  $('progress-fill').style.width = pct + '%';
+  $('progress-text').textContent = t.status + ' · ' + pct + '%';
 
   if (t.status === 'done') {
     stopPoll();
-    setStatus('ok', '完成');
+    setBusy(false, '完成');
     renderResults(t.results || []);
-    $('progress-bar').style.width = '100%';
+    $('progress-fill').style.width = '100%';
   } else if (t.status === 'error') {
     stopPoll();
-    setStatus('err', '失败');
+    setBusy(false, '失败');
     showError(t.error || '未知错误');
   }
 }
@@ -666,19 +871,23 @@ function renderResults(results) {
   const box = $('results');
   box.innerHTML = '';
   if (!results.length) {
-    box.innerHTML = '<div class="error-box">没有生成结果（请查看上方错误信息）</div>';
+    showError('没有生成结果(请查看上方错误信息)');
     return;
   }
   for (const r of results) {
     const card = document.createElement('div');
     card.className = 'result-card';
     card.innerHTML =
-      `<span class="rname">✅ ${escapeHtml(r.filename)}<span class="path">${escapeHtml(r.path)}</span></span>` +
+      `<span class="ricon win-font-icon">&#xE73E;</span>` +
+      `<span class="rname">${escapeHtml(r.filename)}<span class="path">${escapeHtml(r.path)}</span></span>` +
       `<span class="rbtns">` +
-      `<button class="rbtn primary" onclick="openResult('${escapeJs(r.path)}')">打开</button>` +
-      `<button class="rbtn" onclick="openResultFolder('${escapeJs(r.path)}')">所在文件夹</button>` +
-      `<button class="rbtn" onclick="saveResultAs('${escapeJs(r.path)}')">另存为…</button>` +
+      `<button class="win-btn" data-act="open"><span class="win-font-icon">&#xE8E5;</span><span class="win-text-block">打开</span></button>` +
+      `<button class="win-btn" data-act="folder"><span class="win-font-icon">&#xE838;</span><span class="win-text-block">所在文件夹</span></button>` +
+      `<button class="win-btn" data-act="save"><span class="win-font-icon">&#xE792;</span><span class="win-text-block">另存为…</span></button>` +
       `</span>`;
+    card.querySelector('[data-act="open"]').addEventListener('click', () => openResult(r.path));
+    card.querySelector('[data-act="folder"]').addEventListener('click', () => openResultFolder(r.path));
+    card.querySelector('[data-act="save"]').addEventListener('click', () => saveResultAs(r.path));
     box.appendChild(card);
   }
 }
@@ -692,28 +901,34 @@ async function saveResultAs(path) {
   const dest = await api.save_path(name);
   if (!dest) return;
   const r = await api.copy_to(path, dest.replace(/[\\/][^\\/]+$/, ''), dest.split(/[\\/]/).pop());
-  if (r.success) setStatus('ok', '已保存: ' + r.dest);
+  if (r.success) setBusy(false, '已保存: ' + r.dest);
   else showError(r.error);
 }
 
-/* ── Status helpers ────────────────────────────────────── */
-function setStatus(cls, text) {
-  const dot = $('status-dot');
-  dot.className = 'dot ' + cls;
+/* ── 状态 / InfoBar ─────────────────────────────────────── */
+function setBusy(busy, text) {
+  $('status-ring').classList.toggle('hidden', !busy);
+  setStatusText(text);
+}
+function setStatusText(text) {
   $('status-text').textContent = text;
 }
-function toast(msg) {
-  setStatus('err', msg);
-}
-function showError(msg) {
-  const box = $('error-box');
-  box.textContent = msg;
+function showInfoBar(kind, msg, title) {
+  const box = $('error-infobar');
+  box.classList.remove('win-infobar-error', 'win-infobar-warning', 'win-infobar-informational', 'win-infobar-success');
+  box.classList.add('win-infobar-' + kind);
+  const glyphs = { error: '\uE783', warning: '\uE7BA', informational: '\uE946', success: '\uE73E' };
+  $('error-icon').textContent = glyphs[kind] || glyphs.error;
+  $('error-title').textContent = title || (kind === 'error' ? '出错了' : '提示');
+  $('error-message').textContent = msg;
   box.classList.remove('hidden');
 }
+function showError(msg) { showInfoBar('error', msg); }
 function resetResults() {
   $('results').innerHTML = '';
-  $('error-box').classList.add('hidden');
-  $('progress-bar').style.width = '0%';
+  $('error-infobar').classList.add('hidden');
+  $('progress-fill').style.width = '0%';
+  $('progress-text').textContent = '';
 }
 
 function escapeHtml(s) {
@@ -721,41 +936,111 @@ function escapeHtml(s) {
     ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 function escapeAttr(s) { return escapeHtml(s); }
-function escapeJs(s) {
-  return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-}
 
-/* ── About ─────────────────────────────────────────────── */
+/* ── 关于对话框(ContentDialog) ─────────────────────────── */
 async function openAbout() {
-  $('about-mask').classList.add('open');
+  const mask = $('about-mask');
+  if (mask.classList.contains('is-open')) return;
+  mask.classList.add('is-open');
+  // 对话框本体走 CSS keyframes 入场(enter-active 由 keyframes both 填充)
+  mask.classList.add('content-dialog-enter-active');
+  setTimeout(() => mask.classList.remove('content-dialog-enter-active'), 300);
   if (api) {
-    const p = await api.get_log_path();
-    $('about-log-path').textContent = p || '（未找到日志文件）';
+    try {
+      const p = await api.get_log_path();
+      $('about-log-path').textContent = p || '(未找到日志文件)';
+    } catch (e) { /* 忽略 */ }
   }
 }
-function closeAbout() { $('about-mask').classList.remove('open'); }
-
-/* ── Init ──────────────────────────────────────────────── */
-// pywebview 注入 js_api 是异步的（pywebviewready 事件后才可用），
-// 所以初始化必须等事件触发，否则 api 为 null、模型加载被跳过。
-function initDesktop() {
-  api = window.pywebview.api;
-  loadVersion();
-  switchTab('single');
-  loadModels();
+function closeAbout() {
+  const mask = $('about-mask');
+  mask.classList.add('content-dialog-leave-active', 'content-dialog-leave-to');
+  setTimeout(() => {
+    mask.classList.remove('is-open', 'content-dialog-leave-active', 'content-dialog-leave-to');
+  }, 180);
 }
 
+/* ── 主题 ───────────────────────────────────────────────── */
+const THEME_KEY = 're4x-theme';
+
+function applyTheme(dark) {
+  // theme 变量既挂在 html 上,也挂在弹层/对话框的 win-theme-scope 上
+  for (const el of [document.documentElement, ...document.querySelectorAll('.win-theme-scope')]) {
+    el.classList.toggle('theme-dark', dark);
+    el.classList.toggle('theme-light', !dark);
+  }
+}
+
+function initTheme() {
+  const saved = localStorage.getItem(THEME_KEY);
+  const mq = window.matchMedia('(prefers-color-scheme: dark)');
+  const dark = saved ? saved === 'dark' : mq.matches;
+  applyTheme(dark);
+  themeSwitch.setChecked(dark, true);
+  mq.addEventListener('change', e => {
+    if (!localStorage.getItem(THEME_KEY)) {
+      applyTheme(e.matches);
+      themeSwitch.setChecked(e.matches, true);
+    }
+  });
+}
+
+/* ── 事件绑定 ───────────────────────────────────────────── */
+document.querySelectorAll('.win-nav-item[data-tab]').forEach(item => {
+  item.addEventListener('click', () => switchTab(item.dataset.tab));
+  item.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); switchTab(item.dataset.tab); }
+  });
+});
+$('nav-about').addEventListener('click', openAbout);
+// 汉堡 = 收起;内容区左上角按钮 = 展开(WinUI minimal 模式行为)
+function setPaneHidden(hidden) {
+  $('nav-shell').classList.toggle('is-pane-hidden', hidden);
+  $('nav-restore').classList.toggle('hidden', !hidden);
+  moveNavIndicator();
+}
+$('nav-toggle').addEventListener('click', () => setPaneHidden(true));
+$('nav-restore').addEventListener('click', () => setPaneHidden(false));
+$('single-pick').addEventListener('click', pickSingle);
+$('batch-pick').addEventListener('click', pickBatch);
+$('video-pick').addEventListener('click', pickVideo);
+$('pick-dir-input').addEventListener('click', pickDirInput);
+$('pick-dir-output').addEventListener('click', pickDirOutput);
+document.querySelectorAll('#mode-switch .win-selector-bar-item').forEach(b =>
+  b.addEventListener('click', () => setMode(b.dataset.mode)));
+$('submit-btn').addEventListener('click', startTask);
+$('error-close').addEventListener('click', () => $('error-infobar').classList.add('hidden'));
+$('about-close').addEventListener('click', closeAbout);
+$('about-mask').addEventListener('click', e => { if (e.target === e.currentTarget) closeAbout(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && $('about-mask').classList.contains('is-open')) closeAbout();
+});
+window.addEventListener('resize', moveNavIndicator);
+
+/* ── 版本 ───────────────────────────────────────────────── */
 async function loadVersion() {
   try {
     const v = await api.get_version();
     if (v) {
-      $('ver-label').textContent = 'v' + v + ' · 桌面版';
+      $('nav-version').textContent = 'v' + v + ' · 桌面版';
       $('about-ver').textContent = 'v' + v;
     }
-  } catch (e) { /* keep hardcoded fallback */ }
+  } catch (e) { /* 保留硬编码回退 */ }
 }
+
+/* ── 初始化 ─────────────────────────────────────────────── */
+// pywebview 注入 js_api 是异步的(pywebviewready 事件后才可用),
+// 所以初始化必须等事件触发,否则 api 为 null、模型加载被跳过。
+function initDesktop() {
+  api = window.pywebview.api;
+  switchTab('single');
+  loadVersion();
+  loadModels();
+}
+initTheme(); // 主题跟随系统/本地存储,不依赖 pywebview
+requestAnimationFrame(moveNavIndicator); // 初始指示条定位
 window.addEventListener('pywebviewready', initDesktop);
-if (hasApi()) initDesktop(); // 兜底：页面加载晚于注入完成时
+if (hasApi()) initDesktop(); // 兜底:页面加载晚于注入完成时
 </script>
 </body>
 </html>

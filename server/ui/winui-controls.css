@@ -1,0 +1,3978 @@
+/* WinUIonWeb 控件样式(仅提取本项目用到的组件) */
+
+/* 来源: https://github.com/Furry-Xiyi/WinUIonWeb (MIT) */
+
+/* 组件: Button, FontIcon, SymbolIcon, TextBlock, NavigationView, ComboBox, TextBox, Slider, ToggleSwitch, CheckBox, ProgressBar, ProgressRing, InfoBar, ContentDialog, SettingsCard, SelectorBar, HyperlinkButton */
+
+/* ════════ Button.vue ════════ */
+.win-btn {
+    position: relative;
+    box-sizing: border-box;
+    border-left: var(--ButtonBorderThemeThickness) solid var(--ButtonBorderBrushCurrent);
+    border-top: var(--ButtonBorderThemeThickness) solid var(--ButtonBorderBrushTopCurrent);
+    border-right: var(--ButtonBorderThemeThickness) solid var(--ButtonBorderBrushCurrent);
+    border-bottom: var(--ButtonBorderThemeThickness) solid var(--ButtonBorderBrushBottomCurrent);
+    border-radius: var(--ButtonCornerRadius);
+    padding: var(--ButtonPadding, 5px 11px 6px);
+    font-family: var(--ContentControlThemeFontFamily, 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif);
+    font-size: var(--ControlContentThemeFontSize, 14px);
+    font-weight: normal;
+    min-height: 32px;
+    height: auto;
+    background: padding-box var(--ButtonBackgroundCurrent);
+    color: var(--ButtonForegroundCurrent);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background var(--fast-duration) var(--fast-out-slow-in), color var(--fast-duration);
+    user-select: none;
+    --ButtonPadding: 5px 11px 6px;
+    --ButtonBorderThemeThickness: 1px;
+    --ButtonCornerRadius: 4px;
+    --ButtonBackground: var(--ctrl-fill-default);
+    --ButtonBackgroundPointerOver: var(--ctrl-fill-secondary);
+    --ButtonBackgroundPressed: var(--ctrl-fill-tertiary);
+    --ButtonBackgroundDisabled: var(--ctrl-fill-disabled);
+    --ButtonForeground: var(--text-primary);
+    --ButtonForegroundPointerOver: var(--text-primary);
+    --ButtonForegroundPressed: var(--text-secondary);
+    --ButtonForegroundDisabled: var(--text-disabled);
+    --ButtonBorderBrush: var(--ControlStrokeColorDefaultBrush, var(--ctrl-border));
+    --ButtonBorderBrushTop: var(--ButtonBorderBrushDefaultTop, var(--ButtonBorderBrush));
+    --ButtonBorderBrushBottom: var(--ButtonBorderBrushDefaultBottom, var(--ctrl-border-accent));
+    --ButtonBorderBrushPointerOver: var(--ButtonBorderBrush);
+    --ButtonBorderBrushPointerOverTop: var(--ButtonBorderBrushTop);
+    --ButtonBorderBrushPointerOverBottom: var(--ButtonBorderBrushBottom);
+    --ButtonBorderBrushPressed: var(--ControlStrokeColorDefaultBrush);
+    --ButtonBorderBrushPressedTop: var(--ButtonBorderBrushPressed);
+    --ButtonBorderBrushPressedBottom: var(--ButtonBorderBrushPressed);
+    --ButtonBorderBrushDisabled: var(--ControlStrokeColorDefaultBrush);
+    --ButtonBorderBrushDisabledTop: var(--ButtonBorderBrushDisabled);
+    --ButtonBorderBrushDisabledBottom: var(--ButtonBorderBrushDisabled);
+    --ButtonBackgroundCurrent: var(--ButtonBackground);
+    --ButtonForegroundCurrent: var(--ButtonForeground);
+    --ButtonBorderBrushCurrent: var(--ButtonBorderBrush);
+    --ButtonBorderBrushTopCurrent: var(--ButtonBorderBrushTop);
+    --ButtonBorderBrushBottomCurrent: var(--ButtonBorderBrushBottom);
+  }
+
+    .win-btn:hover {
+      --ButtonBackgroundCurrent: var(--ButtonBackgroundPointerOver);
+      --ButtonForegroundCurrent: var(--ButtonForegroundPointerOver);
+      --ButtonBorderBrushCurrent: var(--ButtonBorderBrushPointerOver);
+      --ButtonBorderBrushTopCurrent: var(--ButtonBorderBrushPointerOverTop);
+      --ButtonBorderBrushBottomCurrent: var(--ButtonBorderBrushPointerOverBottom);
+    }
+
+    .win-btn:active {
+      --ButtonBackgroundCurrent: var(--ButtonBackgroundPressed);
+      --ButtonForegroundCurrent: var(--ButtonForegroundPressed);
+      --ButtonBorderBrushCurrent: var(--ButtonBorderBrushPressed);
+      --ButtonBorderBrushTopCurrent: var(--ButtonBorderBrushPressedTop);
+      --ButtonBorderBrushBottomCurrent: var(--ButtonBorderBrushPressedBottom);
+    }
+
+    .win-btn:disabled {
+      --ButtonBackgroundCurrent: var(--ButtonBackgroundDisabled);
+      --ButtonForegroundCurrent: var(--ButtonForegroundDisabled);
+      --ButtonBorderBrushCurrent: var(--ButtonBorderBrushDisabled);
+      --ButtonBorderBrushTopCurrent: var(--ButtonBorderBrushDisabledTop);
+      --ButtonBorderBrushBottomCurrent: var(--ButtonBorderBrushDisabledBottom);
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .win-btn.AccentButtonStyle {
+      --ButtonBackground: var(--AccentButtonBackground);
+      --ButtonBackgroundPointerOver: var(--AccentButtonBackgroundPointerOver);
+      --ButtonBackgroundPressed: var(--AccentButtonBackgroundPressed);
+      --ButtonBackgroundDisabled: var(--AccentButtonBackgroundDisabled);
+      --ButtonForeground: var(--AccentButtonForeground);
+      --ButtonForegroundPointerOver: var(--AccentButtonForegroundPointerOver);
+      --ButtonForegroundPressed: var(--AccentButtonForegroundPressed);
+      --ButtonForegroundDisabled: var(--AccentButtonForegroundDisabled);
+      --ButtonBorderBrush: var(--AccentButtonBorderBrush);
+      --ButtonBorderBrushTop: var(--AccentButtonBorderBrush);
+      --ButtonBorderBrushBottom: var(--AccentButtonBorderBrushBottom);
+      --ButtonBorderBrushPointerOver: var(--AccentButtonBorderBrushPointerOver);
+      --ButtonBorderBrushPointerOverTop: var(--AccentButtonBorderBrushPointerOver);
+      --ButtonBorderBrushPointerOverBottom: var(--AccentButtonBorderBrushPointerOverBottom);
+      --ButtonBorderBrushPressed: var(--AccentButtonBorderBrushPressed);
+      --ButtonBorderBrushPressedTop: var(--AccentButtonBorderBrushPressed);
+      --ButtonBorderBrushPressedBottom: var(--AccentButtonBorderBrushPressed);
+      --ButtonBorderBrushDisabled: var(--AccentButtonBorderBrushDisabled);
+      --ButtonBorderBrushDisabledTop: var(--AccentButtonBorderBrushDisabled);
+      --ButtonBorderBrushDisabledBottom: var(--AccentButtonBorderBrushDisabled);
+      --AccentButtonBackground: var(--accent-base);
+      --AccentButtonBackgroundPointerOver: var(--accent-hover);
+      --AccentButtonBackgroundPressed: var(--accent-pressed);
+      --AccentButtonBackgroundDisabled: var(--accent-fill-disabled);
+      --AccentButtonForeground: var(--accent-text);
+      --AccentButtonForegroundPointerOver: var(--accent-text);
+      --AccentButtonForegroundPressed: var(--accent-text-secondary);
+      --AccentButtonForegroundDisabled: var(--text-disabled);
+      --AccentButtonBorderBrush: var(--AccentButtonBorderBrushDefault, var(--accent-border));
+      --AccentButtonBorderBrushBottom: var(--AccentButtonBorderBrushDefaultBottom, var(--accent-border-accent));
+      --AccentButtonBorderBrushPointerOver: var(--AccentButtonBorderBrush);
+      --AccentButtonBorderBrushPointerOverBottom: var(--AccentButtonBorderBrushBottom);
+      --AccentButtonBorderBrushPressed: var(--ControlFillColorTransparentBrush, transparent);
+      --AccentButtonBorderBrushDisabled: var(--ControlFillColorTransparentBrush, transparent);
+    }
+
+  .win-btn .win-text-block {
+      color: inherit;
+    }
+
+  .win-btn.content-horizontal-stretch > * {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .win-btn.content-vertical-stretch > * {
+    align-self: stretch;
+  }
+
+    .win-btn.SubtleButtonStyle {
+      --ButtonBackground: var(--SubtleButtonBackground);
+      --ButtonBackgroundPointerOver: var(--SubtleButtonBackgroundPointerOver);
+      --ButtonBackgroundPressed: var(--SubtleButtonBackgroundPressed);
+      --ButtonBackgroundDisabled: var(--SubtleButtonBackgroundDisabled);
+      --ButtonForeground: var(--SubtleButtonForeground);
+      --ButtonForegroundPointerOver: var(--SubtleButtonForegroundPointerOver);
+      --ButtonForegroundPressed: var(--SubtleButtonForegroundPressed);
+      --ButtonForegroundDisabled: var(--SubtleButtonForegroundDisabled);
+      --ButtonBorderBrush: var(--SubtleButtonBorderBrush);
+      --ButtonBorderBrushTop: var(--SubtleButtonBorderBrush);
+      --ButtonBorderBrushBottom: var(--SubtleButtonBorderBrush);
+      --ButtonBorderBrushPointerOver: var(--SubtleButtonBorderBrushPointerOver);
+      --ButtonBorderBrushPointerOverTop: var(--SubtleButtonBorderBrushPointerOver);
+      --ButtonBorderBrushPointerOverBottom: var(--SubtleButtonBorderBrushPointerOver);
+      --ButtonBorderBrushPressed: var(--SubtleButtonBorderBrushPressed);
+      --ButtonBorderBrushPressedTop: var(--SubtleButtonBorderBrushPressed);
+      --ButtonBorderBrushPressedBottom: var(--SubtleButtonBorderBrushPressed);
+      --ButtonBorderBrushDisabled: var(--SubtleButtonBorderBrushDisabled);
+      --ButtonBorderBrushDisabledTop: var(--SubtleButtonBorderBrushDisabled);
+      --ButtonBorderBrushDisabledBottom: var(--SubtleButtonBorderBrushDisabled);
+      --SubtleButtonBackground: var(--subtle-transparent);
+      --SubtleButtonBackgroundPointerOver: var(--subtle-secondary);
+      --SubtleButtonBackgroundPressed: var(--subtle-tertiary);
+      --SubtleButtonBackgroundDisabled: var(--subtle-transparent);
+      --SubtleButtonForeground: var(--text-primary);
+      --SubtleButtonForegroundPointerOver: var(--text-primary);
+      --SubtleButtonForegroundPressed: var(--text-secondary);
+      --SubtleButtonForegroundDisabled: var(--text-disabled);
+      --SubtleButtonBorderBrush: var(--subtle-transparent);
+      --SubtleButtonBorderBrushPointerOver: var(--subtle-transparent);
+      --SubtleButtonBorderBrushPressed: var(--subtle-transparent);
+      --SubtleButtonBorderBrushDisabled: var(--subtle-transparent);
+    }
+
+  .win-btn {
+    white-space: nowrap;
+  }
+
+/* ════════ CheckBox.vue ════════ */
+.win-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 0;
+  width: fit-content;
+  align-self: flex-start;
+  color: var(--CheckBoxForeground, var(--text-primary));
+  background: transparent;
+  border: 0;
+  font-family: var(--ContentControlThemeFontFamily, 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif);
+  font-size: 14px;
+  line-height: 20px;
+  text-align: left;
+  cursor: pointer;
+  user-select: none;
+}
+
+.win-checkbox:focus-visible {
+  outline: 2px solid var(--focus-stroke-outer, var(--text-primary));
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.checkbox-box {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  position: relative;
+  box-sizing: border-box;
+  border: 1px solid var(--CheckBoxCheckBackgroundStroke, var(--ctrl-strong-stroke));
+  border-radius: 4px;
+  background: var(--CheckBoxCheckBackgroundFill, var(--ctrl-fill-default));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.checkbox-glyph {
+  font-size: 12px;
+  line-height: 1;
+  color: var(--CheckBoxCheckGlyphForeground, var(--accent-text));
+}
+
+.indeterminate-glyph {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.check-glyph {
+  font-weight: bold;
+  animation: glyph-close 0.2s ease-in-out forwards;
+}
+
+.check-glyph.checked {
+  animation: glyph-open 0.2s ease-in-out forwards;
+}
+
+.check-glyph.hidden {
+  visibility: hidden;
+}
+
+@keyframes glyph-open {
+  0% {
+    clip-path: polygon(0% 0%, 0% 0%, 0% 100%, 0% 100%);
+  }
+
+  100% {
+    clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+  }
+}
+
+@keyframes glyph-close {
+  0% {
+    clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+  }
+
+  100% {
+    clip-path: polygon(100% 0%, 100% 0%, 100% 100%, 100% 100%);
+  }
+}
+
+.checkbox-content {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.win-checkbox.is-unchecked {
+  --CheckBoxCheckBackgroundFill: var(--ctrl-fill-default);
+  --CheckBoxCheckBackgroundStroke: var(--ctrl-strong-stroke);
+}
+
+.win-checkbox.is-unchecked:hover {
+  --CheckBoxCheckBackgroundFill: var(--ctrl-fill-secondary);
+  --CheckBoxCheckBackgroundStroke: var(--ctrl-strong-stroke);
+}
+
+.win-checkbox.is-unchecked:active {
+  --CheckBoxCheckBackgroundFill: var(--ctrl-fill-tertiary);
+  --CheckBoxCheckBackgroundStroke: var(--ctrl-strong-stroke-disabled);
+}
+
+.win-checkbox.is-checked,
+.win-checkbox.is-indeterminate {
+  --CheckBoxCheckBackgroundFill: var(--accent-base);
+  --CheckBoxCheckBackgroundStroke: var(--accent-base);
+  --CheckBoxCheckGlyphForeground: var(--accent-text);
+}
+
+.win-checkbox.is-checked:hover,
+.win-checkbox.is-indeterminate:hover {
+  --CheckBoxCheckBackgroundFill: var(--accent-hover);
+  --CheckBoxCheckBackgroundStroke: var(--accent-hover);
+}
+
+.win-checkbox.is-checked:active,
+.win-checkbox.is-indeterminate:active {
+  --CheckBoxCheckBackgroundFill: var(--accent-pressed);
+  --CheckBoxCheckBackgroundStroke: var(--accent-pressed);
+  --CheckBoxCheckGlyphForeground: var(--accent-text-secondary);
+}
+
+.win-checkbox.is-disabled {
+  pointer-events: none;
+  cursor: default;
+  color: var(--text-disabled);
+}
+
+.win-checkbox.is-disabled .checkbox-box {
+  background: var(--ctrl-fill-disabled);
+  border-color: var(--ctrl-strong-stroke-disabled);
+}
+
+.win-checkbox.is-disabled.is-checked .checkbox-box,
+.win-checkbox.is-disabled.is-indeterminate .checkbox-box {
+  background: var(--accent-fill-disabled);
+  border-color: var(--accent-fill-disabled);
+}
+
+.win-checkbox.is-disabled .checkbox-glyph {
+  color: var(--text-disabled);
+}
+
+/* ════════ ComboBox.vue ════════ */
+.win-combo-box {
+  position: relative;
+  display: inline-block;
+  min-width: 64px;
+  vertical-align: top;
+  color: var(--text-primary);
+  font-family: var(--ContentControlThemeFontFamily, "Segoe UI Variable", "Segoe UI", system-ui, sans-serif);
+  font-size: var(--ControlContentThemeFontSize, 14px);
+}
+
+.win-combo-header {
+  display: block;
+  margin: 0 0 4px;
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.win-combo-btn {
+  width: 100%;
+  min-width: 120px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 38px;
+  gap: 0;
+  align-items: stretch;
+  text-align: left;
+}
+
+.win-combo-content {
+  min-width: 0;
+  padding: 5px 0 7px 12px;
+  display: block;
+  box-sizing: border-box;
+  overflow: hidden;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.win-combo-content.is-placeholder {
+  color: var(--text-secondary);
+}
+
+.win-combo-editable {
+  width: 100%;
+  min-width: 120px;
+  height: 32px;
+  min-height: 32px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 38px;
+  align-items: stretch;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.win-combo-edit-display {
+  grid-row: 1;
+  grid-column: 1 / -1;
+}
+
+.win-combo-textbox {
+  grid-row: 1;
+  grid-column: 1 / -1;
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  min-height: 32px;
+}
+
+.win-combo-textbox .win-textbox-border {
+  height: 32px;
+  min-height: 32px;
+}
+
+.win-combo-textbox .win-textbox-content {
+  height: 30px;
+  min-height: 30px;
+}
+
+.win-combo-textbox .win-textbox-field {
+  height: 30px;
+  min-height: 0;
+  padding: 5px 38px 6px 11px;
+  line-height: 19px;
+}
+
+.win-combo-drop-down-button {
+  grid-row: 1;
+  grid-column: 2;
+  z-index: 1;
+  appearance: none;
+  width: 30px;
+  min-width: 30px;
+  height: 24px;
+  margin: 4px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+}
+
+.win-combo-drop-down-button:hover {
+  background: var(--subtle-secondary);
+}
+
+.win-combo-drop-down-button:active {
+  background: var(--subtle-tertiary);
+}
+
+.win-combo-chevron {
+  grid-row: 1;
+  grid-column: 2;
+  z-index: 2;
+  width: 12px;
+  height: 12px;
+  margin: 0 14px 0 0;
+  place-self: center end;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  color: var(--text-secondary);
+  font-size: 0;
+  line-height: 12px;
+}
+
+.win-combo-box.is-disabled {
+  color: var(--text-disabled);
+}
+
+.win-combo-box.is-disabled .win-combo-header,
+.win-combo-box.is-disabled .win-combo-btn,
+.win-combo-box.is-disabled .win-combo-chevron {
+  color: var(--text-disabled);
+}
+
+.win-combo-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  pointer-events: none;
+}
+
+.win-combo-flyout {
+  position: fixed;
+  z-index: 10001;
+  width: max-content;
+  min-width: 80px;
+  box-sizing: border-box;
+  overflow: hidden;
+  color: var(--text-primary);
+  --win-acrylic-fill: var(--flyout-bg);
+  isolation: isolate;
+  background: transparent;
+  border: 1px solid var(--stroke-surface-flyout);
+  border-radius: 8px;
+  box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
+  -webkit-backdrop-filter: var(--flyout-backdrop);
+  backdrop-filter: var(--flyout-backdrop);
+}
+
+/* The reveal clip belongs to the presenter for visual fidelity. During that
+   short interval this sibling keeps the already-visible options hit-testable
+   when the pointer was positioned over the popup before it finished opening. */
+.win-combo-flyout-hit-overlay {
+  position: fixed;
+  z-index: 10002;
+  box-sizing: border-box;
+  pointer-events: auto;
+  background: transparent;
+}
+
+.win-combo-flyout.edge-square-top {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.win-combo-flyout.edge-square-bottom {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.win-combo-scroll-viewer {
+  width: 100%;
+  height: 100%;
+  max-height: inherit;
+}
+
+.win-combo-scroll-viewer .win-scroll-viewer-viewport {
+  max-height: inherit;
+}
+
+.win-combo-scroll-viewer .scroll-content {
+  min-width: 100%;
+}
+
+.win-combo-items-presenter {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 4px 0;
+}
+
+.win-combo-flyout.touch-input .win-combo-items-presenter {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.win-combo-item {
+  appearance: none;
+  position: relative;
+  width: 100%;
+  min-width: max-content;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  box-sizing: border-box;
+  color: var(--text-primary);
+  background: transparent;
+  border: 0;
+  border-radius: 3px;
+  cursor: pointer;
+  font: inherit;
+  line-height: 20px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.win-combo-item-layout {
+  position: relative;
+  width: calc(100% - 10px);
+  min-height: 32px;
+  margin: 2px 5px;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  border-radius: 3px;
+}
+
+.win-combo-item-content {
+  min-width: 0;
+  padding: 5px 11px 7px;
+  display: block;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.win-combo-flyout.touch-input .win-combo-item-layout {
+  min-height: 44px;
+}
+
+.win-combo-flyout.touch-input .win-combo-item-content {
+  padding: 11px 11px 13px;
+}
+
+.win-combo-item:hover .win-combo-item-layout {
+  background: var(--subtle-secondary);
+}
+
+.win-combo-item.hovered .win-combo-item-layout {
+  background: var(--subtle-secondary);
+}
+
+.win-combo-item:active .win-combo-item-layout {
+  color: var(--text-secondary);
+  background: var(--subtle-tertiary);
+}
+
+.win-combo-item.selected .win-combo-item-layout {
+  background: var(--subtle-secondary);
+}
+
+.win-combo-item.selected:hover .win-combo-item-layout {
+  background: var(--subtle-tertiary);
+}
+
+.win-combo-item:focus-visible {
+  outline: 2px solid var(--text-primary);
+  outline-offset: -2px;
+}
+
+.win-combo-item-pill {
+  position: absolute;
+  left: 1px;
+  top: 50%;
+  width: 3px;
+  height: 16px;
+  border-radius: 1.5px;
+  background: var(--accent-base);
+  transform: translateY(-50%);
+  transition: height 167ms cubic-bezier(0, 0, 0, 1);
+}
+
+.win-combo-item.selected:active .win-combo-item-pill {
+  height: 10px;
+}
+
+/* ════════ ContentDialog.vue ════════ */
+.content-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--SmokeFillColorDefaultBrush, var(--dialog-overlay, rgba(0, 0, 0, 0.30)));
+}
+
+.content-dialog {
+  width: min(100%, var(--ContentDialogMaxWidth, 548px));
+  min-width: min(100%, var(--ContentDialogMinWidth, 320px));
+  min-height: var(--ContentDialogMinHeight, 184px);
+  max-height: min(var(--ContentDialogMaxHeight, 756px), calc(100vh - 48px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--ContentDialogForeground, var(--TextFillColorPrimaryBrush, var(--text-primary)));
+  background: var(--ContentDialogBackground, var(--SolidBackgroundFillColorBaseBrush, var(--dialog-background)));
+  border: var(--ContentDialogBorderWidth, 1px) solid var(--ContentDialogBorderBrush, var(--SurfaceStrokeColorDefaultBrush, var(--flyout-border)));
+  border-radius: var(--OverlayCornerRadius, 8px);
+  box-shadow: 0 32px 64px rgba(0, 0, 0, 0.28);
+}
+
+.content-dialog-content {
+  min-height: 0;
+  flex: 1 1 auto;
+  padding: var(--ContentDialogPadding, 24px);
+  background: var(--content-dialog-content-bg, var(--ContentDialogTopOverlay, var(--LayerFillColorAltBrush, var(--dialog-content-bg))));
+  border-bottom: var(--ContentDialogSeparatorThickness, 1px) solid var(--ContentDialogSeparatorBorderBrush, var(--CardStrokeColorDefaultBrush, var(--dialog-divider)));
+}
+
+.content-dialog-title {
+  margin: 0 0 12px;
+  color: var(--TextFillColorPrimaryBrush, var(--text-primary));
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 28px;
+}
+
+.content-dialog-body {
+  color: var(--TextFillColorPrimaryBrush, var(--text-primary));
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.content-dialog-command-space {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 0 0 8px minmax(0, 1fr);
+  column-gap: 0;
+  padding: var(--ContentDialogPadding, 24px);
+  background: var(--content-dialog-command-bg, var(--ContentDialogCommandSpaceBackground, var(--SolidBackgroundFillColorBaseBrush, var(--dialog-button-bg))));
+}
+
+.content-dialog-command-space.all-visible {
+  grid-template-columns: minmax(0, 1fr) 8px minmax(0, 1fr) 8px minmax(0, 1fr);
+}
+
+.content-dialog-button {
+  width: 100%;
+  min-width: 0;
+}
+
+.content-dialog-primary {
+  grid-column: 1;
+}
+
+.content-dialog-secondary {
+  grid-column: 1;
+}
+
+.content-dialog-close {
+  grid-column: 5;
+}
+
+.content-dialog-command-space.all-visible .content-dialog-secondary {
+  grid-column: 3;
+}
+
+.content-dialog-command-space.primary-visible .content-dialog-primary,
+.content-dialog-command-space.secondary-visible .content-dialog-secondary,
+.content-dialog-command-space.primary-secondary-visible .content-dialog-secondary {
+  grid-column: 5;
+}
+
+.content-dialog-enter-active {
+  transition: opacity 83ms linear;
+}
+
+.content-dialog-leave-active {
+  transition: opacity 83ms linear;
+  pointer-events: none;
+}
+
+.content-dialog-enter-active .content-dialog {
+  animation: content-dialog-enter 250ms cubic-bezier(0, 0, 0, 1) both;
+}
+
+.content-dialog-leave-active .content-dialog {
+  animation: content-dialog-exit 167ms cubic-bezier(0, 0, 0, 1) both;
+}
+
+.content-dialog-appear-active .content-dialog {
+  animation: content-dialog-enter 250ms cubic-bezier(0, 0, 0, 1) both;
+}
+
+.content-dialog-enter-from,
+.content-dialog-leave-to {
+  opacity: 0;
+}
+
+@keyframes content-dialog-enter {
+  from {
+    transform: scale(1.05);
+  }
+
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes content-dialog-exit {
+  from {
+    transform: scale(1);
+  }
+
+  to {
+    transform: scale(1.05);
+  }
+}
+
+/* ════════ FontIcon.vue ════════ */
+.win-font-icon { display: inline-flex; align-items: center; justify-content: center; font-family: 'Segoe Fluent Icons', 'Segoe MDL2 Assets', sans-serif; line-height: 1; }
+
+/* ════════ HyperlinkButton.vue ════════ */
+.win-hyperlink-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: var(--ButtonPadding, 5px 11px 6px);
+  border: none;
+  border-radius: var(--ControlCornerRadius, 4px);
+  background: transparent;
+  color: var(--accent-text-fill-color-primary);
+  font-size: var(--ControlContentThemeFontSize, 14px);
+  font-family: var(--ContentControlThemeFontFamily, 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif);
+  font-weight: normal;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 83ms cubic-bezier(0.1, 0.9, 0.2, 1),
+              color 83ms cubic-bezier(0.1, 0.9, 0.2, 1);
+  user-select: none;
+  min-height: 32px;
+  outline: none;
+  flex: 0 0 auto;
+}
+
+.win-hyperlink-button:hover:not(:disabled):not(.disabled) {
+  background: var(--subtle-fill-color-secondary, var(--subtle-secondary));
+  color: var(--accent-text-fill-color-primary);
+}
+
+.win-hyperlink-button:active:not(:disabled):not(.disabled) {
+  background: var(--subtle-fill-color-tertiary, var(--subtle-tertiary));
+  color: var(--accent-text-fill-color-primary);
+}
+
+.win-hyperlink-button:disabled,
+.win-hyperlink-button.disabled {
+  color: var(--accent-text-fill-color-disabled, var(--text-disabled));
+  cursor: not-allowed;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.win-hyperlink-button:focus-visible {
+  outline: 2px solid var(--accent-base);
+  outline-offset: -3px;
+}
+
+/* ════════ InfoBar.vue ════════ */
+.win-infobar {
+  box-sizing: border-box;
+  width: 100%;
+  overflow: hidden;
+  color: var(--InfoBarForeground, var(--TextFillColorPrimaryBrush, var(--text-primary)));
+  background: var(--InfoBarSeverityBackgroundBrush, var(--InfoBarInformationalSeverityBackgroundBrush));
+  border-color: var(--InfoBarBorderBrush, var(--CardStrokeColorDefaultBrush, var(--card-stroke)));
+  border-style: solid;
+  border-width: var(--InfoBarBorderThickness, 1px);
+  border-radius: var(--InfoBarCornerRadius, var(--ControlCornerRadius, 4px));
+  font-family: var(--ContentControlThemeFontFamily, 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif);
+  --InfoBarInformationalSeverityBackgroundBrush: var(--SystemFillColorAttentionBackgroundBrush, light-dark(rgb(246 246 246 / 50%), rgb(255 255 255 / 3.14%)));
+  --InfoBarSuccessSeverityBackgroundBrush: var(--SystemFillColorSuccessBackgroundBrush, light-dark(#dff6dd, #393d1b));
+  --InfoBarWarningSeverityBackgroundBrush: var(--SystemFillColorCautionBackgroundBrush, light-dark(#fff4ce, #433519));
+  --InfoBarErrorSeverityBackgroundBrush: var(--SystemFillColorCriticalBackgroundBrush, light-dark(#fde7e9, #442726));
+  --InfoBarInformationalSeverityIconBackground: var(--SystemFillColorAttentionBrush, var(--AccentFillColorDefaultBrush, var(--accent-base)));
+  --InfoBarSuccessSeverityIconBackground: var(--SystemFillColorSuccessBrush, light-dark(#0f7b0f, #6ccb5f));
+  --InfoBarWarningSeverityIconBackground: var(--SystemFillColorCautionBrush, light-dark(#9d5d00, #fce100));
+  --InfoBarErrorSeverityIconBackground: var(--SystemFillColorCriticalBrush, light-dark(#c42b1c, #ff99a4));
+  --InfoBarHyperlinkButtonForeground: var(--AccentTextFillColorPrimaryBrush, var(--accent-text-fill-color-primary));
+}
+
+.win-infobar-layout {
+  box-sizing: border-box;
+  min-height: 48px;
+  padding: 0 0 0 16px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  align-items: start;
+  background: var(--InfoBarBackground, transparent);
+  border-radius: inherit;
+}
+
+.win-infobar-standard-icon-area,
+.win-infobar-user-icon-box {
+  grid-column: 1;
+  grid-row: 1;
+  box-sizing: content-box;
+  width: 16px;
+  height: 16px;
+  margin: 16px 14px 16px 0;
+  align-self: start;
+}
+
+.win-infobar-standard-icon-area {
+  display: grid;
+  place-items: center;
+}
+
+.win-infobar-standard-icon-area .win-infobar-standard-icon,
+.win-infobar-user-icon-box .win-infobar-user-icon {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  color: inherit;
+  font-size: 16px;
+  line-height: 16px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.win-infobar-user-icon-box {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.win-infobar-panel {
+  position: relative;
+  grid-column: 2;
+  grid-row: 1;
+  box-sizing: border-box;
+  min-width: 0;
+  margin: 0 16px 0 0;
+  padding: 0;
+  display: flex;
+  align-items: start;
+}
+
+.win-infobar-panel .win-infobar-title,
+.win-infobar-panel .win-infobar-message {
+  box-sizing: border-box;
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  color: var(--InfoBarForeground, var(--TextFillColorPrimaryBrush, var(--text-primary)));
+  font-size: 14px;
+  line-height: 20px;
+  white-space: normal;
+  overflow-wrap: normal;
+}
+
+.win-infobar-panel .win-infobar-title {
+  font-weight: 600;
+}
+
+.win-infobar-panel .win-infobar-message {
+  font-weight: 400;
+}
+
+.win-infobar-action {
+  box-sizing: border-box;
+  min-width: 0;
+  display: grid;
+  align-items: start;
+  justify-items: start;
+}
+
+.win-infobar-action:empty {
+  display: none;
+}
+
+.win-infobar-action .win-hyperlink-button,
+.win-infobar-action-measure .win-hyperlink-button {
+  margin: 0 0 0 -12px;
+  color: var(--InfoBarHyperlinkButtonForeground);
+}
+
+.win-infobar-action .win-hyperlink-button .win-text-block,
+.win-infobar-action-measure .win-hyperlink-button .win-text-block {
+  color: inherit;
+}
+
+.win-infobar-panel.is-vertical {
+  flex-direction: column;
+  padding: 14px 0 18px;
+}
+
+.win-infobar-panel.is-vertical .win-infobar-title,
+.win-infobar-panel.is-vertical .win-infobar-message,
+.win-infobar-panel.is-vertical .win-infobar-action {
+  flex: 0 0 auto;
+  margin-left: 0;
+  margin-top: 0;
+}
+
+.win-infobar-panel.is-vertical .win-infobar-title,
+.win-infobar-panel.is-vertical .win-infobar-message {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.win-infobar-panel.is-vertical.has-title .win-infobar-message {
+  margin-top: 4px;
+}
+
+.win-infobar-panel.is-vertical.has-title .win-infobar-action,
+.win-infobar-panel.is-vertical.has-message .win-infobar-action {
+  margin-top: 12px;
+}
+
+.win-infobar-panel.is-vertical .win-infobar-action {
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.win-infobar-panel:not(.is-vertical) {
+  flex-direction: row;
+  min-height: 48px;
+}
+
+.win-infobar-panel:not(.is-vertical) .win-infobar-title,
+.win-infobar-panel:not(.is-vertical) .win-infobar-message {
+  flex: 0 0 auto;
+  width: max-content;
+  max-width: none;
+  margin-top: 14px;
+  white-space: nowrap;
+}
+
+.win-infobar-panel:not(.is-vertical).has-title .win-infobar-message {
+  margin-left: 12px;
+}
+
+.win-infobar-panel:not(.is-vertical) .win-infobar-action {
+  flex: 1 1 auto;
+  margin-top: 8px;
+}
+
+.win-infobar-panel:not(.is-vertical).has-title .win-infobar-action,
+.win-infobar-panel:not(.is-vertical).has-message .win-infobar-action {
+  margin-left: 16px;
+}
+
+.win-infobar-panel:not(.is-vertical):not(.has-action) .win-infobar-message {
+  flex-grow: 1;
+}
+
+.win-infobar-measure-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: max-content;
+  height: auto;
+  display: none;
+  overflow: visible;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.win-infobar-measure-text {
+  box-sizing: border-box;
+  display: block;
+  width: max-content;
+  max-width: none;
+  min-width: max-content;
+  margin: 0;
+  color: var(--InfoBarForeground, var(--TextFillColorPrimaryBrush, var(--text-primary)));
+  font-size: 14px;
+  line-height: 20px;
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
+.win-infobar-action-measure {
+  box-sizing: border-box;
+  width: max-content;
+  max-width: none;
+  min-width: max-content;
+  margin: 0;
+  display: inline-grid;
+  align-items: start;
+  justify-items: start;
+}
+
+.win-infobar-content-area {
+  grid-column: 2;
+  grid-row: 2;
+  min-width: 0;
+  align-self: center;
+}
+
+.no-banner-content .win-infobar-content-area {
+  grid-row: 1;
+}
+
+.win-infobar-close-button {
+  grid-column: 3;
+  grid-row: 1;
+  align-self: start;
+  box-sizing: border-box;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  min-height: 38px;
+  margin: 5px;
+  padding: 0;
+}
+
+.win-infobar-close-button.uses-default-close-button-style {
+  --ButtonBackground: transparent;
+  --ButtonBackgroundPointerOver: var(--subtle-secondary);
+  --ButtonBackgroundPressed: var(--subtle-tertiary);
+  --ButtonBackgroundDisabled: transparent;
+  --ButtonForeground: var(--TextFillColorPrimaryBrush, var(--text-primary));
+  --ButtonForegroundPointerOver: var(--TextFillColorPrimaryBrush, var(--text-primary));
+  --ButtonForegroundPressed: var(--TextFillColorSecondaryBrush, var(--text-secondary));
+  --ButtonForegroundDisabled: var(--TextFillColorDisabledBrush, var(--text-disabled));
+  --ButtonBorderBrush: transparent;
+  --ButtonBorderBrushTop: transparent;
+  --ButtonBorderBrushBottom: transparent;
+  --ButtonBorderBrushPointerOver: transparent;
+  --ButtonBorderBrushPressed: transparent;
+  --ButtonBorderBrushDisabled: transparent;
+}
+
+.win-infobar-close-button .win-infobar-close-glyph {
+  width: 16px;
+  height: 16px;
+  color: inherit;
+  text-align: center;
+}
+
+.win-infobar-informational {
+  --InfoBarSeverityBackgroundBrush: var(--InfoBarInformationalSeverityBackgroundBrush);
+  --InfoBarSeverityIconBackground: var(--InfoBarInformationalSeverityIconBackground);
+}
+
+.win-infobar-success {
+  --InfoBarSeverityBackgroundBrush: var(--InfoBarSuccessSeverityBackgroundBrush);
+  --InfoBarSeverityIconBackground: var(--InfoBarSuccessSeverityIconBackground);
+}
+
+.win-infobar-warning {
+  --InfoBarSeverityBackgroundBrush: var(--InfoBarWarningSeverityBackgroundBrush);
+  --InfoBarSeverityIconBackground: var(--InfoBarWarningSeverityIconBackground);
+}
+
+.win-infobar-error {
+  --InfoBarSeverityBackgroundBrush: var(--InfoBarErrorSeverityBackgroundBrush);
+  --InfoBarSeverityIconBackground: var(--InfoBarErrorSeverityIconBackground);
+}
+
+/* ════════ NavigationView.vue ════════ */
+.win-nav-shell {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background: var(--app-bg);
+  }
+
+  .win-nav-shell.is-left {
+      flex-direction: row;
+    }
+
+    .win-nav-shell.is-top {
+      flex-direction: column;
+    }
+
+    .win-nav-shell.is-overlay-left {
+      position: relative;
+    }
+
+  .win-nav-content {
+    position: relative;
+    isolation: isolate;
+    box-sizing: border-box;
+    width: 100%;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    overflow: hidden;
+    overflow-x: hidden;
+    transition: background var(--normal-duration) var(--fast-out-slow-in);
+  }
+
+  .win-nav-content::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    border-radius: inherit;
+    background: var(--NavigationViewContentBackground, var(--layer-fill-color-default, var(--layer-default)));
+    transition: background var(--normal-duration) var(--fast-out-slow-in);
+  }
+
+  .win-nav-shell.is-left > .win-nav-content {
+    border-radius: 8px 0 0 0;
+    border-top: 1px solid var(--NavigationViewContentGridBorderBrush, var(--CardStrokeColorDefaultBrush, var(--card-stroke)));
+    border-left: 1px solid var(--NavigationViewContentGridBorderBrush, var(--CardStrokeColorDefaultBrush, var(--card-stroke)));
+  }
+
+  .win-nav-shell.is-overlay-left > .win-nav-content {
+    margin-left: 0;
+  }
+
+  .win-nav-shell.is-left-compact > .win-nav-content {
+    /* Keep the compact rail in the layout at all times.  The overlay pane
+       opens above this fixed rail, so toggling it never remeasures the page. */
+    margin-left: var(--win-nav-compact-pane-length, 48px);
+  }
+
+  .win-nav-shell.is-left-minimal > .win-nav-content {
+    /* Minimal uses the native overlay composition: ContentGrid remains the
+       full root surface while the pane is layered above it. Keeping this
+       layer out of the flex width negotiation prevents pane open/close from
+       changing the hosted page's available width or its own gutters. */
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    flex: none;
+    border-left: 0;
+    border-radius: 0;
+  }
+
+  .win-nav-shell.is-top > .win-nav-content {
+    border-top: 1px solid var(--NavigationViewContentGridBorderBrush, var(--CardStrokeColorDefaultBrush, var(--card-stroke)));
+    border-radius: 0;
+  }
+
+  .win-nav-content-inner {
+    box-sizing: border-box;
+    width: 100%;
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .win-nav-content-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .win-nav-shell.is-pane-hidden > .win-nav-left-panel,
+  .win-nav-shell.is-pane-hidden > .win-nav-top-bar {
+    display: none;
+  }
+
+  .win-nav-shell.is-pane-hidden.is-left-compact > .win-nav-content {
+    margin-left: 0;
+  }
+
+  .win-nav-page-header {
+    min-height: 40px;
+    margin: 44px 0 0 var(--win-nav-header-margin-left, 56px);
+    padding: 0;
+    display: flex;
+    align-items: center;
+    font-size: 28px;
+    line-height: 36px;
+    font-weight: 600;
+    color: var(--text-primary);
+    border-bottom: 1px solid transparent;
+  }
+
+  .win-nav-page-header .win-text-block {
+    color: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    font-weight: inherit;
+  }
+
+  .win-nav-shell.is-top > .win-nav-content > .win-nav-page-header {
+    min-height: 36px;
+    margin: 0;
+    padding: 0 32px;
+    font-size: 20px;
+    line-height: 28px;
+  }
+
+    .win-nav-page-header + .win-nav-content-inner {
+      padding-top: 0;
+    }
+
+  .win-nav-left-panel {
+    position: relative;
+    box-sizing: border-box;
+    width: var(--win-nav-open-pane-length, 320px);
+    display: flex;
+    flex-direction: column;
+    padding: 4px 4px;
+    margin-right: 0;
+    --win-nav-shadow-bleed: 30px;
+    clip-path: inset(calc(-1 * var(--win-nav-shadow-bleed)));
+    transition: clip-path var(--win-nav-pane-duration, 200ms) var(--win-nav-pane-easing, cubic-bezier(0, 0.35, 0.15, 1)), background var(--normal-duration) var(--fast-out-slow-in);
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+
+  .win-nav-pane-surface {
+    display: contents;
+  }
+
+    .win-nav-shell.is-overlay-left > .win-nav-left-panel {
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      z-index: 20;
+      --win-nav-pane-fill: var(--AcrylicInAppFillColorDefaultBrush, var(--host-nav-pane-bg));
+      isolation: isolate;
+      background: transparent;
+      -webkit-backdrop-filter: var(--flyout-backdrop);
+      backdrop-filter: var(--flyout-backdrop);
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+      border-radius: 0 8px 8px 0;
+      width: var(--win-nav-open-pane-length, 320px);
+      clip-path: inset(calc(-1 * var(--win-nav-shadow-bleed)));
+      transition: clip-path var(--win-nav-pane-duration, 350ms) var(--win-nav-pane-easing, cubic-bezier(0.1, 0.9, 0.2, 1)), background var(--normal-duration) var(--fast-out-slow-in), box-shadow var(--win-nav-pane-duration, 350ms) linear;
+    }
+
+    .win-nav-shell.is-overlay-left > .win-nav-left-panel::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      border-radius: inherit;
+      background: var(--win-nav-pane-fill);
+      transition: background var(--normal-duration) var(--fast-out-slow-in);
+    }
+
+    html.winui-webview-host .win-nav-shell.is-overlay-left > .win-nav-left-panel:not(.is-compact) {
+      --win-nav-pane-fill: var(--host-nav-pane-bg, var(--AcrylicInAppFillColorDefaultBrush));
+      background: transparent;
+      -webkit-backdrop-filter: var(--flyout-backdrop);
+      backdrop-filter: var(--flyout-backdrop);
+    }
+
+    .win-nav-shell.is-overlay-left > .win-nav-left-panel.is-compact {
+      width: var(--win-nav-open-pane-length, 320px);
+      clip-path: inset(0 calc(var(--win-nav-open-pane-length, 320px) - var(--win-nav-compact-pane-length, 48px)) 0 0);
+      box-shadow: none;
+      border-radius: 0;
+    }
+
+    .win-nav-shell.is-left-compact > .win-nav-left-panel.is-compact {
+      /* The closed compact pane shares the normal Left rail surface. The
+         shell background supplies the solid fill; the pane itself remains
+         transparent just like PaneNotOverlaying in the native template. */
+      background: transparent;
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+
+    .win-nav-shell.is-left-compact > .win-nav-left-panel,
+    html.winui-webview-host .win-nav-shell.is-overlay-left.is-left-compact > .win-nav-left-panel {
+      background: transparent;
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      box-shadow: none;
+    }
+
+    .win-nav-shell.is-left-compact > .win-nav-left-panel:not(.is-compact),
+    html.winui-webview-host .win-nav-shell.is-overlay-left.is-left-compact > .win-nav-left-panel:not(.is-compact) {
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+
+    .win-nav-shell.is-left-compact > .win-nav-left-panel::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      width: 100%;
+      pointer-events: none;
+      background: var(--win-nav-pane-fill, var(--AcrylicInAppFillColorDefaultBrush, var(--host-nav-pane-bg)));
+      border-radius: 0 8px 8px 0;
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+      -webkit-backdrop-filter: var(--flyout-backdrop);
+      backdrop-filter: var(--flyout-backdrop);
+      opacity: 1;
+    }
+
+    .win-nav-shell.is-left-compact > .win-nav-left-panel::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 4;
+      pointer-events: none;
+      border: 1px solid var(--NavigationViewItemSeparatorForeground, var(--DividerStrokeColorDefaultBrush, var(--stroke-divider)));
+      border-radius: 0 8px 8px 0;
+      opacity: 1;
+    }
+
+    .win-nav-shell.is-left-compact > .win-nav-left-panel.is-compact::before,
+    .win-nav-shell.is-left-compact > .win-nav-left-panel.is-compact::after {
+      opacity: 0;
+    }
+
+    .win-nav-shell.is-left-compact > .win-nav-left-panel.is-compact.is-pane-closing::before,
+    .win-nav-shell.is-left-compact > .win-nav-left-panel.is-compact.is-pane-closing::after {
+      opacity: 1;
+    }
+
+    .win-nav-shell.is-left-compact > .win-nav-left-panel > .win-nav-back-button,
+    .win-nav-shell.is-left-compact > .win-nav-left-panel > .win-nav-pane-command-row,
+    .win-nav-shell.is-left-compact > .win-nav-left-panel > .win-nav-pane-surface > *:not(.win-nav-indicator-track) {
+      position: relative;
+      z-index: 2;
+    }
+
+    .win-nav-shell.is-left-compact > .win-nav-left-panel > .win-nav-pane-surface > .win-nav-indicator-track {
+      position: absolute;
+      z-index: 3;
+    }
+
+    .win-nav-shell:not(.is-overlay-left) > .win-nav-left-panel.is-compact {
+      width: var(--win-nav-open-pane-length, 320px);
+      margin-right: calc(var(--win-nav-compact-pane-length, 48px) - var(--win-nav-open-pane-length, 320px));
+      clip-path: inset(0 calc(var(--win-nav-open-pane-length, 320px) - var(--win-nav-compact-pane-length, 48px)) 0 0);
+    }
+
+    .win-nav-shell.is-left-minimal > .win-nav-left-panel.is-compact {
+      background: transparent;
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      width: var(--win-nav-open-pane-length, 320px);
+      clip-path: none;
+      pointer-events: none;
+    }
+
+    .win-nav-shell.is-left-minimal > .win-nav-left-panel.is-compact.is-pane-closing {
+      background: transparent;
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      box-shadow: none;
+    }
+
+    .win-nav-left-panel > .win-nav-pane-surface > .win-nav-pane-top,
+    .win-nav-left-panel > .win-nav-pane-surface > .win-nav-pane-custom-content,
+    .win-nav-left-panel > .win-nav-pane-surface > .win-nav-left-scrollable,
+    .win-nav-left-panel > .win-nav-pane-surface > .win-nav-footer,
+    .win-nav-left-panel .win-nav-menu {
+      box-sizing: border-box;
+      width: calc(var(--win-nav-open-pane-length, 320px) - 8px);
+    }
+
+    .win-nav-left-panel.is-closed-compact > .win-nav-pane-surface > .win-nav-left-scrollable,
+    .win-nav-left-panel.is-closed-compact .win-nav-menu {
+      width: calc(var(--win-nav-compact-pane-length, 48px) - 8px);
+    }
+
+    .win-nav-left-panel .win-nav-indicator-track {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+      overflow: visible;
+      z-index: 3;
+    }
+
+  .win-nav-shell.is-left-minimal > .win-nav-left-panel {
+    background: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: none;
+    clip-path: none;
+  }
+
+  .win-nav-shell.is-left-minimal > .win-nav-left-panel::before {
+    content: none;
+  }
+
+  /* The host acrylic rule has a stronger selector than the minimal reset.
+     Keep minimal to one pane surface instead of stacking a second translucent
+     overlay behind it. */
+  .win-nav-shell.is-overlay-left.is-left-minimal > .win-nav-left-panel,
+  html.winui-webview-host .win-nav-shell.is-overlay-left.is-left-minimal > .win-nav-left-panel {
+    background: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: none;
+  }
+
+  html.winui-webview-host .win-nav-shell.is-left-minimal > .win-nav-left-panel > .win-nav-pane-surface {
+    --win-nav-pane-fill: var(--host-nav-pane-bg, var(--AcrylicInAppFillColorDefaultBrush));
+  }
+
+  .win-nav-shell.is-left-minimal > .win-nav-left-panel > .win-nav-pane-surface {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 1;
+    box-sizing: border-box;
+    width: auto;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    --win-nav-pane-fill: var(--AcrylicInAppFillColorDefaultBrush, var(--host-nav-pane-bg));
+    isolation: isolate;
+    background: var(--win-nav-pane-fill);
+    -webkit-backdrop-filter: var(--flyout-backdrop);
+    backdrop-filter: var(--flyout-backdrop);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+    border-radius: 0 8px 8px 0;
+    transform: translateX(0);
+    transform-origin: left center;
+  }
+
+  .win-nav-shell.is-left-minimal > .win-nav-left-panel > .win-nav-pane-surface::before {
+    content: none;
+  }
+
+  .win-nav-shell.is-left-minimal > .win-nav-left-panel > .win-nav-pane-surface::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
+    border: 1px solid var(--NavigationViewItemSeparatorForeground, var(--DividerStrokeColorDefaultBrush, var(--stroke-divider)));
+    border-radius: inherit;
+  }
+
+  .win-nav-shell.is-left-minimal > .win-nav-left-panel.has-back-button > .win-nav-pane-surface,
+  .win-nav-shell.is-left-minimal > .win-nav-left-panel.has-pane-toggle-button > .win-nav-pane-surface {
+    padding-top: 48px;
+  }
+
+  .win-nav-shell.is-left-minimal > .win-nav-left-panel.has-back-button.has-pane-toggle-button > .win-nav-pane-surface {
+    padding-top: 88px;
+  }
+
+  .win-nav-shell.is-left-minimal > .win-nav-left-panel.is-pane-opening > .win-nav-pane-surface {
+    animation: win-nav-minimal-pane var(--win-nav-pane-open-duration, 350ms) var(--win-nav-pane-easing, cubic-bezier(0.1, 0.9, 0.2, 1)) both;
+  }
+
+  .win-nav-shell.is-left-minimal > .win-nav-left-panel.is-pane-closing > .win-nav-pane-surface {
+    animation: win-nav-minimal-pane var(--win-nav-pane-close-duration, 120ms) var(--win-nav-pane-easing, cubic-bezier(0.1, 0.9, 0.2, 1)) reverse both;
+    pointer-events: none;
+  }
+
+  .win-nav-shell.is-left-minimal > .win-nav-left-panel > .win-nav-back-button,
+  .win-nav-shell.is-left-minimal > .win-nav-left-panel > .win-nav-pane-command-row {
+    position: relative;
+    z-index: 4;
+    pointer-events: auto;
+  }
+
+  @keyframes win-nav-minimal-pane {
+    from { transform: translateX(calc(-1 * var(--win-nav-open-pane-length, 320px))); }
+    to { transform: translateX(0); }
+  }
+
+  .win-nav-shell:not(.is-overlay-left):not(.is-left-compact) > .win-nav-left-panel.is-pane-opening + .win-nav-content {
+    animation: win-nav-inline-content-opening var(--win-nav-pane-open-duration, 200ms) var(--win-nav-pane-easing, cubic-bezier(0, 0.35, 0.15, 1)) both;
+  }
+
+  .win-nav-shell:not(.is-overlay-left):not(.is-left-compact) > .win-nav-left-panel.is-pane-closing + .win-nav-content {
+    animation: win-nav-inline-content-closing var(--win-nav-pane-close-duration, 200ms) var(--win-nav-pane-easing, cubic-bezier(0, 0.35, 0.15, 1)) both;
+  }
+
+  @keyframes win-nav-inline-content-opening {
+    from { transform: translateX(calc(var(--win-nav-compact-pane-length, 48px) - var(--win-nav-open-pane-length, 320px))); }
+    to { transform: translateX(0); }
+  }
+
+  @keyframes win-nav-inline-content-closing {
+    from { transform: translateX(calc(var(--win-nav-open-pane-length, 320px) - var(--win-nav-compact-pane-length, 48px))); }
+    to { transform: translateX(0); }
+  }
+
+  .win-nav-left-scrollable {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+  }
+
+  .win-nav-left-panel .win-nav-left-scrollable > .scrollbar-vertical {
+    right: -4px;
+  }
+
+  .win-nav-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 2;
+    background: var(--app-bg);
+  }
+
+  .win-nav-pane-command-row {
+    box-sizing: border-box;
+    width: calc(var(--win-nav-open-pane-length, 320px) - 8px);
+    min-height: 40px;
+    display: flex;
+    align-items: flex-start;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 4;
+  }
+
+  .win-nav-pane-top {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    flex-shrink: 0;
+    padding: 0 12px 8px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .win-nav-pane-top.is-closed-compact {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .win-nav-pane-header,
+  .win-nav-pane-footer,
+  .win-nav-pane-custom-content {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    color: var(--text-primary);
+  }
+
+  .win-nav-pane-footer {
+    flex: 0 0 auto;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-self: stretch;
+    overflow: hidden;
+    /* PaneFooter is hosted by the same content grid as footer items.  Keep
+       its content edge at the pane's 4px inset; individual controls provide
+       their own content padding, just like NavigationViewItem. */
+    padding: 0;
+    margin-bottom: 4px;
+  }
+
+  .win-nav-pane-footer > .win-stack-panel,
+  .win-nav-pane-footer > * {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .win-nav-pane-footer .win-stack-panel {
+    flex: 1 1 auto;
+    align-items: stretch !important;
+  }
+
+  .win-nav-pane-footer .win-btn {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    height: 36px;
+    min-height: 36px;
+    margin: 2px 0;
+    padding: 0 12px;
+    border-radius: 4px;
+    gap: 0;
+    justify-content: flex-start;
+  }
+
+  .win-nav-pane-footer .win-btn > .icon {
+    width: 16px;
+    min-width: 16px;
+    height: 16px;
+    line-height: 16px;
+    text-align: center;
+  }
+
+  .win-nav-left-panel.is-closed-compact .win-nav-pane-footer {
+    width: calc(var(--win-nav-compact-pane-length, 48px) - 8px);
+    min-width: calc(var(--win-nav-compact-pane-length, 48px) - 8px);
+    padding: 0;
+  }
+
+  .win-nav-left-panel.is-closed-compact .win-nav-pane-footer > *,
+  .win-nav-left-panel.is-closed-compact .win-nav-pane-footer .win-stack-panel {
+    width: calc(var(--win-nav-compact-pane-length, 48px) - 8px);
+    min-width: calc(var(--win-nav-compact-pane-length, 48px) - 8px);
+  }
+
+  .win-nav-left-panel.is-closed-compact .win-nav-pane-footer .win-btn {
+    width: calc(var(--win-nav-compact-pane-length, 48px) - 8px);
+    min-width: calc(var(--win-nav-compact-pane-length, 48px) - 8px);
+    margin: 2px 0;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .win-nav-pane-header.has-pane-toggle {
+    min-height: 40px;
+    margin-top: -40px;
+    margin-left: 40px;
+    padding-right: 8px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .win-nav-pane-title-holder {
+    box-sizing: border-box;
+    height: 40px;
+    min-height: 40px;
+    padding: 4px 8px 0;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .win-nav-pane-title {
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .win-nav-hamburger.has-pane-title {
+    width: auto;
+    min-width: calc(var(--win-nav-open-pane-length, 320px) - 8px);
+    max-width: calc(var(--win-nav-open-pane-length, 320px) - 8px);
+    justify-content: flex-start;
+    overflow: hidden;
+  }
+
+  .win-nav-hamburger.has-pane-title > .icon {
+    margin: 0 12px;
+    flex-shrink: 0;
+  }
+
+  .win-nav-hamburger .win-nav-pane-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .win-nav-pane-search {
+    display: flex;
+    align-items: center;
+    min-height: 40px;
+  }
+
+    .win-nav-pane-search-presenter,
+    .win-nav-pane-search-presenter > * {
+      width: 100%;
+    }
+
+  .win-nav-pane-search-button {
+    box-sizing: border-box;
+    width: calc(var(--win-nav-compact-pane-length, 48px) - 8px);
+    min-width: calc(var(--win-nav-compact-pane-length, 48px) - 8px);
+    height: 36px;
+    min-height: 36px;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--text-primary);
+    background: transparent;
+    cursor: pointer;
+    transition: background var(--fast-duration) var(--fast-out-slow-in);
+  }
+
+  .win-nav-pane-search-button:hover {
+    background: var(--subtle-secondary);
+  }
+
+  .win-nav-pane-search-button:active {
+    background: var(--subtle-tertiary);
+  }
+
+  .win-nav-pane-search-button .icon {
+    width: 16px;
+    height: 16px;
+    font-size: 12px;
+    line-height: 16px;
+  }
+
+  .win-nav-shell.is-overlay-left > .win-nav-left-panel .win-nav-footer {
+    background: transparent;
+  }
+
+  .win-nav-back-button,
+  .win-nav-hamburger {
+    padding: 0;
+    border: 0;
+    color: var(--text-primary);
+    font: inherit;
+    width: 40px;
+    height: 36px;
+    margin: 2px 0;
+    border-radius: 4px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: transparent;
+    transition: background var(--fast-duration) var(--fast-out-slow-in);
+  }
+
+    .win-nav-hamburger .icon {
+      width: 16px;
+      height: 16px;
+      font-size: 16px;
+      line-height: 16px;
+    }
+
+    .win-nav-back-button .icon {
+      width: 16px;
+      height: 16px;
+      font-size: 11px;
+      line-height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+  .win-nav-settings-item .animated-icon-gear {
+    font-size: 11px;
+  }
+
+    .win-nav-back-button:disabled {
+      color: var(--text-disabled);
+      cursor: default;
+    }
+
+    .win-nav-back-button:not(:disabled):hover,
+    .win-nav-hamburger:hover {
+      background: var(--subtle-secondary);
+    }
+
+    .win-nav-back-button:not(:disabled):active,
+    .win-nav-hamburger:active {
+      background: var(--subtle-tertiary);
+    }
+
+  .win-nav-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .win-nav-top-bar {
+    position: relative;
+    box-sizing: border-box;
+    width: calc(100% - 8px);
+    height: 48px;
+    margin: 0 4px;
+    flex-shrink: 0;
+    transition: width var(--normal-duration) var(--fast-out-slow-in), background var(--normal-duration) var(--fast-out-slow-in);
+    display: flex;
+    align-items: center;
+  }
+
+  .win-nav-top-fixed {
+    flex-shrink: 0;
+  }
+
+  .win-nav-top-pane-header,
+  .win-nav-top-pane-title,
+  .win-nav-top-pane-footer {
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    color: var(--text-primary);
+  }
+
+  .win-nav-top-pane-title {
+    margin: 0 16px;
+  }
+
+  .win-nav-top-pane-footer > .win-stack-panel {
+    height: 40px;
+    align-items: stretch;
+  }
+
+  .win-nav-top-pane-footer .win-btn {
+    box-sizing: border-box;
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    min-height: 36px;
+    margin: 2px 0;
+    padding: 0;
+  }
+
+  .win-nav-top-pane-custom-content {
+    min-width: 0;
+    height: 48px;
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+  }
+
+  .win-nav-top-primary-menu {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .win-nav-top-footer-menu {
+    flex: 0 0 auto;
+    margin-left: auto;
+  }
+
+  .win-nav-top-pane-search {
+    min-width: 216px;
+    height: 48px;
+    margin: 0 4px;
+    display: flex;
+    align-items: center;
+  }
+
+  .win-nav-top-pane-search > * {
+    width: 100%;
+  }
+
+  .win-nav-top-measure {
+    position: absolute;
+    left: -10000px;
+    top: -10000px;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    height: 48px;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+    .win-nav-top-bar .win-nav-indicator-track {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: visible;
+    }
+
+    .win-nav-top-bar .win-nav-menu {
+      flex-direction: row;
+      align-items: center;
+      gap: 0;
+      height: 100%;
+    }
+
+  .win-nav-item {
+    position: relative;
+    box-sizing: border-box;
+    height: 36px;
+    margin: 2px 0;
+    padding: 0 12px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    background: transparent;
+    transition: background var(--fast-duration) var(--fast-out-slow-in);
+    white-space: nowrap;
+    user-select: none;
+  }
+
+    .win-nav-item:not(.is-disabled):hover {
+      background: var(--subtle-secondary);
+    }
+
+    .win-nav-item:not(.is-disabled):active {
+      background: var(--subtle-tertiary);
+    }
+
+  .win-nav-left-panel .win-nav-item:not(.is-disabled):active {
+    color: var(--text-secondary);
+  }
+
+  .win-nav-item.is-selected {
+    background: var(--subtle-secondary);
+  }
+
+    .win-nav-item.is-selected:not(.is-disabled):hover {
+      background: var(--subtle-tertiary);
+    }
+
+    .win-nav-item.is-selected:not(.is-disabled):active {
+      background: var(--subtle-secondary);
+      color: var(--text-secondary);
+    }
+
+  .win-nav-item.is-disabled {
+    color: var(--text-disabled);
+    cursor: default;
+  }
+
+    .win-nav-item.is-disabled:not(.is-selected),
+    .win-nav-item.is-disabled:not(.is-selected):hover,
+    .win-nav-item.is-disabled:not(.is-selected):active {
+      background: transparent;
+      color: var(--text-disabled);
+    }
+
+    .win-nav-item.is-disabled.is-selected,
+    .win-nav-item.is-disabled.is-selected:hover,
+    .win-nav-item.is-disabled.is-selected:active {
+      background: var(--subtle-secondary);
+      color: var(--text-disabled);
+    }
+
+  .win-nav-item .icon {
+    margin-right: 16px;
+    min-width: 16px;
+    width: 16px;
+    text-align: center;
+    font-size: 16px;
+    line-height: 1;
+    position: relative;
+  }
+
+  .win-nav-item .label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 20px;
+    color: inherit;
+  }
+
+  .win-nav-item .win-nav-infobadge {
+    margin-left: auto;
+  }
+
+  .win-nav-item-header {
+    box-sizing: border-box;
+    height: 40px;
+    min-height: 40px;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 600;
+    user-select: none;
+  }
+
+  .win-nav-item-header .win-text-block {
+    color: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    font-weight: inherit;
+  }
+
+  .win-nav-item-separator {
+    height: 1px;
+    margin: 3px 0 4px;
+    background: var(--stroke-divider);
+  }
+
+  .win-nav-item.win-nav-settings-item .icon.animated-icon-gear {
+    font-size: 14px;
+  }
+
+  .win-nav-left-panel.is-closed-compact .win-nav-item .label {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .win-nav-left-panel.is-closed-compact .win-nav-item {
+    width: calc(var(--win-nav-compact-pane-length, 48px) - 8px);
+    min-width: calc(var(--win-nav-compact-pane-length, 48px) - 8px);
+    max-width: calc(var(--win-nav-compact-pane-length, 48px) - 8px);
+    overflow: hidden;
+  }
+
+  .win-nav-left-panel.is-closed-compact .win-nav-item > .win-nav-infobadge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    margin: 0;
+  }
+
+  .win-nav-left-panel.is-closed-compact .win-nav-item-header {
+    height: 0;
+    min-height: 0;
+    padding: 0;
+    opacity: 0;
+    overflow: hidden;
+  }
+
+  .win-nav-left-panel.is-closed-compact .win-nav-group-chevron {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .win-nav-indicator {
+    position: absolute;
+    background: var(--accent-base);
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 10;
+    contain: layout paint;
+    will-change: transform, width, height;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+  }
+
+  .win-nav-left-panel .win-nav-indicator {
+    left: 4px;
+    top: 0;
+    width: 3px;
+    height: 16px;
+    transition: left 200ms var(--fast-out-slow-in);
+  }
+
+    .win-nav-left-panel .win-nav-indicator.is-child {
+      left: 36px;
+    }
+
+  .win-nav-top-bar .win-nav-indicator {
+    top: auto;
+    bottom: 4px;
+    left: 0;
+    height: 3px;
+  }
+
+  .win-nav-top-bar .win-nav-item,
+  .win-nav-top-measure .win-nav-item {
+    color: var(--text-primary);
+  }
+
+  .win-nav-top-bar .win-nav-item:not(.win-nav-more-button):not(.win-nav-settings-item),
+  .win-nav-top-measure .win-nav-item:not(.win-nav-more-button) {
+    box-sizing: border-box;
+    width: max-content;
+    height: 40px;
+    min-height: 40px;
+    margin: 2px 4px;
+    padding: 0;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    justify-content: start;
+  }
+
+  .win-nav-top-bar .win-nav-item:not(.win-nav-more-button):not(.win-nav-settings-item) > .icon:not(.win-nav-group-chevron),
+  .win-nav-top-measure .win-nav-item:not(.win-nav-more-button) > .icon:not(.win-nav-group-chevron) {
+    grid-column: 1;
+    width: 16px;
+    min-width: 16px;
+    margin: 0 0 0 12px;
+    top: 0;
+  }
+
+  .win-nav-top-bar .win-nav-item:not(.win-nav-more-button):not(.win-nav-settings-item) > .label,
+  .win-nav-top-measure .win-nav-item:not(.win-nav-more-button) > .label {
+    grid-column: 2;
+    margin: 0 12px;
+  }
+
+  .win-nav-top-bar .win-nav-item:not(.win-nav-more-button):not(.win-nav-settings-item) > .win-nav-infobadge,
+  .win-nav-top-measure .win-nav-item:not(.win-nav-more-button) > .win-nav-infobadge {
+    grid-column: 3;
+    margin: 0 2px 13px -16px;
+    align-self: center;
+    justify-self: center;
+  }
+
+  .win-nav-top-bar .win-nav-item:has(> .icon:not(.win-nav-group-chevron)):not(.win-nav-more-button):not(.win-nav-settings-item) > .label,
+  .win-nav-top-measure .win-nav-item:has(> .icon:not(.win-nav-group-chevron)):not(.win-nav-more-button) > .label {
+    margin-left: 8px;
+  }
+
+  .win-nav-top-bar .win-nav-item-header,
+  .win-nav-top-measure .win-nav-item-header {
+    padding: 0 12px;
+  }
+
+  .win-nav-top-bar .win-nav-item-separator,
+  .win-nav-top-measure .win-nav-item-separator {
+    align-self: center;
+    width: 1px;
+    min-width: 1px;
+    height: 24px;
+    margin: 0 4px 0 3px;
+  }
+
+    .win-nav-top-bar .win-nav-more-button,
+    .win-nav-top-measure .win-nav-more-button {
+      box-sizing: border-box;
+      width: 40px;
+      min-width: 40px;
+      max-width: 40px;
+      height: 40px;
+      min-height: 40px;
+      max-height: 40px;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+      .win-nav-top-bar .win-nav-more-button .icon,
+      .win-nav-top-measure .win-nav-more-button .icon {
+        top: 0;
+        width: 20px;
+        min-width: 20px;
+        height: 20px;
+        margin: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        line-height: 20px;
+      }
+
+      .win-nav-top-bar .win-nav-more-button .icon:only-child,
+      .win-nav-top-measure .win-nav-more-button .icon:only-child {
+        margin-right: 0;
+      }
+
+      .win-nav-top-bar .win-nav-more-button .label,
+      .win-nav-top-measure .win-nav-more-button .label {
+        display: none;
+      }
+
+    .win-nav-top-bar .win-nav-item:not(.is-disabled):hover {
+      background: var(--subtle-secondary);
+      color: var(--text-primary);
+    }
+
+    .win-nav-top-bar .win-nav-item:not(.is-disabled):active {
+      background: var(--subtle-tertiary);
+      color: var(--text-secondary);
+    }
+
+    .win-nav-top-bar .win-nav-item.is-selected {
+      background: transparent;
+      color: var(--text-primary);
+    }
+
+      .win-nav-top-bar .win-nav-item.is-selected:not(.is-disabled):hover {
+        background: transparent;
+        color: var(--text-primary);
+      }
+
+      .win-nav-top-bar .win-nav-item.is-selected:not(.is-disabled):active {
+        background: transparent;
+        color: var(--text-secondary);
+      }
+
+  .win-nav-top-bar .win-nav-settings-item .label {
+    display: none;
+  }
+
+  .win-nav-top-bar .win-nav-settings-item {
+    box-sizing: border-box;
+    width: 40px;
+    min-width: 40px;
+    max-width: 40px;
+    height: 40px;
+    min-height: 40px;
+    max-height: 40px;
+    padding: 0;
+    margin: 2px 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .win-nav-top-bar .win-nav-settings-item .icon {
+    margin: 0;
+    top: 0;
+  }
+
+  .win-nav-shell.is-top > .win-nav-content,
+  .win-nav-shell.is-top > .win-nav-content > .win-nav-content-inner {
+    border-radius: 0 !important;
+  }
+
+  .win-nav-group-header {
+    position: relative;
+  }
+
+    .win-nav-group-header .win-nav-group-chevron {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      min-width: 40px;
+      height: 36px;
+      margin-left: auto;
+      margin-right: -14px;
+      font-size: 8px;
+      transition: transform 200ms var(--fast-out-slow-in), opacity var(--fast-duration) var(--fast-out-slow-in);
+      transform: rotate(0deg);
+    }
+
+      .win-nav-group-header .win-nav-group-chevron.chevron-open {
+        transform: rotate(180deg);
+      }
+
+      .win-nav-group-header .win-nav-group-chevron.chevron-close {
+        transform: rotate(0deg);
+      }
+
+  .win-nav-group.is-expanded > .win-nav-group-header .win-nav-group-chevron {
+    transform: rotate(180deg);
+  }
+
+  /* During a pane fold the logical group remains expanded for restoration,
+     while its child presenter is animating closed. Keep the arrow in the
+     same visual state as the height animation. */
+  .win-nav-left-panel .win-nav-group:not(.is-expanded) > .win-nav-group-header .win-nav-group-chevron {
+    transform: rotate(0deg);
+  }
+
+  .win-nav-group-children {
+    overflow: hidden;
+    transition: height var(--normal-duration) var(--fast-out-slow-in);
+  }
+
+  .win-nav-group-children-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding-top: 0;
+  }
+
+  .win-nav-group-child {
+    padding-left: 44px;
+  }
+
+    .win-nav-group-child .icon {
+      margin-right: 16px;
+    }
+
+  .win-nav-left-panel .win-nav-group.is-child-selected > .win-nav-group-header {
+    background: transparent;
+  }
+
+    .win-nav-left-panel .win-nav-group.is-child-selected > .win-nav-group-header:not(.is-disabled):hover {
+      background: var(--subtle-secondary);
+    }
+
+  .win-nav-left-panel.is-closed-compact .win-nav-group.is-child-selected > .win-nav-group-header {
+    background: transparent;
+  }
+
+  .win-nav-top-bar .win-nav-group-header > .win-nav-group-chevron,
+  .win-nav-top-measure .win-nav-item > .win-nav-group-chevron {
+    grid-column: 4;
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    margin: 0 0 0 -12px;
+    font-size: 8px;
+    transform: rotate(0deg);
+    transition: transform 200ms var(--fast-out-slow-in);
+  }
+
+  .win-nav-top-bar .win-nav-group-header:has(> .icon:not(.win-nav-group-chevron)) > .win-nav-group-chevron,
+  .win-nav-top-measure .win-nav-item:has(> .icon:not(.win-nav-group-chevron)) > .win-nav-group-chevron {
+    margin-left: -16px;
+  }
+
+    .win-nav-top-bar .win-nav-group-header .win-nav-group-chevron.chevron-open {
+      transform: rotate(180deg);
+    }
+
+    .win-nav-top-bar .win-nav-group-header .win-nav-group-chevron.chevron-close {
+      transform: rotate(0deg);
+    }
+
+  .win-nav-top-bar .win-nav-group.is-child-selected > .win-nav-group-header {
+    background: transparent;
+  }
+
+  .win-nav-top-bar .win-nav-group {
+    display: flex;
+    align-items: center;
+    height: 100%;
+  }
+
+  .win-nav-more-panel {
+    width: max-content;
+    min-width: 0;
+    max-width: min(320px, calc(100vw - 16px));
+    display: grid;
+    grid-template-columns: max-content;
+    justify-items: stretch;
+  }
+
+  .win-nav-more-title {
+    min-height: 32px;
+    padding: 4px 12px;
+    display: flex;
+    align-items: center;
+    color: var(--text-secondary);
+    font-size: 12px;
+  }
+
+  .win-nav-more-panel .win-nav-item {
+    box-sizing: border-box;
+    width: auto;
+    height: 36px;
+    min-height: 36px;
+    margin: 0;
+    padding: 0 14px 0 0;
+    display: grid;
+    grid-template-columns: auto minmax(max-content, 1fr) auto auto;
+    align-items: center;
+    border-radius: 0;
+    background: transparent;
+    color: var(--text-primary);
+  }
+
+  .win-nav-more-panel > .win-nav-group {
+    width: 100%;
+  }
+
+  .win-nav-more-panel .win-nav-item > .icon:not(.win-nav-group-chevron) {
+    grid-column: 1;
+    width: 16px;
+    min-width: 16px;
+    margin: 0 0 0 16px;
+  }
+
+  .win-nav-more-panel .win-nav-item > .label {
+    grid-column: 2;
+    margin: 0 20px 0 16px;
+  }
+
+  .win-nav-more-panel .win-nav-item:has(> .icon:not(.win-nav-group-chevron)) > .label {
+    margin-left: 12px;
+  }
+
+  .win-nav-more-panel .win-nav-item > .win-nav-infobadge {
+    grid-column: 3;
+    margin: 0 12px 0 0;
+  }
+
+  .win-nav-more-panel .win-nav-group-header > .win-nav-group-chevron {
+    grid-column: 4;
+    box-sizing: border-box;
+    width: 40px;
+    min-width: 40px;
+    height: 36px;
+    margin: 0 -8px 0 -4px;
+    padding: 0 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .win-nav-more-panel .win-nav-item:not(.is-disabled):hover {
+    background: var(--subtle-secondary);
+    color: var(--text-primary);
+  }
+
+  .win-nav-more-panel .win-nav-item:not(.is-disabled):active {
+    background: var(--subtle-tertiary);
+    color: var(--text-secondary);
+  }
+
+  .win-nav-more-panel .win-nav-item.is-selected {
+    background: var(--subtle-secondary);
+    color: var(--text-primary);
+  }
+
+  .win-nav-more-panel .win-nav-item.is-selected:not(.is-disabled):hover {
+    background: var(--subtle-tertiary);
+    color: var(--text-primary);
+  }
+
+  .win-nav-more-panel .win-nav-item.is-selected:not(.is-disabled):active {
+    background: var(--subtle-secondary);
+    color: var(--text-secondary);
+  }
+
+  .win-nav-more-panel .win-nav-group-child {
+    padding-left: 28px;
+  }
+
+  /* Expanded Compact/Minimal panes use one direct tinted acrylic surface.
+     The Compact pseudo layer is reserved for the closed-pane transition so
+     it cannot hide the material behind a separate stacking context. */
+  .win-nav-shell.is-left-compact > .win-nav-left-panel:not(.is-compact),
+  html.winui-webview-host .win-nav-shell.is-overlay-left.is-left-compact > .win-nav-left-panel:not(.is-compact) {
+    --win-nav-pane-fill: var(--host-nav-pane-bg, var(--AcrylicInAppFillColorDefaultBrush));
+    background: var(--win-nav-pane-fill);
+    -webkit-backdrop-filter: var(--flyout-backdrop);
+    backdrop-filter: var(--flyout-backdrop);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+  }
+
+  .win-nav-shell.is-left-compact > .win-nav-left-panel:not(.is-compact)::before,
+  html.winui-webview-host .win-nav-shell.is-overlay-left.is-left-compact > .win-nav-left-panel:not(.is-compact)::before {
+    content: none;
+  }
+
+  .win-nav-shell.is-left-minimal > .win-nav-left-panel > .win-nav-pane-surface {
+    --win-nav-pane-fill: var(--host-nav-pane-bg, var(--AcrylicInAppFillColorDefaultBrush));
+    background: var(--win-nav-pane-fill);
+    -webkit-backdrop-filter: var(--flyout-backdrop);
+    backdrop-filter: var(--flyout-backdrop);
+  }
+
+  .win-menu-flyout:has(.win-nav-more-panel) {
+    --flyout-scroll-max-height: calc(var(--flyout-max-height, 70vh) - 6px);
+    padding: 2px 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .win-nav-left-panel,
+    .win-nav-pane-surface,
+    .win-nav-content,
+    .win-nav-indicator,
+    .win-nav-group-children,
+    .win-nav-group-chevron {
+      transition-duration: 0ms !important;
+      animation-duration: 0ms !important;
+    }
+  }
+
+/* ════════ ProgressBar.vue ════════ */
+.win-progress-bar {
+  --ProgressBarForeground: var(--AccentFillColorDefaultBrush, var(--accent-base));
+  --ProgressBarBackground: var(--ControlStrongStrokeColorDefaultBrush, var(--ctrl-strong-stroke));
+  --ProgressBarBorderBrush: var(--ControlStrokeColorDefaultBrush, var(--ctrl-border));
+  --ProgressBarPausedForegroundColor: var(--SystemFillColorCautionBrush, #9D5D00);
+  --ProgressBarErrorForegroundColor: var(--SystemFillColorCriticalBrush, #C42B1C);
+  position: relative;
+  display: inline-block;
+  box-sizing: border-box;
+  min-width: 1px;
+  vertical-align: middle;
+  color: var(--ProgressBarForeground);
+}
+
+.LayoutRoot,
+.ProgressBarRoot,
+.ProgressBarClip {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+  box-sizing: border-box;
+}
+
+.ProgressBarRoot {
+  overflow: visible;
+  border-radius: inherit;
+}
+
+.ProgressBarClip {
+  overflow: visible;
+  border-radius: inherit;
+}
+
+.state-Indeterminate .ProgressBarClip,
+.state-IndeterminatePaused .ProgressBarClip,
+.state-IndeterminateError .ProgressBarClip {
+  overflow: hidden;
+}
+
+.ProgressBarTrack,
+.DeterminateProgressBarIndicator,
+.IndeterminateProgressBarIndicator,
+.IndeterminateProgressBarIndicator2 {
+  position: absolute;
+  left: 0;
+  box-sizing: border-box;
+  transform-origin: left center;
+  pointer-events: none;
+}
+
+.ProgressBarTrack {
+  top: 50%;
+  width: 100%;
+  height: 1px;
+  min-height: 1px;
+  background: var(--ProgressBarBackground);
+  transform: translateY(-50%);
+  border-radius: 0.5px;
+  transition: opacity 167ms linear, transform 750ms cubic-bezier(0, 0, 0, 1);
+}
+
+.DeterminateProgressBarIndicator,
+.IndeterminateProgressBarIndicator,
+.IndeterminateProgressBarIndicator2 {
+  top: 0;
+  height: 3px;
+  min-height: 1px;
+  border-radius: 1.5px;
+  transform: none;
+}
+
+.DeterminateProgressBarIndicator {
+  background: var(--ProgressBarForeground);
+  transition: width 167ms cubic-bezier(0.4, 0, 0.6, 1), background-color 167ms linear;
+}
+
+.IndeterminateProgressBarIndicator,
+.IndeterminateProgressBarIndicator2 {
+  width: 40%;
+  opacity: 0;
+  background: var(--ProgressBarForeground);
+}
+
+.IndeterminateProgressBarIndicator2 {
+  width: 60%;
+}
+
+.state-Indeterminate .ProgressBarTrack {
+  opacity: 0;
+}
+
+.state-Indeterminate .IndeterminateProgressBarIndicator,
+.state-Indeterminate .IndeterminateProgressBarIndicator2 {
+  opacity: 1;
+}
+
+.state-Indeterminate .IndeterminateProgressBarIndicator {
+  animation: win-progress-bar-indeterminate 2s infinite;
+}
+
+.state-Indeterminate .IndeterminateProgressBarIndicator2 {
+  animation: win-progress-bar-indeterminate-2 2s infinite;
+}
+
+.state-IndeterminatePaused .ProgressBarTrack,
+.state-IndeterminateError .ProgressBarTrack {
+  opacity: 0;
+}
+
+.state-IndeterminatePaused .DeterminateProgressBarIndicator,
+.state-IndeterminateError .DeterminateProgressBarIndicator,
+.state-IndeterminatePaused .IndeterminateProgressBarIndicator,
+.state-IndeterminateError .IndeterminateProgressBarIndicator {
+  opacity: 0;
+}
+
+.state-IndeterminatePaused .IndeterminateProgressBarIndicator2,
+.state-IndeterminateError .IndeterminateProgressBarIndicator2 {
+  width: 100%;
+  opacity: 1;
+  animation: none;
+  transform: translateX(0);
+  transition: transform 750ms cubic-bezier(0, 0, 0, 1), background-color 167ms linear;
+}
+
+.state-IndeterminatePaused .IndeterminateProgressBarIndicator2 {
+  background: var(--ProgressBarPausedForegroundColor);
+}
+
+.state-IndeterminateError .IndeterminateProgressBarIndicator2 {
+  background: var(--ProgressBarErrorForegroundColor);
+}
+
+.state-Paused .DeterminateProgressBarIndicator {
+  background: var(--ProgressBarPausedForegroundColor);
+}
+
+.state-Error .DeterminateProgressBarIndicator {
+  background: var(--ProgressBarErrorForegroundColor);
+}
+
+.state-Paused .ProgressBarTrack,
+.state-Error .ProgressBarTrack,
+.state-Determinate .ProgressBarTrack {
+  opacity: 1;
+}
+
+.is-disabled {
+  opacity: 0.6;
+}
+
+@keyframes win-progress-bar-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  75% {
+    transform: translateX(300%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}
+
+@keyframes win-progress-bar-indeterminate-2 {
+  0% {
+    transform: translateX(-150%);
+  }
+  37.5% {
+    transform: translateX(-150%);
+  }
+  100% {
+    transform: translateX(166%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .state-Indeterminate .IndeterminateProgressBarIndicator,
+  .state-Indeterminate .IndeterminateProgressBarIndicator2 {
+    animation-duration: 0.001ms;
+    animation-iteration-count: 1;
+  }
+
+  .DeterminateProgressBarIndicator,
+  .ProgressBarTrack,
+  .IndeterminateProgressBarIndicator2 {
+    transition-duration: 0.001ms;
+  }
+}
+
+/* ════════ ProgressRing.vue ════════ */
+.win-progress-ring {
+  --ProgressRingStrokeThickness: 8;
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  vertical-align: middle;
+  color: var(--ProgressRingForeground);
+  opacity: 1;
+  transition: opacity 167ms linear;
+}
+
+.win-progress-ring.is-inactive,
+.win-progress-ring.is-collapsed {
+  opacity: 0;
+}
+
+.win-progress-ring.is-hidden {
+  visibility: hidden;
+}
+
+.win-progress-ring.is-collapsed {
+  display: none;
+}
+
+.win-progress-ring.is-disabled:not(.is-inactive):not(.is-collapsed) {
+  opacity: 0.6;
+}
+
+.LayoutRoot,
+.ProgressRingVisual {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.ProgressRingVisual {
+  overflow: visible;
+}
+
+.ProgressRingTrack,
+.ProgressRingDeterminateIndicator,
+.ProgressRingIndeterminateIndicator {
+  fill: none;
+  stroke-width: var(--ProgressRingStrokeThickness);
+  stroke-linecap: round;
+}
+
+.ProgressRingTrack {
+  stroke: var(--ProgressRingBackground);
+}
+
+.ProgressRingDeterminateIndicator {
+  stroke: var(--ProgressRingForeground);
+  stroke-dasharray: 100;
+  transform: rotate(-90deg);
+  transform-origin: center;
+}
+
+.ProgressRingIndeterminateIndicator {
+  display: none;
+  stroke: var(--ProgressRingForeground);
+  stroke-dasharray: 0.01 100;
+  stroke-dashoffset: 0;
+}
+
+.is-indeterminate .ProgressRingDeterminateIndicator {
+  display: none;
+}
+
+.is-indeterminate .ProgressRingIndeterminateIndicator {
+  display: block;
+}
+
+.is-inactive .ProgressRingIndeterminateIndicator {
+  display: none;
+}
+
+/* ════════ SelectorBar.vue ════════ */
+.win-selector-bar {
+  display: inline-grid;
+  grid-template-columns: auto;
+  grid-template-rows: auto;
+  min-width: 0;
+  border: 0 solid transparent;
+  color: var(--SelectorBarItemForeground, var(--TextFillColorPrimaryBrush, var(--text-primary)));
+  font-family: var(--ContentControlThemeFontFamily, 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif);
+}
+
+.win-selector-bar-items-view {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+.win-selector-bar-items-view::-webkit-scrollbar {
+  display: none;
+}
+
+.win-selector-bar-item {
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  position: relative;
+  display: grid;
+  grid-template-columns: auto;
+  grid-template-rows: auto 3px;
+  min-width: 0;
+  min-height: 40px;
+  margin: 0;
+  padding: 0;
+  flex: 0 0 auto;
+  color: var(--SelectorBarItemForeground, var(--TextFillColorPrimaryBrush, var(--text-primary)));
+  background: var(--SelectorBarItemBackground, transparent);
+  background-image: none;
+  border: 1px solid var(--SelectorBarItemBorderBrush, transparent);
+  border-style: solid;
+  border-radius: var(--ControlCornerRadius, 4px);
+  box-shadow: none;
+  outline: none;
+  font: inherit;
+  line-height: normal;
+  text-align: inherit;
+  text-decoration: none;
+  text-transform: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+}
+
+.win-selector-bar-item:disabled {
+  cursor: default;
+}
+
+.win-selector-bar-item-content {
+  position: relative;
+  z-index: 1;
+  grid-row: 1;
+  grid-column: 1;
+  display: flex;
+  align-items: center;
+  justify-content: inherit;
+  gap: var(--SelectorBarItemSpacing, 8px);
+  min-width: 0;
+  margin: var(--win-selector-bar-item-padding, 10px 12px 7px 12px);
+  color: inherit;
+  text-align: left;
+}
+
+.win-selector-bar-item-icon {
+  width: 20px;
+  height: 20px;
+  margin: 0 -2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+  font-size: 20px;
+  line-height: 20px;
+  transform: scale(var(--SelectorBarItemIconScale, 0.8));
+  transform-origin: 50% 50%;
+  flex: 0 0 20px;
+}
+
+.win-selector-bar-item-icon-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.win-selector-bar-item-icon-glyph img,
+.win-selector-bar-item-icon-glyph img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.win-selector-bar-item-text {
+  min-width: 0;
+  color: inherit;
+  font-size: var(--ControlContentThemeFontSize, 14px);
+  font-weight: 400;
+  line-height: 20px;
+  white-space: normal;
+}
+
+.win-selector-bar-item-selection-visual {
+  position: relative;
+  z-index: 1;
+  grid-row: 2;
+  grid-column: 1;
+  justify-self: center;
+  align-self: end;
+  width: var(--SelectorBarItemPillWidth, 4px);
+  height: var(--SelectorBarItemPillHeight, 3px);
+  opacity: 0;
+  background: var(--SelectorBarItemPillFill, var(--AccentFillColorDefaultBrush, var(--accent-base)));
+  border-radius: var(--SelectorBarItemPillCornerRadius, 2px);
+  transition: none;
+  pointer-events: none;
+}
+
+.win-selector-bar-item-common-visual {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border: 1px solid var(--SelectorBarItemBorderBrush, transparent);
+  border-radius: inherit;
+  background: transparent;
+  pointer-events: none;
+}
+
+.win-selector-bar-item:hover:not(:disabled) {
+  color: var(--SelectorBarItemForegroundPointerOver, var(--TextFillColorSecondaryBrush, var(--text-secondary)));
+  background: var(--SelectorBarItemBackgroundPointerOver, transparent);
+}
+
+.win-selector-bar-item:active:not(:disabled) {
+  color: var(--SelectorBarItemForegroundPressed, var(--text-tertiary));
+  background: var(--SelectorBarItemBackgroundPressed, transparent);
+}
+
+.win-selector-bar-item.is-selected {
+  color: var(--SelectorBarItemForegroundSelected, var(--TextFillColorPrimaryBrush, var(--text-primary)));
+  background: var(--SelectorBarItemBackgroundSelected, transparent);
+}
+
+.win-selector-bar-item.is-selected:hover:not(:disabled),
+.win-selector-bar-item.is-selected:active:not(:disabled) {
+  color: var(--SelectorBarItemForegroundPointerOver, var(--TextFillColorSecondaryBrush, var(--text-secondary)));
+}
+
+.win-selector-bar-item.is-selected .win-selector-bar-item-selection-visual {
+  opacity: 1;
+  width: var(--SelectorBarItemPillSelectedWidth, 16px);
+  animation: win-selector-bar-selection-visual-show var(--ComboBoxItemScaleAnimationDuration, 0.167s) var(--fast-out-slow-in, cubic-bezier(0, 0, 0, 1)) both;
+}
+
+.win-selector-bar-item.is-disabled {
+  color: var(--SelectorBarItemForegroundDisabled, var(--TextFillColorDisabledBrush, var(--text-disabled)));
+  background: var(--SelectorBarItemBackgroundDisabled, transparent);
+}
+
+.win-selector-bar-item.is-disabled .win-selector-bar-item-selection-visual {
+  background: var(--SelectorBarItemDisabledPillFill, var(--AccentFillColorDisabledBrush, var(--accent-fill-disabled)));
+}
+
+.win-selector-bar-item:focus-visible {
+  outline: 2px solid var(--focus-stroke-outer, var(--TextFillColorPrimaryBrush, var(--text-primary)));
+  outline-offset: var(--SelectorBarItemFocusVisualMargin, -2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .win-selector-bar-item.is-selected .win-selector-bar-item-selection-visual {
+    animation: none;
+  }
+}
+
+@keyframes win-selector-bar-selection-visual-show {
+  from {
+    width: var(--SelectorBarItemPillWidth, 4px);
+    opacity: 0;
+  }
+  to {
+    width: var(--SelectorBarItemPillSelectedWidth, 16px);
+    opacity: 1;
+  }
+}
+
+/* ════════ SettingsCard.vue ════════ */
+.win-settings-card {
+    width: 100%;
+    border: 1px solid var(--card-stroke);
+    border-radius: 4px;
+    margin-bottom: 4px;
+    padding: 0;
+    display: block;
+    min-height: 68px;
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    text-align: left;
+    --settings-card-fill: var(--CardBackgroundFillColorDefaultBrush, var(--card-bg));
+  }
+
+  .win-settings-card-surface {
+    position: relative;
+    isolation: isolate;
+    width: 100%;
+    background: transparent;
+    border-radius: 4px;
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    color: var(--text-primary);
+    font: inherit;
+    text-align: left;
+  }
+
+  .win-settings-card-surface::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    border-radius: inherit;
+    background: var(--settings-card-fill);
+    transition: background var(--faster-duration, 83ms) linear;
+  }
+
+  .win-settings-card.clickable {
+    cursor: pointer;
+  }
+
+  .win-settings-card.clickable .win-settings-card-surface {
+    cursor: pointer;
+  }
+
+  .win-settings-card.clickable:hover:not(:active) {
+    color: var(--text-primary);
+    --settings-card-fill: var(--control-fill-color-secondary, var(--ctrl-fill-secondary));
+  }
+
+  .win-settings-card.clickable:hover:not(:active) {
+    border-color: var(--control-stroke-color-default, var(--ctrl-border));
+  }
+
+  .win-settings-card.clickable:active {
+    color: var(--text-secondary);
+    --settings-card-fill: var(--control-fill-color-tertiary, var(--ctrl-fill-tertiary));
+  }
+
+  .win-settings-card.clickable:active {
+    border-color: var(--control-stroke-color-default, var(--ctrl-border));
+  }
+
+  .win-settings-card.clickable:active .win-settings-card-icon,
+  .win-settings-card.clickable:active .win-settings-card-title,
+  .win-settings-card.clickable:active .win-settings-card-desc {
+    color: var(--text-secondary);
+  }
+
+  html.theme-light .win-settings-card.clickable:hover:not(:active),
+  html[data-theme='light'] .win-settings-card.clickable:hover:not(:active) {
+    border-bottom-color: var(--control-stroke-color-secondary, var(--ctrl-border-accent));
+  }
+
+  html.theme-dark .win-settings-card.clickable:hover:not(:active),
+  html[data-theme='dark'] .win-settings-card.clickable:hover:not(:active) {
+    border-top-color: var(--control-stroke-color-secondary, var(--ctrl-border-accent));
+  }
+
+  @media (prefers-color-scheme: light) {
+    html:not(.theme-dark):not([data-theme='dark']) .win-settings-card.clickable:hover:not(:active) {
+      border-bottom-color: var(--control-stroke-color-secondary, var(--ctrl-border-accent));
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    html:not(.theme-light):not([data-theme='light']) .win-settings-card.clickable:hover:not(:active) {
+      border-top-color: var(--control-stroke-color-secondary, var(--ctrl-border-accent));
+    }
+  }
+
+  .win-settings-card.content-left .win-settings-card-surface {
+    justify-content: flex-start;
+    align-items: center;
+  }
+
+  .win-settings-card.content-left .win-settings-card-content {
+    flex: 1;
+    justify-content: flex-start;
+  }
+
+  .win-settings-card.content-vertical .win-settings-card-surface {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .win-settings-card.content-vertical .win-settings-card-content {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .win-settings-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .win-settings-card-icon {
+    width: 20px;
+    height: 20px;
+    max-width: 20px;
+    max-height: 20px;
+    margin: 0 20px 0 2px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--TextFillColorSecondaryBrush, var(--text-secondary));
+    flex-shrink: 0;
+    font-size: 20px;
+    line-height: 20px;
+  }
+
+  .win-settings-card-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    min-width: 0;
+  }
+
+  .win-settings-card-title {
+    font-size: 14px;
+    color: var(--text-primary);
+    line-height: 20px;
+  }
+
+  .win-settings-card-desc {
+    font-size: var(--SettingsCardDescriptionFontSize, 12px);
+    color: var(--TextFillColorSecondaryBrush, var(--text-secondary));
+    margin-top: 0;
+    line-height: 16px;
+  }
+
+  .win-settings-card-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .win-settings-card-action-icon {
+    margin-left: -2px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 640px) {
+    .win-settings-card.has-header-content:not(.content-left) .win-settings-card-surface {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .win-settings-card.has-header-content:not(.content-left) .win-settings-card-content {
+      justify-content: flex-start;
+    }
+  }
+
+/* ════════ Slider.vue ════════ */
+.win-slider-root {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.win-slider-header {
+  margin: 0 0 8px;
+}
+
+.win-slider {
+  position: relative;
+  display: flex;
+  align-items: center;
+  touch-action: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  min-width: 32px;
+  min-height: 32px;
+}
+
+.win-slider.vertical {
+  justify-content: center;
+  align-items: stretch;
+  min-width: 24px;
+  min-height: 32px;
+}
+
+.win-slider-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 4px;
+  border-radius: 2px;
+  background: var(--ctrl-strong-fill);
+  overflow: hidden;
+  z-index: 0;
+}
+
+.win-slider.vertical .win-slider-track {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  width: 4px;
+  height: auto;
+  margin: 0;
+  display: flex;
+  align-items: flex-end;
+}
+
+.win-slider-fill {
+  height: 100%;
+  background: var(--accent-base);
+  border-radius: 2px;
+}
+
+.win-slider.vertical .win-slider-fill {
+  width: 100%;
+  height: 0;
+}
+
+.win-slider-thumb {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--SliderOuterThumbBackground, var(--control-solid-fill-color-default, var(--ctrl-solid-fill)));
+  border-left: 1px solid var(--ControlStrokeColorDefaultBrush, var(--ctrl-border));
+  border-top: 1px solid var(--ButtonBorderBrushDefaultTop, var(--ControlStrokeColorDefaultBrush, var(--ctrl-border)));
+  border-right: 1px solid var(--ControlStrokeColorDefaultBrush, var(--ctrl-border));
+  border-bottom: 1px solid var(--ButtonBorderBrushDefaultBottom, var(--ctrl-border-accent));
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  display: grid;
+  place-items: center;
+  z-index: 2;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.win-slider.vertical .win-slider-thumb {
+  left: 50%;
+  top: auto;
+  transform: translate(-50%, 50%);
+}
+
+.win-slider-thumb::after {
+  content: "";
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent-base);
+  transform: scale(0.86);
+  transition: transform var(--fast-duration) var(--fast-out-slow-in);
+}
+
+.win-slider-thumb.is-pointer-over::after {
+  background: var(--accent-hover);
+  transform: scale(1.167);
+}
+
+.win-slider-thumb.is-pressed::after {
+  background: var(--accent-pressed);
+  transform: scale(0.71);
+}
+
+.win-slider-ticks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.win-slider-tick {
+  position: absolute;
+  width: 1px;
+  height: 4px;
+  background: var(--SliderTickBarFill, var(--control-strong-fill-color-default, var(--ctrl-strong-fill)));
+  transform: translateX(-50%);
+}
+
+.win-slider-tick.top-left {
+  top: calc(50% - 10px);
+}
+
+.win-slider-tick.bottom-right {
+  top: calc(50% + 6px);
+}
+
+.win-slider-ticks.placement-inline .win-slider-tick.bottom-right {
+  top: 50%;
+  height: 4px;
+  background: var(--SliderInlineTickBarFill, var(--control-fill-color-input-active, var(--ctrl-fill-input-active)));
+  transform: translate(-50%, -50%);
+}
+
+.win-slider.vertical .win-slider-tick {
+  width: 4px;
+  height: 1px;
+  transform: none;
+}
+
+.win-slider.vertical .win-slider-tick.top-left {
+  left: calc(50% - 10px);
+}
+
+.win-slider.vertical .win-slider-tick.bottom-right {
+  left: calc(50% + 6px);
+}
+
+.win-slider.vertical .win-slider-ticks.placement-inline .win-slider-tick.bottom-right {
+  left: 50%;
+  width: 4px;
+  height: 1px;
+  transform: translateX(-50%);
+}
+
+.example-theme-wrapper.theme-light .win-slider,
+.win-theme-scope.theme-light .win-slider {
+  --SliderOuterThumbBackground: #ffffff;
+}
+
+.example-theme-wrapper.theme-dark .win-slider,
+.win-theme-scope.theme-dark .win-slider {
+  --SliderOuterThumbBackground: #454545;
+}
+
+.win-slider-root.is-disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* ════════ SymbolIcon.vue ════════ */
+.win-symbol-icon { display: inline-flex; align-items: center; justify-content: center; font-family: 'Segoe Fluent Icons', 'Segoe MDL2 Assets', sans-serif; line-height: 1; }
+
+/* ════════ TextBlock.vue ════════ */
+.win-text-block {
+  display: block;
+  min-width: 0;
+  margin: 0;
+  color: var(--text-primary);
+  font-family: var(--ContentControlThemeFontFamily, 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif);
+  font-size: var(--ControlContentThemeFontSize, 14px);
+  line-height: 20px;
+  white-space: normal;
+  overflow-wrap: normal;
+  user-select: none;
+}
+
+.win-text-block.CustomTextBlockStyle {
+  font-family: 'Comic Sans MS';
+  font-style: italic;
+}
+
+.win-text-block.BaseTextBlockStyle,
+.win-text-block.BodyStrongTextBlockStyle {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.win-text-block.CaptionTextBlockStyle {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+}
+
+.win-text-block.BodyTextBlockStyle {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+.win-text-block.BodyLargeTextBlockStyle {
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 24px;
+}
+
+.win-text-block.BodyLargeStrongTextBlockStyle {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 24px;
+}
+
+.win-text-block.SubtitleTextBlockStyle {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 28px;
+}
+
+.win-text-block.TitleTextBlockStyle {
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 36px;
+}
+
+.win-text-block.TitleLargeTextBlockStyle {
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 52px;
+}
+
+.win-text-block.DisplayTextBlockStyle {
+  font-size: 68px;
+  font-weight: 600;
+  line-height: 92px;
+}
+
+.win-text-block::selection {
+  background-color: var(--TextBlockSelectionHighlightColor, Highlight);
+  color: HighlightText;
+}
+
+/* ════════ TextBox.vue ════════ */
+.win-textbox {
+  --textbox-background: var(--TextControlBackground, var(--ControlFillColorDefaultBrush, var(--control-fill-color-default, var(--ctrl-fill-default, rgba(255, 255, 255, 0.70)))));
+  --textbox-background-pointer-over: var(--TextControlBackgroundPointerOver, var(--ControlFillColorSecondaryBrush, var(--control-fill-color-secondary, var(--ctrl-fill-secondary))));
+  --textbox-background-pressed: var(--ControlFillColorTertiaryBrush, var(--control-fill-color-tertiary, var(--ctrl-fill-tertiary)));
+  --textbox-background-focused: var(--TextControlBackgroundFocused, var(--ControlFillColorInputActiveBrush, var(--control-fill-color-input-active, var(--ctrl-fill-input-active))));
+  --textbox-background-disabled: var(--TextControlBackgroundDisabled, var(--ControlFillColorDisabledBrush, var(--control-fill-color-disabled, var(--ctrl-fill-disabled))));
+  --textbox-border-top: var(--ControlStrokeColorDefaultBrush, var(--control-stroke-color-default, var(--ctrl-border-rest)));
+  --textbox-border-bottom: var(--ControlStrongStrokeColorDefaultBrush, var(--control-strong-stroke-color-default, var(--ctrl-strong-stroke)));
+  --textbox-border-focused: var(--SystemAccentColorDark1, var(--AccentFillColorDefaultBrush, var(--accent-base)));
+  --textbox-foreground: var(--TextControlForeground, var(--TextFillColorPrimaryBrush, var(--text-primary, var(--text-fill-color-primary))));
+  --textbox-foreground-pointer-over: var(--TextControlForegroundPointerOver, var(--TextFillColorPrimaryBrush, var(--text-primary, var(--text-fill-color-primary))));
+  --textbox-foreground-focused: var(--TextControlForegroundFocused, var(--TextFillColorPrimaryBrush, var(--text-primary, var(--text-fill-color-primary))));
+  --textbox-foreground-disabled: var(--TextControlForegroundDisabled, var(--TextFillColorDisabledBrush, var(--text-disabled, var(--text-fill-color-disabled))));
+  --textbox-placeholder-foreground: var(--TextControlPlaceholderForeground, var(--TextFillColorSecondaryBrush, var(--text-secondary, var(--text-fill-color-secondary))));
+  --textbox-placeholder-foreground-pointer-over: var(--TextControlPlaceholderForegroundPointerOver, var(--TextFillColorSecondaryBrush, var(--text-secondary, var(--text-fill-color-secondary))));
+  --textbox-placeholder-foreground-focused: var(--TextControlPlaceholderForegroundFocused, var(--TextFillColorSecondaryBrush, var(--text-secondary, var(--text-fill-color-secondary))));
+  --textbox-placeholder-foreground-disabled: var(--TextControlPlaceholderForegroundDisabled, var(--TextFillColorDisabledBrush, var(--text-disabled, var(--text-fill-color-disabled))));
+  --textbox-button-background-pointer-over: var(--TextControlButtonBackgroundPointerOver, var(--SubtleFillColorSecondaryBrush, var(--subtle-fill-color-secondary, var(--subtle-secondary))));
+  --textbox-button-background-pressed: var(--TextControlButtonBackgroundPressed, var(--SubtleFillColorTertiaryBrush, var(--subtle-fill-color-tertiary, var(--subtle-tertiary))));
+  --textbox-button-foreground: var(--TextControlButtonForeground, var(--TextFillColorSecondaryBrush, var(--text-secondary, var(--text-fill-color-secondary))));
+  --textbox-button-foreground-pointer-over: var(--TextControlButtonForegroundPointerOver, var(--TextFillColorSecondaryBrush, var(--text-secondary, var(--text-fill-color-secondary))));
+  --textbox-button-foreground-pressed: var(--TextControlButtonForegroundPressed, var(--TextFillColorTertiaryBrush, var(--text-tertiary, var(--text-fill-color-tertiary))));
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+:global(html.theme-dark .win-textbox),
+:global(.example-theme-wrapper.theme-dark .win-textbox),
+:global(.win-theme-scope.theme-dark .win-textbox) {
+  --textbox-border-focused: var(--SystemAccentColorLight2, var(--AccentFillColorDefaultBrush, var(--accent-base)));
+}
+
+:global(html.theme-light .win-textbox),
+:global(.example-theme-wrapper.theme-light .win-textbox),
+:global(.win-theme-scope.theme-light .win-textbox) {
+  --textbox-border-focused: var(--SystemAccentColorDark1, var(--AccentFillColorDefaultBrush, var(--accent-base)));
+}
+
+.win-textbox-header {
+  margin-bottom: 8px;
+  color: var(--text-primary, var(--text-fill-color-primary));
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+.win-textbox-border {
+  position: relative;
+  min-height: 32px;
+  overflow: visible;
+  background: var(--textbox-background);
+  border: 1px solid var(--textbox-border-top);
+  border-bottom-color: var(--textbox-border-bottom);
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 transparent;
+  box-sizing: border-box;
+}
+
+.win-textbox-focus-border {
+  position: absolute;
+  inset: -1px;
+  z-index: 4;
+  display: none;
+  overflow: hidden;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.win-textbox-focus-border::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--textbox-border-focused);
+}
+
+.win-textbox.is-hovered:not(.is-disabled) .win-textbox-border {
+  background: var(--textbox-background-pointer-over);
+}
+
+.win-textbox:active:not(.is-disabled):not(.is-focused) .win-textbox-border {
+  background: var(--textbox-background-pressed);
+}
+
+.win-textbox.is-focused:not(.is-disabled) .win-textbox-border {
+  background: var(--textbox-background-focused);
+}
+
+.win-textbox.is-focused:not(.is-disabled) .win-textbox-focus-border {
+  display: block;
+}
+
+.win-textbox-content {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  min-height: 30px;
+}
+
+.win-textbox-field {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 5px 6px 6px 10px;
+  color: var(--textbox-foreground);
+  background: transparent;
+  border: 0;
+  outline: 0;
+  font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  user-select: text;
+}
+
+.win-textbox.candidate-window-bottom-edge .win-textbox-field {
+  -ms-ime-align: after;
+}
+
+.win-textbox-textarea {
+  min-height: 76px;
+  height: auto;
+  resize: none;
+  overflow: hidden;
+}
+
+.win-textbox-delete-button {
+  appearance: none;
+  -webkit-appearance: none;
+  align-self: stretch;
+  position: relative;
+  width: 40px;
+  min-width: 40px;
+  height: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  color: var(--textbox-button-foreground);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  cursor: pointer;
+  flex: 0 0 40px;
+  font: inherit;
+  line-height: 1;
+}
+
+:slotted(.win-textbox-action-button) {
+  appearance: none;
+  -webkit-appearance: none;
+  align-self: stretch;
+  position: relative;
+  width: 40px;
+  min-width: 40px;
+  height: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  color: var(--textbox-button-foreground);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  cursor: pointer;
+  flex: 0 0 40px;
+  font: inherit;
+  line-height: 1;
+}
+
+:slotted(.win-textbox-action-button.win-textbox-action-query) {
+  width: 40px;
+  min-width: 40px;
+  flex-basis: 40px;
+  margin-left: 0;
+}
+
+:slotted(.win-textbox-action-button.win-textbox-action-number) {
+  width: 40px;
+  min-width: 40px;
+  flex-basis: 40px;
+}
+
+:slotted(.win-textbox-action-button:hover) {
+  color: var(--textbox-button-foreground-pointer-over);
+}
+
+:slotted(.win-textbox-action-button:active) {
+  color: var(--textbox-button-foreground-pressed);
+}
+
+:slotted(.win-textbox-action-button:disabled) {
+  color: var(--text-disabled, var(--text-fill-color-disabled, rgba(0, 0, 0, 0.36)));
+  cursor: default;
+}
+
+.win-textbox-delete-button-layout {
+  position: absolute;
+  inset: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.win-textbox-delete-button,
+:slotted(.win-textbox-action-button) {
+  display: block;
+}
+
+.win-textbox-action-button > span {
+  position: absolute;
+  inset: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.win-textbox-action-button.win-textbox-action-query > span {
+  inset: 4px;
+}
+
+.win-textbox-action-button:hover > span,
+.win-textbox-delete-button:hover .win-textbox-delete-button-layout {
+  background: var(--textbox-button-background-pointer-over);
+}
+
+.win-textbox-delete-button:hover {
+  color: var(--textbox-button-foreground-pointer-over);
+}
+
+.win-textbox-action-button:active > span,
+.win-textbox-delete-button:active .win-textbox-delete-button-layout {
+  background: var(--textbox-button-background-pressed);
+  color: var(--textbox-button-foreground-pressed);
+}
+
+.win-textbox-delete-button:active {
+  color: var(--textbox-button-foreground-pressed);
+}
+
+.win-textbox-delete-glyph {
+  display: block;
+  font-size: 12px;
+  line-height: 12px;
+}
+
+.win-textbox-field::placeholder {
+  color: var(--textbox-placeholder-foreground);
+  opacity: 1;
+}
+
+.win-textbox.is-hovered:not(.is-disabled) .win-textbox-field {
+  color: var(--textbox-foreground-pointer-over);
+}
+
+.win-textbox.is-hovered:not(.is-disabled) .win-textbox-field::placeholder {
+  color: var(--textbox-placeholder-foreground-pointer-over);
+}
+
+.win-textbox.is-focused:not(.is-disabled) .win-textbox-field {
+  color: var(--textbox-foreground-focused);
+}
+
+.win-textbox.is-focused:not(.is-disabled) .win-textbox-field::placeholder {
+  color: var(--textbox-placeholder-foreground-focused);
+}
+
+.win-textbox-field::selection {
+  background-color: var(--textbox-selection-background, Highlight);
+  color: HighlightText;
+}
+
+.win-textbox-description {
+  margin-top: 6px;
+  color: var(--text-secondary, var(--text-fill-color-secondary, rgba(0, 0, 0, 0.62)));
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.win-textbox.is-readonly .win-textbox-border {
+  background: var(--control-fill-color-tertiary, var(--ctrl-fill-tertiary, rgba(249, 249, 249, 0.3)));
+}
+
+.win-textbox.is-disabled {
+  pointer-events: none;
+}
+
+.win-textbox.is-disabled .win-textbox-border {
+  background: var(--textbox-background-disabled);
+  border-color: var(--textbox-border-top);
+  border-bottom-color: var(--ctrl-strong-stroke-disabled, rgba(0, 0, 0, 0.22));
+}
+
+.win-textbox.is-disabled .win-textbox-header,
+.win-textbox.is-disabled .win-textbox-description,
+.win-textbox.is-disabled .win-textbox-field {
+  color: var(--textbox-foreground-disabled);
+}
+
+.win-textbox.is-disabled .win-textbox-field::placeholder {
+  color: var(--textbox-placeholder-foreground-disabled);
+}
+
+/* ════════ ToggleSwitch.vue ════════ */
+.win-switch-root {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 154px;
+  }
+
+  .win-switch-header {
+    margin: 0 0 4px;
+  }
+
+  .win-switch {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    --tx: 0px;
+    width: 40px;
+    height: 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    touch-action: none;
+    flex-shrink: 0;
+  }
+
+    .win-switch .track {
+      position: absolute;
+      inset: 0;
+      border-radius: 10px;
+      border: 1px solid var(--toggle-border);
+      background-color: var(--control-alt-fill-color-secondary, var(--subtle-secondary));
+      transition: all var(--fast-duration) var(--fast-out-slow-in);
+    }
+
+    .win-switch:hover .track {
+      border-color: var(--text-primary);
+      background-color: var(--control-alt-fill-color-tertiary, var(--subtle-tertiary));
+    }
+
+    .win-switch.is-pressed:not(.is-on) .track,
+    .win-switch.dragging:not(.is-on) .track {
+      border-color: var(--toggle-border);
+      background-color: var(--control-alt-fill-color-quarternary, var(--subtle-pressed));
+    }
+
+    .win-switch.is-on .track {
+      background-color: var(--accent-base);
+      border-color: transparent;
+    }
+
+    .win-switch.is-on:hover .track {
+      background-color: var(--accent-hover);
+    }
+
+    .win-switch.is-on.is-pressed .track,
+    .win-switch.is-on.dragging .track {
+      background-color: var(--accent-pressed);
+    }
+
+    .win-switch .knob {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 20px;
+      height: 20px;
+      transform: translateX(var(--tx));
+      transition: transform var(--fast-duration) var(--fast-out-slow-in);
+    }
+
+    .win-switch.is-on .knob {
+      --tx: 20px;
+    }
+
+    .win-switch .thumb {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 12px;
+      height: 12px;
+      border-radius: 6px;
+      background-color: var(--toggle-thumb);
+      transform: translate(-50%, -50%) translateX(-0.5px);
+      transition: width var(--fast-duration) var(--fast-out-slow-in), height var(--fast-duration) var(--fast-out-slow-in), background-color var(--fast-duration);
+    }
+
+    .win-switch.is-on .thumb {
+      background-color: var(--toggle-on-thumb);
+      transform: translate(-50%, -50%) translateX(-0.5px);
+    }
+
+    .win-switch:hover .thumb {
+      width: 14px;
+      height: 14px;
+      border-radius: 7px;
+      background-color: var(--toggle-thumb-hover);
+    }
+
+    .win-switch:hover.is-on .thumb {
+      background-color: var(--toggle-on-thumb);
+    }
+
+    .win-switch.is-pressed .knob,
+    .win-switch.dragging .knob {
+      transition: none;
+    }
+
+    .win-switch.is-pressed:not(.is-on) .thumb,
+    .win-switch.dragging:not(.is-on) .thumb {
+      width: 17px;
+      height: 14px;
+      border-radius: 7px;
+      background-color: var(--toggle-thumb-hover);
+      /* WinUI Pressed: SwitchKnobOff is left-aligned inside the 20px knob with Margin="3,0,0,0". */
+      transform: translate(-50%, -50%) translateX(1.5px);
+      transition: none;
+    }
+
+    .win-switch.is-pressed.is-on .thumb,
+    .win-switch.dragging.is-on .thumb {
+      width: 17px;
+      height: 14px;
+      border-radius: 7px;
+      background-color: var(--toggle-on-thumb);
+      /* WinUI Pressed: SwitchKnobOn is right-aligned inside the 20px knob with Margin="0,0,3,0". */
+      transform: translate(-50%, -50%) translateX(-1.5px);
+      transition: none;
+    }
+
+  .win-switch-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 40px;
+    cursor: pointer;
+    touch-action: none;
+    user-select: none;
+  }
+
+  .win-switch-wrap:not(.is-disabled):hover .win-switch:not(.is-on) .track {
+    border-color: var(--text-primary);
+  }
+
+  .win-switch-wrap:not(.is-disabled):hover .win-switch .thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 7px;
+    background-color: var(--toggle-thumb-hover);
+  }
+
+  .win-switch-wrap:not(.is-disabled):hover .win-switch.is-on .track {
+    background-color: var(--accent-hover);
+  }
+
+  .win-switch-wrap:not(.is-disabled):hover .win-switch.is-on .thumb {
+    background-color: var(--toggle-on-thumb);
+  }
+
+  .win-switch-wrap:not(.is-disabled):active .win-switch:not(.is-on) .thumb {
+    width: 17px;
+    height: 14px;
+    border-radius: 7px;
+    background-color: var(--toggle-thumb-hover);
+    transform: translate(-50%, -50%) translateX(1.5px);
+    transition: none;
+  }
+
+  .win-switch-wrap:not(.is-disabled):active .win-switch.is-on .thumb {
+    width: 17px;
+    height: 14px;
+    border-radius: 7px;
+    background-color: var(--toggle-on-thumb);
+    transform: translate(-50%, -50%) translateX(-1.5px);
+    transition: none;
+  }
+
+  .win-switch-wrap:not(.is-disabled):active .win-switch.is-on .track {
+    background-color: var(--accent-pressed);
+  }
+
+  .win-switch-label {
+    color: var(--text-primary);
+    user-select: none;
+    min-width: 20px;
+    cursor: pointer;
+  }
+
+  /* --- 禁用状态 --- */
+  .win-switch-wrap.is-disabled {
+    cursor: default;
+  }
+
+    .win-switch-wrap.is-disabled .win-switch-label {
+      color: var(--text-disabled);
+      cursor: default;
+    }
+
+  .win-switch.is-disabled {
+    cursor: default;
+  }
+
+    .win-switch.is-disabled .track {
+      border-color: var(--ctrl-strong-stroke-disabled);
+      background-color: transparent;
+    }
+
+    .win-switch.is-disabled .thumb {
+      background-color: var(--ctrl-strong-stroke-disabled);
+    }
+
+    .win-switch.is-disabled.is-on .track {
+      background-color: var(--accent-fill-disabled);
+      border-color: transparent;
+    }
+
+    .win-switch.is-disabled.is-on .thumb {
+      background-color: var(--text-disabled);
+    }
+
+    .win-switch.is-disabled:hover .track {
+      border-color: var(--ctrl-strong-stroke-disabled);
+    }
+
+    .win-switch.is-disabled:hover .thumb {
+      width: 12px;
+      height: 12px;
+      border-radius: 6px;
+      background-color: var(--ctrl-strong-stroke-disabled);
+    }
+
+    .win-switch.is-disabled:hover.is-on .track {
+      background-color: var(--accent-fill-disabled);
+    }
+
+    .win-switch.is-disabled:hover.is-on .thumb {
+      background-color: var(--text-disabled);
+    }
