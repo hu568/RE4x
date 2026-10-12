@@ -4,7 +4,7 @@
 
 ### ✨ 新功能
 
-- **应用图标（Win11 Fluent「像素重生」）**: 新增 `design/icon/` 设计资源目录——3 套图标方案（放大镜 / 像素风 / 4x 箭头）× `icon.svg` 源文件 + `design_brief.json` + 16/32/48/64/128/256/1024 多尺寸 PNG + `.ico`（`build_assets.py` 渲染管线，`render_transparent.py` 合成透明底）；方案 B「像素重生」正式接入 `build.spec` 与 `app.py`，**exe 文件图标与 pywebview 窗口标题栏图标均已内嵌**
+- **应用图标（Win11 Fluent「像素重生」）**: 新增 `design/icon/` 设计资源目录——3 套备选方案（放大镜 / 像素风 / 4x 箭头）× `icon.svg` 源文件 + `design_brief.json` + 16/32/48/64/128/256/1024 多尺寸 PNG + `.ico`（`build_assets.py` 渲染管线，`render_transparent.py` 合成透明底）；**发行只采用方案 B「像素重生」一套**（另两套仅作设计备选留在仓库，不进发行包），已接入 `build.spec` 与 `app.py`，**exe 文件图标与 pywebview 窗口标题栏图标均已内嵌**
 - **导航底部「清理缓存」**: 导航窗格「关于」上方新增清理项——二次确认对话框后清空 `TMP/`，成功/拒绝用 InfoBar（success/warning）提示；有任务运行中时拒绝（`error=tasks-running`），`clear_cache()` 返回 `{success, freed_bytes, error}`
 - **默认放大目标 2x → 4x**: 四个功能页默认倍率由 2x 提升为 4x（模型原生倍率，减少二次 lanczos 缩放损失）
 
