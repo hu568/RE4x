@@ -4,7 +4,7 @@
 Consumes the transparent per-size PNGs produced by render_transparent.py and
 produces:
   - <concept>.ico   (multi-frame: 256/128/64/48/32/16, PNG-compressed frames)
-  - preview.png     (3-concept contact sheet, light + dark backgrounds)
+  - preview.png     (contact sheet, light + dark backgrounds)
 
 Usage: python build_assets.py
 """
@@ -16,9 +16,7 @@ from PIL import Image, ImageDraw, ImageFont
 ROOT = Path(__file__).parent
 SIZES = [256, 128, 64, 48, 32, 16]
 CONCEPTS = [
-    ("concept-a-magnifier", "A · 放大镜 + 山景"),
-    ("concept-b-pixels", "B · 像素重生"),
-    ("concept-c-4x", "C · 4× 徽标"),
+    ("concept-b-pixels", "像素重生"),
 ]
 LIGHT_BG = (245, 245, 245, 255)
 DARK_BG = (31, 31, 31, 255)
@@ -69,13 +67,18 @@ def main():
     # contact sheet
     cell, gutter, margin = 300, 24, 24
     big_h, ladder_h, title_h = 304, 110, 56
-    width = margin * 2 + cell * 3 + gutter * 2
+    cols = len(CONCEPTS)
+    width = margin * 2 + cell * cols + gutter * (cols - 1)
     height = margin + title_h + big_h * 2 + ladder_h * 2 + margin
     sheet = Image.new("RGBA", (width, height), (255, 255, 255, 255))
     draw = ImageDraw.Draw(sheet)
 
     y = margin
-    draw.text((margin, y + 8), "RE4x — 软件图标概念方案（浅色 / 深色背景）", fill=(30, 30, 30), font=fonts[22])
+    title = "RE4x — 软件图标（浅色 / 深色背景）"
+    tsize = 22
+    while tsize > 12 and draw.textlength(title, font=font(tsize)) > width - margin * 2:
+        tsize -= 1
+    draw.text((margin, y + 8), title, fill=(30, 30, 30), font=font(tsize))
     y += title_h
 
     def paste_row(y0, h, bg, label_color, size, ladder):

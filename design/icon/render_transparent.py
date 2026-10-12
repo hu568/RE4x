@@ -13,7 +13,7 @@ from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).parent
 SIZES = [1024, 256, 128, 64, 48, 32, 16]
-CONCEPTS = ["concept-a-magnifier", "concept-b-pixels", "concept-c-4x"]
+CONCEPTS = ["concept-b-pixels"]
 
 HTML = """<!DOCTYPE html><html><head><meta charset="utf-8">
 <style>html,body{{margin:0;padding:0;background:transparent}}svg{{width:{s}px;height:{s}px;display:block}}</style>

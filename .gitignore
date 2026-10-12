@@ -46,6 +46,9 @@ tools/ncnn-build/
 AGENTS.md
 .sisyphus/
 
+# DSH 项目记忆（本地工具生成，不进仓库）
+MEMORY.md
+
 # Reasonix 工具（本地运行时元数据与配置）
 .reasonix/
 reasonix.toml
