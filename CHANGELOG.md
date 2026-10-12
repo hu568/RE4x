@@ -1,5 +1,34 @@
 # Changelog
 
+## v2.4.0 (2026-10-12)
+
+### ✨ 新功能
+
+- **应用图标（Win11 Fluent「像素重生」）**: 新增 `design/icon/` 设计资源目录——3 套图标方案（放大镜 / 像素风 / 4x 箭头）× `icon.svg` 源文件 + `design_brief.json` + 16/32/48/64/128/256/1024 多尺寸 PNG + `.ico`（`build_assets.py` 渲染管线，`render_transparent.py` 合成透明底）；方案 B「像素重生」正式接入 `build.spec` 与 `app.py`，**exe 文件图标与 pywebview 窗口标题栏图标均已内嵌**
+- **导航底部「清理缓存」**: 导航窗格「关于」上方新增清理项——二次确认对话框后清空 `TMP/`，成功/拒绝用 InfoBar（success/warning）提示；有任务运行中时拒绝（`error=tasks-running`），`clear_cache()` 返回 `{success, freed_bytes, error}`
+- **默认放大目标 2x → 4x**: 四个功能页默认倍率由 2x 提升为 4x（模型原生倍率，减少二次 lanczos 缩放损失）
+
+### 🛠 修复
+
+- **批量 / 目录任务忽略尺寸模式**: 选「按目标尺寸」（width/height/crop）时，单图任务正确缩放到目标尺寸，但批量与目录任务仍按比例放大——`_compute_dimension_upscale()` 的计算结果没有传到批量/目录管线。现在单图 / 多文件 / 目录三条路径共用同一套尺寸换算（contain 适应 / cover 裁剪一致），新增回归测试覆盖批量与目录的尺寸模式
+
+## v2.3.0 (2026-09-27)
+
+### ✨ 新功能：WinUI 11 风格界面重构
+
+- **WinUIonWeb 样式层**: 桌面 GUI 重构为 WinUI 11 风格，样式取自开源项目 [WinUIonWeb](https://github.com/Furry-Xiyi/WinUIonWeb)（**GPL-3.0**，仅取其 CSS——主题令牌 + 控件样式），不引入 Vue / 任何前端框架；交互（下拉弹层、滑条、开关、导航指示条、对话框）由原生 JS 实现，pywebview + WebView2 架构与 js_api 契约零改动
+- **NavigationView 导航布局**: 左侧导航窗格（汉堡按钮收起、内容区左上角一键展开、选中项指示条）+ 右侧内容区（WinUI 式页面标题、切换入场动画）
+- **设置区改为 Windows 11 设置卡片**: 放大模型、模式、倍数、混合、输出格式等排入 SettingsCard；控件换新——ComboBox 弹层（含选中胶囊）、Slider、ToggleSwitch、InfoBar、进度条 + 忙碌圈、关于页改为 ContentDialog
+- **深浅主题**: 跟随系统（prefers-color-scheme），导航底部「深色模式」开关手动切换，localStorage（`re4x-theme`）持久化
+- **拖拽 & 卡内预览**: 支持文件拖放到选择卡片，卡片内即时预览（<512KB base64），导航窗格收起带动画
+- **零额外依赖**: 图标使用系统自带 Segoe Fluent Icons / Segoe MDL2 Assets 字体，发行包体积基本不变
+
+### 🛠 修复
+
+- **模型基名折叠导致静默黑帧**: 下拉框展示折叠基名（如 `realesr-animevideov3`），引擎与 ffmpeg 滤镜都直接拼接 `<基名>.param/.bin`，磁盘实际文件是 `realesr-animevideov3-x4` → 模型加载失败（滤镜端表现为**静默黑帧**）。新增 `resolve_model_param()` 把基名映射回磁盘真实 .param 干，`parse_params` 后供引擎与滤镜共用
+- **滤镜端模型加载失败即报错退出**: 不再带着未加载的模型继续跑，初始化失败直接退出并给出明确错误
+- **WinUIonWeb 许可标注**: GPL-3.0（原误标 MIT），版权与来源声明修正
+
 ## v2.2.0 (2026-08-14)
 
 ### ✨ 新功能：FFmpeg 滤镜链内嵌 Real-ESRGAN（issue #3）
