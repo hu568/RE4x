@@ -607,6 +607,26 @@ def test_compute_dimension_upscale_crop_odd(project_root, tmp_dir):
     assert w == 2160 and h == 3840
 
 
+def test_compute_dimension_upscale_huge_source(make_huge_png, tmp_dir):
+    """Regression: dimension mode accepts sources past Pillow's pixel limit.
+
+    A 24000x8000 source (192,000,000 px) is beyond Pillow's default
+    decompression-bomb threshold (2 x 89,478,485 = 178,956,970 px), so the
+    dimension read used to raise ``DecompressionBombError`` and the GUI
+    reported "Failed to read input dimensions". Contain into 2560x1600:
+    scale = 2560/24000 -> 2560x852 after the even-dimension rounding.
+    """
+    from core import _compute_dimension_upscale  # noqa: PLC0415
+
+    src = os.path.join(tmp_dir, 'dim_src_huge_24000x8000.png')
+    with open(src, 'wb') as fh:
+        fh.write(make_huge_png((24000, 8000)))
+
+    w, h, scale = _compute_dimension_upscale(src, 2560, 1600, crop=False)
+    assert (w, h) == (2560, 852)
+    assert scale == pytest.approx(2560 / 24000)
+
+
 def test_submit_single_dimension_contain_odd(service, tmp_dir):
     """Issue #1 (single image): contain on odd rounding → even output."""
     src = os.path.join(tmp_dir, 'single_contain_640x480.png')

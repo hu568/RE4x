@@ -18,8 +18,7 @@ import threading
 import uuid
 import zipfile
 
-from PIL import Image
-
+from imgutil import read_image_size
 from procutils import popen
 
 logger = logging.getLogger('sd_enhance.core')
@@ -299,8 +298,7 @@ def _compute_dimension_upscale(
     ``final_w``/``final_h`` are always even so the result can be encoded
     with libx264 + yuv420p (see :func:`_even_dimension`).
     """
-    with Image.open(input_path) as img:
-        src_w, src_h = img.size
+    src_w, src_h = read_image_size(input_path)
 
     final_w, final_h, effective_scale, _mid_w, _mid_h = (
         _compute_dimension_from_size(src_w, src_h, target_w, target_h, crop))
@@ -1111,8 +1109,7 @@ class UpscaleService:
                 video_mid_w = video_mid_h = None
                 if dim_mode:
                     first_frame = os.path.join(frames_dir, frame_files[0])
-                    with Image.open(first_frame) as img:
-                        src_w, src_h = img.size
+                    src_w, src_h = read_image_size(first_frame)
                     video_final_w, video_final_h, eff_scale = (
                         _compute_dimension_upscale(
                             first_frame,

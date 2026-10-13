@@ -9,8 +9,7 @@ import os
 import sys
 import subprocess
 
-from PIL import Image
-
+from imgutil import read_image_size
 from procutils import popen
 
 logger = logging.getLogger('sd_enhance.resizer')
@@ -169,8 +168,7 @@ class ImageResizer:
         abs_input = self._resolve_path(input_path)
 
         try:
-            with Image.open(abs_input) as img:
-                w, h = img.size
+            w, h = read_image_size(abs_input)
         except Exception as e:
             return {
                 "success": False,

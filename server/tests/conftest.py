@@ -6,7 +6,9 @@ ffmpeg.exe) — no mocking is used anywhere.
 
 import io
 import os
+import struct
 import sys
+import zlib
 
 from PIL import Image
 import pytest
@@ -122,4 +124,35 @@ def make_image():
         img.save(buf, format=fmt)
         buf.seek(0)
         return buf
+    return _make
+
+
+@pytest.fixture
+def make_huge_png():
+    """Factory fixture — oversized solid-colour PNG **bytes** (1 bit/pixel).
+
+    Builds a real PNG whose pixel count is past Pillow's default
+    decompression-bomb limit (``2 x 89,478,485 = 178,956,970`` px) without
+    allocating a multi-hundred-MB bitmap: the tests under it only read
+    dimensions, and ``Image.open()`` needs nothing but the IHDR header — the
+    solid-colour IDAT stream compresses to a few KB.
+
+    Examples::
+
+        path.write_bytes(make_huge_png())              # 24000x8000
+        path.write_bytes(make_huge_png((30000, 20000)))
+    """
+    def _chunk(tag, payload):
+        return (struct.pack('>I', len(payload)) + tag + payload
+                + struct.pack('>I', zlib.crc32(tag + payload) & 0xFFFFFFFF))
+
+    def _make(size=(24000, 8000)):
+        width, height = size
+        ihdr = struct.pack('>IIBBBBB', width, height, 1, 0, 0, 0, 0)
+        raw = b''.join(b'\x00' + bytes((width + 7) // 8) for _ in range(height))
+        return (b'\x89PNG\r\n\x1a\n'
+                + _chunk(b'IHDR', ihdr)
+                + _chunk(b'IDAT', zlib.compress(raw, 9))
+                + _chunk(b'IEND', b''))
+
     return _make

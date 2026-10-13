@@ -6,8 +6,7 @@ import sys
 import subprocess
 import shutil
 
-from PIL import Image
-
+from imgutil import read_image_size
 from procutils import popen
 
 logger = logging.getLogger('sd_enhance.mixer')
@@ -123,10 +122,8 @@ class ImageMixer:
 
         # --- Determine input image dimensions ---------------------------------
         try:
-            with Image.open(abs_a) as img:
-                w_a, h_a = img.size
-            with Image.open(abs_b) as img:
-                w_b, h_b = img.size
+            w_a, h_a = read_image_size(abs_a)
+            w_b, h_b = read_image_size(abs_b)
         except Exception as e:
             return {
                 "success": False,
