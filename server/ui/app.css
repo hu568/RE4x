@@ -327,10 +327,16 @@ body {
   user-select: text;
 }
 .content-dialog .app-about-log {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
   color: var(--text-tertiary);
   font-size: 12px;
-  word-break: break-all;
   user-select: text;
+}
+.content-dialog .app-about-log code {
+  font-size: 12px;
 }
 
 /* ── WinUI 风格滚动条 ────────────────────────────────────── */

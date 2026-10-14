@@ -392,7 +392,12 @@
           <li>本地处理,无需上传,无需联网</li>
         </ul>
         <p>引擎:realesrgan-ncnn-vulkan · 模型自动探测 <code>tools/models/</code></p>
-        <p class="app-about-log">日志:<span id="about-log-path">…</span></p>
+        <p class="app-about-log">日志:<code id="about-log-rel">logs\sd-enhance.log</code>
+          <button class="win-hyperlink-button app-repo-link" id="about-log-open" type="button"
+                  title="在文件管理器中打开日志文件夹">
+            <span class="win-text-block">打开日志文件夹</span>
+          </button>
+        </p>
       </div>
     </div>
     <div class="content-dialog-command-space">
@@ -1059,9 +1064,10 @@ async function openAbout() {
   setTimeout(() => mask.classList.remove('content-dialog-enter-active'), 300);
   if (api) {
     try {
-      const p = await api.get_log_path();
-      $('about-log-path').textContent = p || '(未找到日志文件)';
-    } catch (e) { /* 忽略 */ }
+      // 只显示相对程序根目录的路径:发行版不应把用户的安装绝对路径印在界面上
+      const rel = await api.get_log_rel_path();
+      if (rel) $('about-log-rel').textContent = rel;
+    } catch (e) { /* 保留相对路径回退文案 */ }
   }
 }
 function closeAbout() {
@@ -1194,6 +1200,7 @@ document.querySelectorAll('#mode-switch .win-selector-bar-item').forEach(b =>
 $('submit-btn').addEventListener('click', startTask);
 $('error-close').addEventListener('click', () => $('error-infobar').classList.add('hidden'));
 $('about-close').addEventListener('click', closeAbout);
+$('about-log-open').addEventListener('click', () => { if (api) api.open_log_folder(); });
 $('about-mask').addEventListener('click', e => { if (e.target === e.currentTarget) closeAbout(); });
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;

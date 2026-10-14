@@ -117,11 +117,25 @@ class GuiApi:
         from core import APP_VERSION  # noqa: PLC0415
         return APP_VERSION
 
-    def get_log_path(self) -> str | None:
-        """Absolute path of the on-disk log file (for the About dialog)."""
+    def get_log_rel_path(self) -> str:
+        """Log file path **relative to the program root**, e.g. ``logs\\sd-enhance.log``.
+
+        The About dialog shows this instead of the absolute path: a shipped
+        build must not print the user's install location, and the relative
+        form is the same for everyone (and matches README/RELEASE_INFO).
+        """
         from logutil import log_dir  # noqa: PLC0415
         path = os.path.join(log_dir(self.service.base_path), 'sd-enhance.log')
-        return path if os.path.isfile(path) else None
+        return os.path.relpath(path, self.service.base_path)
+
+    def open_log_folder(self) -> bool:
+        """Open the ``logs/`` folder in Explorer.
+
+        Keeps the absolute path on the Python side — nothing the user could
+        see (or the DOM could render) ever holds it.
+        """
+        from logutil import log_dir  # noqa: PLC0415
+        return self.open_folder(os.path.join(log_dir(self.service.base_path), 'sd-enhance.log'))
 
     def get_models(self) -> list[dict]:
         return self.service.get_models()
