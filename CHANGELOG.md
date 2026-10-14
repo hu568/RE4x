@@ -1,5 +1,16 @@
 # Changelog
 
+## v2.5.0 (2026-10-14)
+
+### ✨ 新功能
+
+- **关于页加入 GitHub 仓库链接**: 「关于」对话框新增仓库行——链接按钮通过新增的 `GuiApi.open_external(url)` 交给系统默认浏览器打开（WebView2 直接跳转会把 GUI 窗口整个换成网页），旁边附「复制链接」按钮（`navigator.clipboard`，成功/失败用 InfoBar 提示）；`open_external` 只接受 `http/https`，其余一律拒绝
+- **启动默认模型固定为 R-ESRGAN 4x+ Anime**: 默认模型由 `server/models.py` 的 `DEFAULT_MODEL`（`realesrgan-x4plus-anime`）唯一提供，GUI 启动时经新增的 `GuiApi.get_default_model()` 预选下拉框，`core.parse_params` 的兜底同源——此前下拉框只是列表排序中的一项、与后端兜底是两个各写一份的字面量。用户删掉该模型时自动回退到第一个可用模型
+
+### 🛠 修复
+
+- **关于页泄漏用户安装绝对路径**: 发行版不应把 `D:\CODE\RE4x\logs\sd-enhance.log` 这类本机绝对路径显示在界面上。`get_log_path()`（返回绝对路径）改为 `get_log_rel_path()`，只对外给出相对程序根的 `logs\sd-enhance.log`；原先的「贴日志排查」入口改由「打开日志文件夹」按钮承接（绝对路径只在 Python 侧解析，不进 DOM）
+
 ## v2.4.0 (2026-10-12)
 
 ### ✨ 新功能

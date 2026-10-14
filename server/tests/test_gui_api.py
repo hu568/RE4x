@@ -5,12 +5,45 @@ covered here; they need no binaries (``os.startfile`` is never called for real).
 """
 
 import os
+import re
 
 import gui_api
 
 
 def _api(service):
     return gui_api.GuiApi(service)
+
+
+# ── Version consistency ──────────────────────────────────────────────────
+
+
+def test_version_matches_ui_fallbacks(service, project_root):
+    """``APP_VERSION`` is the single source of truth for the version.
+
+    ``index.html`` hardcodes the version twice as a fallback for when the
+    bridge is unavailable (nav footer + About title). Those literals used to
+    be updated by hand on every release and silently drifted; this guards them.
+    """
+    from core import APP_VERSION  # noqa: PLC0415
+
+    assert _api(service).get_version() == APP_VERSION
+
+    html = open(os.path.join(project_root, 'server', 'ui', 'index.html'),
+                encoding='utf-8').read()
+    for element_id in ('nav-version', 'about-ver'):
+        # the literal must be the APP_VERSION, not a stale one
+        pattern = re.compile(
+            r'id="%s"[^>]*>\s*v?%s' % (element_id, re.escape(APP_VERSION)))
+        assert pattern.search(html), f'{element_id} does not read v{APP_VERSION}'
+
+
+def test_release_info_header_matches(project_root):
+    """RELEASE_INFO.txt's header line carries the same version."""
+    from core import APP_VERSION  # noqa: PLC0415
+
+    text = open(os.path.join(project_root, 'RELEASE_INFO.txt'),
+                encoding='utf-8').read()
+    assert f'v{APP_VERSION}' in text, f'RELEASE_INFO.txt is not on v{APP_VERSION}'
 
 
 # ── Default model (startup pre-selection) ────────────────────────────────
