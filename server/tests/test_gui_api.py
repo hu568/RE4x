@@ -63,3 +63,35 @@ def test_open_log_folder_uses_absolute_path(service, monkeypatch):
 
     assert _api(service).open_log_folder() is True
     assert opened == [os.path.join(service.base_path, 'logs')]
+
+
+# ── About dialog: external link ──────────────────────────────────────────
+
+
+def test_open_external_https(service, monkeypatch):
+    """http/https URLs are handed to the OS default browser."""
+    opened = []
+    monkeypatch.setattr(gui_api.os, 'startfile', opened.append)
+
+    assert _api(service).open_external('https://github.com/hu568/RE4x') is True
+    assert opened == ['https://github.com/hu568/RE4x']
+
+
+def test_open_external_rejects_non_http(service, monkeypatch):
+    """Anything that is not http(s) is refused before reaching the shell."""
+    opened = []
+    monkeypatch.setattr(gui_api.os, 'startfile', opened.append)
+    api = _api(service)
+
+    for bad in ('file:///C:/Windows/System32/cmd.exe', 'javascript:alert(1)',
+                'cmd.exe', '', None, 42):
+        assert api.open_external(bad) is False
+    assert opened == []
+
+
+def test_open_external_survives_shell_failure(service, monkeypatch):
+    def boom(_url):
+        raise OSError('no default handler')
+
+    monkeypatch.setattr(gui_api.os, 'startfile', boom)
+    assert _api(service).open_external('https://github.com/hu568/RE4x') is False

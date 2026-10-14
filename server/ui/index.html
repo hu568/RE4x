@@ -392,6 +392,16 @@
           <li>本地处理,无需上传,无需联网</li>
         </ul>
         <p>引擎:realesrgan-ncnn-vulkan · 模型自动探测 <code>tools/models/</code></p>
+        <p class="app-about-repo">GitHub 仓库:
+          <button class="win-hyperlink-button app-repo-link" id="about-repo-open" type="button"
+                  title="在默认浏览器中打开">
+            <span class="win-text-block" id="about-repo-url">github.com/hu568/RE4x</span>
+          </button>
+          <button class="win-hyperlink-button app-repo-link" id="about-repo-copy" type="button"
+                  title="复制仓库链接">
+            <span class="win-text-block">复制链接</span>
+          </button>
+        </p>
         <p class="app-about-log">日志:<code id="about-log-rel">logs\sd-enhance.log</code>
           <button class="win-hyperlink-button app-repo-link" id="about-log-open" type="button"
                   title="在文件管理器中打开日志文件夹">
@@ -1055,6 +1065,23 @@ function escapeHtml(s) {
 function escapeAttr(s) { return escapeHtml(s); }
 
 /* ── 关于对话框(ContentDialog) ─────────────────────────── */
+const REPO_URL = 'https://github.com/hu568/RE4x';
+
+async function openRepo() {
+  if (api && await api.open_external(REPO_URL)) return;
+  // 桥接不可用时(如纯浏览器预览)退化为新标签页 / 剪贴板
+  try { window.open(REPO_URL, '_blank', 'noopener'); } catch (e) { /* 忽略 */ }
+}
+
+async function copyRepoLink() {
+  try {
+    await navigator.clipboard.writeText(REPO_URL);
+    showInfoBar('success', '仓库链接已复制到剪贴板', '已复制');
+  } catch (e) {
+    showInfoBar('warning', '复制失败,请手动复制: ' + REPO_URL, '无法复制');
+  }
+}
+
 async function openAbout() {
   const mask = $('about-mask');
   if (mask.classList.contains('is-open')) return;
@@ -1200,6 +1227,8 @@ document.querySelectorAll('#mode-switch .win-selector-bar-item').forEach(b =>
 $('submit-btn').addEventListener('click', startTask);
 $('error-close').addEventListener('click', () => $('error-infobar').classList.add('hidden'));
 $('about-close').addEventListener('click', closeAbout);
+$('about-repo-open').addEventListener('click', openRepo);
+$('about-repo-copy').addEventListener('click', copyRepoLink);
 $('about-log-open').addEventListener('click', () => { if (api) api.open_log_folder(); });
 $('about-mask').addEventListener('click', e => { if (e.target === e.currentTarget) closeAbout(); });
 document.addEventListener('keydown', e => {

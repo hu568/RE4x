@@ -339,6 +339,25 @@ body {
   font-size: 12px;
 }
 
+/* 关于页 GitHub 链接行(仓库链接 + 复制链接) */
+.content-dialog .app-about-repo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+.content-dialog .app-repo-link {
+  min-height: 28px;
+  padding: 2px 8px 3px;
+  font-size: 13px;
+}
+.content-dialog .app-repo-link#about-repo-copy {
+  color: var(--text-secondary);
+}
+.content-dialog .app-repo-link#about-repo-copy:hover {
+  color: var(--accent-text-fill-color-primary);
+}
+
 /* ── WinUI 风格滚动条 ────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 12px;

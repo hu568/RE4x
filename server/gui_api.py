@@ -151,6 +151,22 @@ class GuiApi:
         from models import default_model_name  # noqa: PLC0415
         return default_model_name(self.service.get_models())
 
+    def open_external(self, url: str) -> bool:
+        """Open *url* in the user's default browser.
+
+        WebView2 would otherwise navigate the app window itself, replacing the
+        GUI with the web page. Only ``http``/``https`` URLs are accepted.
+        """
+        try:
+            if not isinstance(url, str) or not url.lower().startswith(('http://', 'https://')):
+                logger.warning('open_external refused non-http url: %r', url)
+                return False
+            os.startfile(url)  # noqa: S606 — local GUI, intended
+            return True
+        except Exception as e:
+            logger.warning('open_external failed: %s', e)
+            return False
+
     def clear_cache(self) -> dict:
         """Empty the TMP/ cache folder → ``{"success", "freed_bytes", "error"}``.
 
