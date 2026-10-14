@@ -116,3 +116,37 @@ def test_resolve_model_param_missing(tmp_path):
     (tmp_path / 'other.param').write_bytes(b'')
     assert resolve_model_param(str(tmp_path), 'nope') is None
     assert resolve_model_param(str(tmp_path / 'void'), 'nope') is None
+
+
+# ── default_model_name: startup pre-selection ────────────────────────────
+
+
+def test_default_model_is_x4plus_anime():
+    """The shipped default is R-ESRGAN 4x+ Anime."""
+    from models import DEFAULT_MODEL  # noqa: PLC0415
+
+    assert DEFAULT_MODEL == 'realesrgan-x4plus-anime'
+
+
+def test_default_model_name_preferred(project_root):
+    """The preferred default wins as long as it is installed."""
+    from models import (DEFAULT_MODEL, default_model_name,  # noqa: PLC0415
+                        get_available_models)
+
+    models_dir = os.path.join(project_root, 'tools', 'models')
+    assert default_model_name(get_available_models(models_dir)) == DEFAULT_MODEL
+
+
+def test_default_model_name_falls_back_to_first():
+    """A pruned models dir falls back to the first detected model."""
+    from models import default_model_name  # noqa: PLC0415
+
+    others = [{'name': 'realesrgan-x4plus'}, {'name': 'spanv2'}]
+    assert default_model_name(others) == 'realesrgan-x4plus'
+
+
+def test_default_model_name_empty():
+    """No models installed → no default (never raises)."""
+    from models import default_model_name  # noqa: PLC0415
+
+    assert default_model_name([]) is None

@@ -681,6 +681,14 @@ async function loadModels() {
       value: m.name,
       label: `${m.display_name}（${m.description}）`,
     })));
+    // 启动默认模型由后端提供(models.DEFAULT_MODEL 唯一真源),
+    // 未安装时后端回退到第一个可用模型;再兜底为下拉首项。
+    let preferred = null;
+    try { preferred = await api.get_default_model(); } catch (e) { /* 用回退值 */ }
+    if (!preferred || !state.models.some(m => m.name === preferred)) {
+      preferred = state.models.length ? state.models[0].name : null;
+    }
+    if (preferred) cbModel.setValue(preferred);
     cbModel2.setOptions(
       [{ value: '', label: '不使用' }].concat(
         state.models.map(m => ({ value: m.name, label: m.display_name }))

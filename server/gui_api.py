@@ -126,6 +126,17 @@ class GuiApi:
     def get_models(self) -> list[dict]:
         return self.service.get_models()
 
+    def get_default_model(self) -> str | None:
+        """Base name of the model the GUI should pre-select on startup.
+
+        Sourced from ``models.DEFAULT_MODEL`` (the same constant
+        ``core.parse_params`` falls back to) so the dropdown and the backend
+        default can never drift apart. Falls back to the first installed
+        model when the preferred one is missing.
+        """
+        from models import default_model_name  # noqa: PLC0415
+        return default_model_name(self.service.get_models())
+
     def clear_cache(self) -> dict:
         """Empty the TMP/ cache folder → ``{"success", "freed_bytes", "error"}``.
 

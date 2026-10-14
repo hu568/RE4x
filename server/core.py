@@ -19,6 +19,7 @@ import uuid
 import zipfile
 
 from imgutil import read_image_size
+from models import DEFAULT_MODEL  # single source of truth for the default model
 from procutils import popen
 
 logger = logging.getLogger('sd_enhance.core')
@@ -32,7 +33,9 @@ ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tiff'}
 VIDEO_EXTENSIONS = {'.mp4', '.webm', '.avi', '.mov', '.mkv'}
 VIDEO_OUTPUT_FORMATS = ('mp4', 'mov', 'gif')
 
-DEFAULT_MODEL = 'realesrgan-x4plus-anime'
+# ``DEFAULT_MODEL`` is imported from models.py (kept importable as
+# ``core.DEFAULT_MODEL`` for callers/tests) — the GUI pre-selects the same
+# model via GuiApi.get_default_model(), so fallback and UI cannot drift.
 
 # Task IDs are 8-char lowercase hex prefixes of UUID4 (see TaskManager.create_task).
 _VALID_TASK_ID_RE = re.compile(r'^[0-9a-f]{8}$')

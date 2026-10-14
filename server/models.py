@@ -10,6 +10,16 @@ a single entry with the maximum scale detected.
 import os
 import re
 
+# ── Defaults ──────────────────────────────────────────────────────────────
+
+# Model pre-selected on startup (base name, as returned by
+# ``get_available_models``).  ``core.DEFAULT_MODEL`` and the GUI (via
+# ``GuiApi.get_default_model``) both read this constant, so the fallback used
+# when the frontend sends no model can never drift from the one the GUI
+# pre-selects.
+DEFAULT_MODEL = "realesrgan-x4plus-anime"
+
+
 # ── Known model metadata ──────────────────────────────────────────────────
 
 DISPLAY_NAMES = {
@@ -138,3 +148,16 @@ def resolve_model_param(models_dir: str, name: str) -> str | None:
             best = (n, entry[:-len(".param")])
 
     return best[1] if best else None
+
+
+def default_model_name(models: list[dict]) -> str | None:
+    """Pick the model the GUI should pre-select from *models*.
+
+    ``DEFAULT_MODEL`` wins; when it is not installed (user pruned
+    ``tools/models/``) the first detected model is used so the dropdown is
+    never left empty. Returns ``None`` when *models* is empty.
+    """
+    for m in models:
+        if m.get("name") == DEFAULT_MODEL:
+            return DEFAULT_MODEL
+    return models[0]["name"] if models else None

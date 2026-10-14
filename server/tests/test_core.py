@@ -132,6 +132,18 @@ def test_service_get_models(service):
     assert 'realesrgan-x4plus-anime' in names
 
 
+def test_default_model_matches_parse_params_fallback(service):
+    """``core.DEFAULT_MODEL`` is the same constant the GUI pre-selects.
+
+    Regression guard: the dropdown default and ``parse_params`` fallback used
+    to be two independent literals; both now read ``models.DEFAULT_MODEL``.
+    """
+    from models import default_model_name  # noqa: PLC0415
+
+    assert service.parse_params({})[0]['model'] == 'realesrgan-x4plus-anime'
+    assert default_model_name(service.get_models()) == 'realesrgan-x4plus-anime'
+
+
 # ── Task helpers ─────────────────────────────────────────────────────────
 
 
